@@ -10,9 +10,15 @@
           "from": "user",
           "text": "[Uji otomatis browser] Alur lengkap: nama tetap utuh + pesan terkirim. Abaikan.",
           "at": "2026-09-13T20:09:22.760Z"
+        },
+        {
+          "id": "m_mu091cte0bbh",
+          "from": "owner",
+          "text": "mantap",
+          "at": "2026-09-13T20:11:00.002Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T20:09:22.760Z",
+      "lastMessageAt": "2026-09-13T20:11:00.002Z",
       "unreadByOwner": 0,
       "ownerLastReadAt": "2026-09-13T20:10:57.204Z"
     },
