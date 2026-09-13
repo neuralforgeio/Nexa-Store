@@ -1,16 +1,17 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 1,
-      "uniques": 1,
+      "views": 3,
+      "uniques": 2,
       "byPath": {
-        "/login": 1
+        "/login": 1,
+        "/": 2
       },
       "byReferrer": {
-        "langsung": 1
+        "langsung": 3
       },
       "byDevice": {
-        "desktop": 1
+        "desktop": 3
       },
       "events": {
         "chat_open": 1
@@ -18,9 +19,12 @@
     }
   },
   "visitors": {
-    "3379e1ba22dea9319a83deb5": "2026-09-14"
+    "3379e1ba22dea9319a83deb5": "2026-09-14",
+    "9e5a37f9c83e85168880a2f9": "2026-09-14"
   },
   "recent": [
-    1789319955843
+    1789319955843,
+    1789328066670,
+    1789328066670
   ]
 }
