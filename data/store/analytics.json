@@ -1,5 +1,26 @@
 {
-  "days": {},
-  "visitors": {},
-  "recent": []
+  "days": {
+    "2026-09-14": {
+      "views": 1,
+      "uniques": 1,
+      "byPath": {
+        "/login": 1
+      },
+      "byReferrer": {
+        "langsung": 1
+      },
+      "byDevice": {
+        "desktop": 1
+      },
+      "events": {
+        "chat_open": 1
+      }
+    }
+  },
+  "visitors": {
+    "3379e1ba22dea9319a83deb5": "2026-09-14"
+  },
+  "recent": [
+    1789319955843
+  ]
 }
