@@ -40,10 +40,16 @@
           "from": "owner",
           "text": "Tidak apa apa kak",
           "at": "2026-09-13T19:47:44.790Z"
+        },
+        {
+          "id": "m_mu087pbrfhix",
+          "from": "user",
+          "text": "Baik Kak terimakasih",
+          "at": "2026-09-13T19:47:56.535Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T19:47:44.790Z",
-      "unreadByOwner": 0,
+      "lastMessageAt": "2026-09-13T19:47:56.535Z",
+      "unreadByOwner": 1,
       "ownerLastReadAt": "2026-09-13T19:47:50.539Z"
     },
     {
