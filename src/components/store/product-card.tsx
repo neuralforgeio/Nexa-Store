@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { GameMark } from "@/components/shared/game-mark";
 import { PriceTag } from "@/components/shared/price-tag";
 import type { Product } from "@/lib/catalog/types";
+import { useSiteFeatures } from "@/lib/queries";
+import { effectivePriceForGame } from "@/lib/promo/pricing";
 import { useCartStore } from "@/lib/cart/store";
 import { MAX_CART_ITEMS } from "@/lib/cart/types";
+import { formatIdr } from "@/lib/format/idr";
 import { cn } from "@/lib/utils";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, TimerReset } from "lucide-react";
 
 /**
  * Denomination-led product card with two actions:
@@ -43,6 +46,8 @@ export const ProductCard = memo(function ProductCard({
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotion = useReducedMotion();
+  const { data: features } = useSiteFeatures();
+  const promo = effectivePriceForGame(product.priceIdr, features?.promos, gameId);
 
   useEffect(() => {
     return () => {
@@ -113,7 +118,27 @@ export const ProductCard = memo(function ProductCard({
         </div>
 
         <div className="mt-auto flex items-end justify-between gap-3">
-          <PriceTag value={product.priceIdr} size="lg" className="leading-none" />
+          {promo.percentOff > 0 ? (
+            <div className="flex min-w-0 flex-col">
+              <span className="flex items-center gap-1.5">
+                <span className="rounded-full bg-primary px-1.5 py-0.5 font-mono text-[10px] font-bold tabular text-primary-foreground">
+                  -{promo.percentOff}%
+                </span>
+                <span className="truncate text-[11px] font-medium text-muted-foreground line-through tabular">
+                  {formatIdr(promo.base)}
+                </span>
+              </span>
+              <PriceTag value={promo.price} size="lg" className="mt-0.5 text-primary leading-none" />
+              {promo.promoTitle ? (
+                <span className="mt-1 flex items-center gap-1 truncate text-[10px] font-medium text-primary/80">
+                  <TimerReset aria-hidden="true" className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{promo.promoTitle}</span>
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <PriceTag value={product.priceIdr} size="lg" className="leading-none" />
+          )}
         </div>
       </div>
 

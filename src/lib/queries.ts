@@ -13,6 +13,15 @@ import type {
   SyncRevision,
   ValidationReport,
 } from "@/lib/catalog/types";
+import type {
+  PublicBanner,
+  PublicPromo,
+  AnalyticsSummary,
+  BannerRecord,
+  ConversationSummary,
+  PromoEvent,
+  ScheduleTask,
+} from "@/lib/site-features/types";
 
 /** Public storefront data (enabled records only). */
 export type PublicCatalog = {
@@ -283,5 +292,141 @@ export function useSettingsMutation() {
       qc.invalidateQueries({ queryKey: ["catalog"] });
       qc.invalidateQueries({ queryKey: ["git-status"] });
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Site features (v1.3.0): banner, promo, analitik, obrolan, tugas terjadwal.
+// ---------------------------------------------------------------------------
+
+export type SiteFeaturesStatus = {
+  banners: PublicBanner[];
+  promos: PublicPromo[];
+  liveVisitors: number;
+};
+
+/** Data publik fitur situs — banner aktif + ringkasan promo + live count. */
+export function useSiteFeatures(enabled = true) {
+  return useQuery({
+    queryKey: ["site-features"],
+    queryFn: () => api.get<SiteFeaturesStatus>("/api/site-features"),
+    enabled,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+}
+
+export function usePromos(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-promos"],
+    queryFn: () => api.get<{ promos: PromoEvent[] }>("/api/developer/promos"),
+    enabled,
+  });
+}
+
+export function usePromoMutation() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, { action: "create"; body: Record<string, unknown> } | { action: "patch"; body: Record<string, unknown> } | { action: "delete"; id: string }>({
+    mutationFn: (input:
+      | { action: "create"; body: Record<string, unknown> }
+      | { action: "patch"; body: Record<string, unknown> }
+      | { action: "delete"; id: string }) =>
+      input.action === "create"
+        ? api.post<{ promo: PromoEvent }>("/api/developer/promos", input.body)
+        : input.action === "patch"
+          ? api.patch<{ ok: boolean }>("/api/developer/promos", input.body)
+          : api.delete<{ ok: boolean }>(`/api/developer/promos?id=${encodeURIComponent(input.id)}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-promos"] });
+      qc.invalidateQueries({ queryKey: ["site-features"] });
+    },
+  });
+}
+
+export function useBanners(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-banners"],
+    queryFn: () => api.get<{ banners: BannerRecord[] }>("/api/developer/banners"),
+    enabled,
+  });
+}
+
+export function useBannerMutation() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, { action: "create"; body: Record<string, unknown> } | { action: "patch"; body: Record<string, unknown> } | { action: "delete"; id: string }>({
+    mutationFn: (input:
+      | { action: "create"; body: Record<string, unknown> }
+      | { action: "patch"; body: Record<string, unknown> }
+      | { action: "delete"; id: string }) =>
+      input.action === "create"
+        ? api.post<{ banner: BannerRecord }>("/api/developer/banners", input.body)
+        : input.action === "patch"
+          ? api.patch<{ ok: boolean }>("/api/developer/banners", input.body)
+          : api.delete<{ ok: boolean }>(`/api/developer/banners?id=${encodeURIComponent(input.id)}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-banners"] });
+      qc.invalidateQueries({ queryKey: ["site-features"] });
+    },
+  });
+}
+
+export function useSchedules(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-schedules"],
+    queryFn: () => api.get<{ tasks: ScheduleTask[] }>("/api/developer/schedules"),
+    enabled,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, { action: "create"; body: Record<string, unknown> } | { action: "patch"; body: Record<string, unknown> } | { action: "delete"; id: string }>({
+    mutationFn: (input:
+      | { action: "create"; body: Record<string, unknown> }
+      | { action: "patch"; body: Record<string, unknown> }
+      | { action: "delete"; id: string }) =>
+      input.action === "create"
+        ? api.post<{ task: ScheduleTask }>("/api/developer/schedules", input.body)
+        : input.action === "patch"
+          ? api.patch<{ ok: boolean }>("/api/developer/schedules", input.body)
+          : api.delete<{ ok: boolean }>(`/api/developer/schedules?id=${encodeURIComponent(input.id)}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-schedules"] });
+    },
+  });
+}
+
+export type ChatConsoleData = {
+  conversations: Array<ConversationSummary & { messages: Array<{ id: string; from: "user" | "owner"; text: string; at: string }> }>;
+  unreadTotal: number;
+};
+
+export function useChatConsole(enabled: boolean, refetchMs: number | false = 8_000) {
+  return useQuery({
+    queryKey: ["dev-chat"],
+    queryFn: () => api.get<ChatConsoleData>("/api/developer/chat"),
+    enabled,
+    refetchInterval: refetchMs,
+  });
+}
+
+export function useChatOwnerMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { conversationId: string; text?: string; action: "reply" | "markRead" }) =>
+      api.post<{ ok: boolean }>("/api/developer/chat", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-chat"] });
+    },
+  });
+}
+
+export function useAnalytics(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-analytics"],
+    queryFn: () => api.get<AnalyticsSummary>("/api/developer/analytics"),
+    enabled,
+    refetchInterval: 30_000,
   });
 }

@@ -26,7 +26,12 @@ export type Capability =
   | "rollback.inspect"
   | "featureFlags.manage"
   | "validation.run"
-  | "access.manage";
+  | "access.manage"
+  | "promos.manage"
+  | "banners.manage"
+  | "schedules.manage"
+  | "chat.manage"
+  | "analytics.read";
 
 const ADMIN_CAPABILITIES = new Set<Capability>([
   "storefront.view",
@@ -54,6 +59,11 @@ const DEVELOPER_CAPABILITIES = new Set<Capability>([
   "featureFlags.manage",
   "validation.run",
   "access.manage",
+  "promos.manage",
+  "banners.manage",
+  "schedules.manage",
+  "chat.manage",
+  "analytics.read",
 ]);
 
 const CUSTOMER_CAPABILITIES = new Set<Capability>(["storefront.view"]);

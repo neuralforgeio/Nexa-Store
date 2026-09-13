@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { PublicCatalog } from "@/lib/queries";
+import type { PublicPromo } from "@/lib/site-features/types";
+import { effectivePriceForGame, type EffectivePrice } from "@/lib/promo/pricing";
 import { useCartStore } from "./store";
 import type { CartItem } from "./types";
 
@@ -11,26 +13,32 @@ import type { CartItem } from "./types";
  *
  * The cart persists only product/game references. Every render resolves the
  * CURRENT catalog: prices and availability always come from the fresh data,
- * never from client-stored values (price integrity).
+ * never from client-stored values (price integrity). Active promos apply at
+ * resolution time — the effective price is what the customer pays.
  */
 
 export type ResolvedCartItem = {
   item: CartItem;
   game: PublicCatalog["games"][number];
   product: PublicCatalog["products"][number];
+  /** Harga efektif termasuk promo aktif (price == base saat tanpa promo). */
+  price: EffectivePrice;
 };
 
 export type CartResolution = {
   resolved: ResolvedCartItem[];
   stale: Array<{ item: CartItem; reason: string }>;
   total: number;
+  /** True bila minimal satu item kena promo — untuk catatan pesan WA. */
+  hasPromo: boolean;
 };
 
 export function resolveCart(
   data: PublicCatalog | undefined,
-  items: CartItem[]
+  items: CartItem[],
+  promos?: PublicPromo[] | null
 ): CartResolution {
-  if (!data) return { resolved: [], stale: [], total: 0 };
+  if (!data) return { resolved: [], stale: [], total: 0, hasPromo: false };
 
   const gameById = new Map(data.games.map((g) => [g.id, g]));
   const productById = new Map(data.products.map((p) => [p.id, p]));
@@ -45,11 +53,17 @@ export function resolveCart(
       stale.push({ item, reason: "Produk sudah tidak tersedia." });
       continue;
     }
-    resolved.push({ item, game, product });
+    resolved.push({
+      item,
+      game,
+      product,
+      price: effectivePriceForGame(product.priceIdr, promos, game.id),
+    });
   }
 
-  const total = resolved.reduce((sum, r) => sum + r.product.priceIdr, 0);
-  return { resolved, stale, total };
+  const total = resolved.reduce((sum, r) => sum + r.price.price, 0);
+  const hasPromo = resolved.some((r) => r.price.percentOff > 0);
+  return { resolved, stale, total, hasPromo };
 }
 
 /**

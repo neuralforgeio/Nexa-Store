@@ -16,6 +16,9 @@ import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { RouteLink } from "@/components/shared/route-link";
 import { BlockedAdminDialog } from "@/components/shared/blocked-admin-dialog";
 import { CartProvider } from "@/components/store/cart/cart-ui-context";
+import { SiteFeaturesBar } from "@/components/store/site-features-bar";
+import { ChatWidget } from "@/components/store/chat/chat-widget";
+import { installAnalyticsFlush, track } from "@/lib/analytics/tracker";
 import { ManagementShell } from "@/components/admin/management-shell";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { AdminGames } from "@/components/admin/admin-games";
@@ -30,6 +33,11 @@ import { DevGit } from "@/components/developer/dev-git";
 import { DevData } from "@/components/developer/dev-data";
 import { DevDiagnostics } from "@/components/developer/dev-diagnostics";
 import { DevDeployment } from "@/components/developer/dev-deployment";
+import { DevChat } from "@/components/developer/dev-chat";
+import { DevPromo } from "@/components/developer/dev-promo";
+import { DevBanner } from "@/components/developer/dev-banner";
+import { DevAnalytics } from "@/components/developer/dev-analytics";
+import { DevSchedule } from "@/components/developer/dev-schedule";
 import { Button } from "@/components/ui/button";
 
 export function NexaApp() {
@@ -101,6 +109,14 @@ function AppFrame() {
   // this keeps soft, client-side navigations honest too — if the current
   // route becomes locked down or under maintenance, swap to the gate screen.
   const pathKey = route.view === "game" ? `game:${route.slug}` : route.view;
+
+  // First-party analytics (v1.3.0): one view event per public navigation + a
+  // visibility flush so the final seconds before a navigation still count.
+  useEffect(() => {
+    if (!isPublic) return;
+    track("view");
+  }, [pathKey, isPublic]);
+  useEffect(() => installAnalyticsFlush(), []);
   useEffect(() => {
     if (isManagement || route.view === "login" || route.view === "not-found") return;
     let cancelled = false;
@@ -255,6 +271,7 @@ function AppFrame() {
     <CartProvider>
       <div className="flex min-h-dvh flex-col">
         <SiteHeader />
+        <SiteFeaturesBar />
         <AnimatePresence mode="wait">
           <motion.div key={viewKey} {...viewTransition} transition={{ duration: 0.16, ease: "easeOut" }} className="contents">
             {content}
@@ -262,6 +279,7 @@ function AppFrame() {
         </AnimatePresence>
         <SiteFooter />
       </div>
+      <ChatWidget />
     </CartProvider>
   );
 }
@@ -299,6 +317,16 @@ function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSecti
       return <DevAccess />;
     case "control":
       return <DevControl />;
+    case "promo":
+      return <DevPromo />;
+    case "banner":
+      return <DevBanner />;
+    case "chat":
+      return <DevChat />;
+    case "analytics":
+      return <DevAnalytics />;
+    case "schedule":
+      return <DevSchedule />;
     case "git":
       return <DevGit />;
     case "data":

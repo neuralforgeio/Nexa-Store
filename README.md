@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.2.0-amber)
+![Version](https://img.shields.io/badge/version-1.3.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -237,7 +237,33 @@ The current version is visible in the storefront footer and in
 
 ## 📋 Changelog
 
+### v1.3.0 — Interaksi pengguna & otomasi (2026-09-13)
+
+Lima fitur baru di panel Developer + bot Telegram, semuanya berjalan tanpa deploy (data dibaca saat runtime):
+
+- **💬 Obrolan Langsung** — widget chat di storefront; pesan pengunjung masuk ke Telegram & panel `/dev/chat`; balas dari Telegram atau panel, tersampa instan via WebSocket (fallback polling). Tanpa akun: identitas perangkat acak yang di-hash.
+- **🏷️ Event Promo** — diskon terjadwal global/per-game; harga promo otomatis di kartu produk, keranjang, dan pesan WhatsApp (harga asli dicoret + label hemat); strip countdown di seluruh situs.
+- **📣 Banner Pengumuman** — pita pengumuman 4 level (info/sukses/peringatan/penting) dengan tombol CTA + jadwal tayang; terbit ke semua halaman publik ≤30 detik.
+- **📊 Analitik Pengunjung** — pelacakan pihak pertama (views, unik, referrer, perangkat, interaksi), pengunjung live (jendela 5 menit), grafik tren 30 hari, digest harian otomatis 21:00 WIB ke Telegram.
+- **⏰ Tugas Terjadwal** — otomasi berwaktu: maintenance/lockdown/banner/promo/announcement/pengingat; dieksekusi layanan bot 24/7, hasil dilaporkan ke Telegram.
+
+Infra: `vercel.json` ignoreCommand — commit data (`store:`/`chat:`/`analytics:`/`ops:`) tidak memicu build. Sidebar developer +5 entri. SemVer minor.
+
 ### v1.2.0 — Telegram bot control center (2026-09-13)
+- **Live chat** — a floating chat widget on the storefront; visitor messages
+  reach the owner on Telegram and in `/dev/chat` within seconds, and replies
+  land instantly over WebSocket (HTTP polling fallback in production).
+- **Promo engine** — scheduled global or per-game discount events; effective
+  prices propagate to product cards, cart, checkout, and the WhatsApp message
+  (strikethrough originals + savings note) with a countdown strip site-wide.
+- **Announcement banners** — four severity levels with optional CTA buttons
+  and publish windows, delivered to every open storefront within 30 seconds.
+- **Visitor analytics** — first-party page views, uniques, referrers, devices,
+  interaction funnels, a live visitor counter, a 30-day trend chart, and an
+  automatic 21:00 WIB Telegram digest.
+- **Scheduled tasks** — time-based automation (maintenance/lockdown windows,
+  banner and promo scheduling, announcement sets, reminders) executed by the
+  always-on bot service with Telegram result notifications.
 - **Added**: `@nexastoregamebot` — a private Telegram bot that gives the
   developer full remote control of the store, with inline buttons and guided
   text input for every flow (runs as an independent Bun service inside

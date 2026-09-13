@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCatalog } from "@/lib/queries";
+import { useCatalog, useSiteFeatures } from "@/lib/queries";
 import { RouteLink } from "@/components/shared/route-link";
 import { GameMark } from "@/components/shared/game-mark";
 import { PriceTag } from "@/components/shared/price-tag";
@@ -29,6 +29,8 @@ import { productTitle } from "@/lib/whatsapp/template";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
 import { displayPhone } from "@/lib/format/phone";
 import { formatJakartaDateTime } from "@/lib/format/date";
+import { formatIdr } from "@/lib/format/idr";
+import { track } from "@/lib/analytics/tracker";
 import { MAX_CART_ITEMS, type LocalOrderRecord } from "@/lib/cart/types";
 import { CartItemCard } from "./cart-item-card";
 import {
@@ -52,6 +54,7 @@ type CheckoutSnapshot = {
   total: number;
   items: CartMessageItem[];
   createdAt: string;
+  promoTotalSaved?: number;
 };
 
 /**
@@ -97,6 +100,7 @@ function CartDrawerInner({
   onOpenChange: (v: boolean) => void;
 }) {
   const { data } = useCatalog();
+  const { data: features } = useSiteFeatures();
   const items = useCartStore((s) => s.items);
   const orders = useCartStore((s) => s.orders);
   const clearItems = useCartStore((s) => s.clearItems);
@@ -119,8 +123,15 @@ function CartDrawerInner({
   const [sentRef, setSentRef] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const resolution = useMemo(() => resolveCart(data, items), [data, items]);
-  const { resolved, total } = resolution;
+  const resolution = useMemo(
+    () => resolveCart(data, items, features?.promos),
+    [data, items, features?.promos]
+  );
+  const { resolved, total, hasPromo } = resolution;
+  const promoSaved = useMemo(
+    () => resolved.reduce((sum, r) => sum + Math.max(0, r.price.base - r.price.price), 0),
+    [resolved]
+  );
   const completeCount = resolved.filter((r) =>
     isRecipientComplete(r.game.orderFields, r.item.recipient)
   ).length;
@@ -151,6 +162,7 @@ function CartDrawerInner({
       reference: snap.reference,
       items: snap.items,
       total: snap.total,
+      ...(snap.promoTotalSaved ? { promoTotalSaved: snap.promoTotalSaved } : {}),
     });
   }
 
@@ -176,7 +188,10 @@ function CartDrawerInner({
     const messageItems: CartMessageItem[] = resolved.map((r) => ({
       gameName: r.game.name,
       productName: productTitle(r.product),
-      priceIdr: r.product.priceIdr,
+      priceIdr: r.price.price,
+      ...(r.price.percentOff > 0
+        ? { basePriceIdr: r.price.base, promoTitle: r.price.promoTitle ?? undefined }
+        : {}),
       recipient: r.item.recipient,
       orderFields: r.game.orderFields,
     }));
@@ -185,6 +200,7 @@ function CartDrawerInner({
       total,
       items: messageItems,
       createdAt: new Date().toISOString(),
+      ...(promoSaved > 0 ? { promoTotalSaved: promoSaved } : {}),
     });
     setShowErrors(false);
     setStep("confirm");
@@ -194,6 +210,7 @@ function CartDrawerInner({
   /** WhatsApp handoff — precise language, never a false "order success". */
   function sendToWhatsApp() {
     if (!snapshot) return;
+    track("wa_handoff");
     const message = buildMessage(snapshot);
     if (!message || !data) return;
 
@@ -319,8 +336,13 @@ function CartDrawerInner({
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <span className="text-sm text-muted-foreground">
               Subtotal · {resolved.length} item
+              {hasPromo ? (
+                <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  hemat {formatIdr(promoSaved)}
+                </span>
+              ) : null}
             </span>
-            <PriceTag value={total} size="lg" />
+            <PriceTag value={total} size="lg" className={hasPromo ? "text-primary" : undefined} />
           </div>
           <Button
             type="button"
@@ -493,9 +515,25 @@ function CartConfirmView({ snapshot, storePhone, storeName }: { snapshot: Checko
               <p className="min-w-0 truncate font-display text-sm font-semibold">
                 <span className="text-muted-foreground">{i + 1}.</span> {item.gameName}
               </p>
-              <PriceTag value={item.priceIdr} size="md" className="shrink-0" />
+              <span className="flex shrink-0 items-baseline gap-1.5">
+                {item.basePriceIdr && item.basePriceIdr > item.priceIdr ? (
+                  <span className="text-xs text-muted-foreground line-through tabular">
+                    {formatIdr(item.basePriceIdr)}
+                  </span>
+                ) : null}
+                <PriceTag
+                  value={item.priceIdr}
+                  size="md"
+                  className={item.basePriceIdr && item.basePriceIdr > item.priceIdr ? "text-primary" : undefined}
+                />
+              </span>
             </div>
             <p className="mt-1 text-sm text-foreground/80">{item.productName}</p>
+            {item.basePriceIdr && item.basePriceIdr > item.priceIdr && item.promoTitle ? (
+              <p className="mt-0.5 text-[11px] font-medium text-primary">
+                Promo {item.promoTitle} aktif — hemat {formatIdr(item.basePriceIdr - item.priceIdr)}
+              </p>
+            ) : null}
             <dl className="mt-2 space-y-1 border-t border-border/60 pt-2 text-xs">
               <ConfirmRow label="Nama" value={item.recipient.customerName || "—"} />
               {item.orderFields.map((f) => (

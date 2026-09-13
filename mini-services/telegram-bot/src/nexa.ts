@@ -92,6 +92,72 @@ export type StoreSettings = {
   supportNote?: string;
 };
 
+// ---------------------------------------------------------------------------
+// Site-features (v1.3.0): promo, banner, obrolan, tugas, analitik.
+// ---------------------------------------------------------------------------
+
+export type PromoRecord = {
+  id: string;
+  title: string;
+  scope: "global" | "game";
+  gameId?: string;
+  percentOff: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  active: boolean;
+  createdAt: string;
+  createdBy: string;
+};
+
+export type BannerRecord = {
+  id: string;
+  severity: "info" | "sukses" | "peringatan" | "penting";
+  title: string;
+  message: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  enabled: boolean;
+  createdAt: string;
+  createdBy: string;
+};
+
+export type ScheduleRecord = {
+  id: string;
+  label: string;
+  type: string;
+  payload: Record<string, unknown>;
+  runAt: string;
+  status: "pending" | "done" | "failed" | "cancelled";
+  createdAt: string;
+  createdBy: string;
+  lastResult?: string;
+  completedAt?: string;
+};
+
+export type ConversationRecord = {
+  id: string;
+  name: string | null;
+  createdAt: string;
+  lastMessageAt: string;
+  unreadByOwner: number;
+  messageCount: number;
+  lastText: string;
+  lastFrom: "user" | "owner" | null;
+  messages: Array<{ id: string; from: "user" | "owner"; text: string; at: string }>;
+};
+
+export type AnalyticsSummaryDto = {
+  today: { views: number; uniques: number; events: Record<string, number> };
+  last7: { views: number; uniques: number; events: Record<string, number> };
+  live: number;
+  totalViews: number;
+  topPages: Array<{ path: string; views: number }>;
+  topReferrers: Array<{ referrer: string; views: number }>;
+  devices: Array<{ device: string; views: number }>;
+};
+
 export type CheckoutTemplate = { template: string; updatedAt?: string; updatedBy?: string };
 
 export type Operation =
@@ -116,7 +182,7 @@ export class NexaError extends Error {
 
 type Envelope = { ok: true; data: Record<string, unknown> } | { ok: false; error: { code: string; message: string } };
 
-/** Sesi cookie HMAC — diperbarui otomatis menjelang kedaluwarsa (TTL 8 jam). */
+/** Sesi cookie HMAC — satu per target API (produksi + sandbox). */
 class Session {
   cookie: string | null = null;
   exp = 0;
@@ -126,7 +192,16 @@ class Session {
   }
 }
 
-const session = new Session();
+const sessions = new Map<string, Session>();
+
+function sessionFor(base: string): Session {
+  let s = sessions.get(base);
+  if (!s) {
+    s = new Session();
+    sessions.set(base, s);
+  }
+  return s;
+}
 
 function parseSessionExp(cookie: string): number {
   try {
@@ -138,8 +213,8 @@ function parseSessionExp(cookie: string): number {
   }
 }
 
-export async function login(): Promise<void> {
-  const res = await fetch(`${config.apiBase}/api/auth/login`, {
+export async function login(base: string = config.apiBase): Promise<void> {
+  const res = await fetch(`${base}/api/auth/login`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email: config.devEmail, password: config.devPassword }),
@@ -157,22 +232,25 @@ export async function login(): Promise<void> {
   if (!nexa) {
     throw new NexaError("no-cookie", "Server tidak mengirim cookie sesi.", 500);
   }
-  session.cookie = nexa.split(";")[0];
-  session.exp = parseSessionExp(session.cookie);
+  const s = sessionFor(base);
+  s.cookie = nexa.split(";")[0];
+  s.exp = parseSessionExp(s.cookie);
 }
 
 async function request(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   path: string,
   body?: Record<string, unknown>,
-  allowRelogin = true
+  allowRelogin = true,
+  base: string = config.apiBase
 ): Promise<Record<string, unknown>> {
-  if (!session.valid()) await login();
-  const res = await fetch(`${config.apiBase}${path}`, {
+  const s = sessionFor(base);
+  if (!s.valid()) await login(base);
+  const res = await fetch(`${base}${path}`, {
     method,
     headers: {
       "content-type": "application/json",
-      ...(session.cookie ? { cookie: session.cookie } : {}),
+      ...(s.cookie ? { cookie: s.cookie } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -180,9 +258,9 @@ async function request(
   if (!json.ok) {
     // Sesi kedaluwarsa di tengah jalan → login ulang sekali lalu ulang permintaan.
     if (res.status === 401 && allowRelogin) {
-      session.cookie = null;
-      await login();
-      return request(method, path, body, false);
+      s.cookie = null;
+      await login(base);
+      return request(method, path, body, false, base);
     }
     const err = json.error;
     throw new NexaError(err.code, err.message, res.status, res.status === 409);
@@ -301,4 +379,84 @@ export async function publicStoreStatus(): Promise<{
   const json = (await res.json()) as { ok: boolean; data?: Record<string, unknown> };
   if (!json.ok || !json.data) throw new NexaError("unhealthy", "Endpoint store-status tidak merespons dengan baik.", 502);
   return json.data as never;
+}
+
+// ---------------------------------------------------------------------------
+// Site-features API (v1.3.0)
+// ---------------------------------------------------------------------------
+
+export async function getPromos(): Promise<PromoRecord[]> {
+  const data = await request("GET", "/api/developer/promos");
+  return (data.promos as PromoRecord[]) ?? [];
+}
+
+export async function createPromo(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("POST", "/api/developer/promos", body);
+}
+
+export async function patchPromo(id: string, patch: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("PATCH", "/api/developer/promos", { id, ...patch });
+}
+
+export async function deletePromo(id: string): Promise<Record<string, unknown>> {
+  return request("DELETE", `/api/developer/promos?id=${encodeURIComponent(id)}`);
+}
+
+export async function getBanners(): Promise<BannerRecord[]> {
+  const data = await request("GET", "/api/developer/banners");
+  return (data.banners as BannerRecord[]) ?? [];
+}
+
+export async function createBanner(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("POST", "/api/developer/banners", body);
+}
+
+export async function patchBanner(id: string, patch: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("PATCH", "/api/developer/banners", { id, ...patch });
+}
+
+export async function getSchedules(): Promise<ScheduleRecord[]> {
+  const data = await request("GET", "/api/developer/schedules");
+  return (data.tasks as ScheduleRecord[]) ?? [];
+}
+
+export async function createSchedule(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("POST", "/api/developer/schedules", body);
+}
+
+export async function patchSchedule(id: string, patch: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return request("PATCH", "/api/developer/schedules", { id, ...patch });
+}
+
+export async function deleteSchedule(id: string): Promise<Record<string, unknown>> {
+  return request("DELETE", `/api/developer/schedules?id=${encodeURIComponent(id)}`);
+}
+
+export async function getAnalyticsSummary(): Promise<AnalyticsSummaryDto> {
+  return request("GET", "/api/developer/analytics") as Promise<AnalyticsSummaryDto>;
+}
+
+export async function getChatConversations(base?: string): Promise<ConversationRecord[]> {
+  const data = await request("GET", "/api/developer/chat", undefined, true, base ?? config.apiBase);
+  return (data.conversations as ConversationRecord[]) ?? [];
+}
+
+export async function chatReply(conversationId: string, text: string, base?: string): Promise<Record<string, unknown>> {
+  return request(
+    "POST",
+    "/api/developer/chat",
+    { action: "reply", conversationId, text },
+    true,
+    base ?? config.apiBase
+  );
+}
+
+export async function chatMarkRead(conversationId: string, base?: string): Promise<Record<string, unknown>> {
+  return request(
+    "POST",
+    "/api/developer/chat",
+    { action: "markRead", conversationId },
+    true,
+    base ?? config.apiBase
+  );
 }

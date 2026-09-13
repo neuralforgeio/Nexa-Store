@@ -41,6 +41,8 @@ export const config = {
   telegramToken: env("TELEGRAM_BOT_TOKEN"),
   pairingCode: env("PAIRING_CODE"),
   apiBase: env("NEXA_API_BASE", "https://nexastoregame.vercel.app").replace(/\/+$/, ""),
+  localBase: env("NEXA_LOCAL_BASE", "http://127.0.0.1:3000").replace(/\/+$/, ""),
+  internalSecret: env("BOT_INTERNAL_SECRET"),
   devEmail: env("NEXA_DEV_EMAIL"),
   devPassword: env("NEXA_DEV_PASSWORD"),
   vercelToken: env("VERCEL_TOKEN"),

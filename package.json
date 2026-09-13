@@ -1,8 +1,8 @@
 {
   "name": "nexastore",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
-  "description": "Nexa Store — top up game via WhatsApp. Storefront multi-item cart, admin & developer panels, file-based catalog with Git persistence.",
+  "description": "Nexa Store — top up game via WhatsApp. Storefront multi-item cart, admin & developer panels, live chat, promo engine, analitik, tugas terjadwal, bot kendali Telegram.",
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "next build",
@@ -55,6 +55,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^3.0.3",
     "recharts": "^2.15.4",
+    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

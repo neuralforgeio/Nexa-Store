@@ -37,8 +37,12 @@ import {
 } from "@/lib/whatsapp/template";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
 import { displayPhone } from "@/lib/format/phone";
+import { formatIdr } from "@/lib/format/idr";
+import { useSiteFeatures } from "@/lib/queries";
+import { effectivePriceForGame } from "@/lib/promo/pricing";
+import { track } from "@/lib/analytics/tracker";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, Copy, MessageCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, MessageCircle, TimerReset } from "lucide-react";
 
 type OrderGame = PublicCatalog["games"][number];
 type Step = "form" | "review";
@@ -162,6 +166,11 @@ function OrderSheetBody({
   const schema = useMemo(() => buildSchema(game), [game]);
   const domainGame = useMemo(() => asDomainGame(game), [game]);
   const reducedMotion = useReducedMotion();
+  const { data: features } = useSiteFeatures();
+  const promo = useMemo(
+    () => effectivePriceForGame(product.priceIdr, features?.promos, game.id),
+    [product.priceIdr, features?.promos, game.id]
+  );
 
   const {
     register,
@@ -185,6 +194,10 @@ function OrderSheetBody({
 
   const message = useMemo(() => {
     try {
+      // Promo aktif: harga efektif diteruskan ke template, dan catatan promo
+      // ditambahkan di bawahnya agar admin bisa memverifikasi diskonnya.
+      const pricedProduct: Product =
+        promo.percentOff > 0 ? { ...product, priceIdr: promo.price } : product;
       const ctx = buildTemplateContext(
         {
           storeName: store.name,
@@ -194,26 +207,35 @@ function OrderSheetBody({
           maintenanceMode: false,
         },
         domainGame,
-        product,
+        pricedProduct,
         {
           customerName: values.customerName ?? "",
           note: values.note ?? "",
           fields: values as Record<string, string>,
         }
       );
-      return renderTemplate(template, ctx);
+      const rendered = renderTemplate(template, ctx);
+      if (promo.percentOff > 0) {
+        const promoLine = `Promo aktif: ${promo.promoTitle ?? "diskon"} -${promo.percentOff}% (normal ${formatIdr(promo.base)})`;
+        return `${rendered}\n${promoLine}`;
+      }
+      return rendered;
     } catch (e) {
       if (e instanceof UnknownPlaceholderError) return `Template tidak valid: ${e.message}`;
       return "";
     }
-  }, [store, domainGame, product, template, values]);
+  }, [store, domainGame, product, template, values, promo]);
 
   const goToReview = async () => {
     const ok = await trigger();
-    if (ok) setStep("review");
+    if (ok) {
+      track("order_click");
+      setStep("review");
+    }
   };
 
   const submitToWhatsApp = handleSubmit(() => {
+    track("wa_handoff");
     try {
       const url = buildWhatsAppUrl(store.whatsappNumber, message);
       // NOTE: open() with the "noopener" feature always returns null by spec,
@@ -277,8 +299,26 @@ function OrderSheetBody({
               <p className="truncate font-display text-base font-semibold">
                 {productTitle(product)}
               </p>
+              {promo.percentOff > 0 ? (
+                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="rounded-full bg-primary px-1.5 py-0.5 font-mono text-[10px] font-bold tabular text-primary-foreground">
+                    -{promo.percentOff}%
+                  </span>
+                  <span className="line-through tabular">{formatIdr(promo.base)}</span>
+                  {promo.promoTitle ? (
+                    <span className="flex min-w-0 items-center gap-0.5 truncate text-primary/80">
+                      <TimerReset aria-hidden="true" className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{promo.promoTitle}</span>
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
-            <PriceTag value={product.priceIdr} size="lg" className="shrink-0" />
+            <PriceTag
+              value={promo.percentOff > 0 ? promo.price : product.priceIdr}
+              size="lg"
+              className={promo.percentOff > 0 ? "shrink-0 text-primary" : "shrink-0"}
+            />
           </div>
 
           <AnimatePresence mode="wait">
@@ -364,7 +404,18 @@ function OrderSheetBody({
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Total pembayaran</span>
-                  <PriceTag value={product.priceIdr} size="lg" />
+                  <span className="flex items-baseline gap-2">
+                    {promo.percentOff > 0 ? (
+                      <span className="text-xs text-muted-foreground line-through tabular">
+                        {formatIdr(promo.base)}
+                      </span>
+                    ) : null}
+                    <PriceTag
+                      value={promo.percentOff > 0 ? promo.price : product.priceIdr}
+                      size="lg"
+                      className={promo.percentOff > 0 ? "text-primary" : undefined}
+                    />
+                  </span>
                 </div>
 
                 <details className="group rounded-xl border bg-background/60">

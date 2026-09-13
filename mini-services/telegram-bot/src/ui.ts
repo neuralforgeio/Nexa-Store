@@ -70,13 +70,22 @@ export function mainMenuKeyboard(): InlineKeyboard {
       { text: "🛠 Perbaikan", callback_data: "mt" },
     ],
     [
-      { text: "👮 Admin", callback_data: "adm" },
-      { text: "📦 Katalog", callback_data: "cat" },
+      { text: "💬 Obrolan", callback_data: "cht" },
+      { text: "🏷 Promo", callback_data: "prm" },
     ],
     [
-      { text: "🚀 Deployment", callback_data: "dep" },
-      { text: "⚙️ Setelan", callback_data: "set" },
+      { text: "📣 Banner", callback_data: "bnr" },
+      { text: "📊 Analitik", callback_data: "stx" },
     ],
+    [
+      { text: "⏰ Tugas", callback_data: "tsk" },
+      { text: "👮 Admin", callback_data: "adm" },
+    ],
+    [
+      { text: "📦 Katalog", callback_data: "cat" },
+      { text: "🚀 Deployment", callback_data: "dep" },
+    ],
+    [{ text: "⚙️ Setelan", callback_data: "set" }],
   ];
 }
 
@@ -86,6 +95,13 @@ export type StatusData = {
   catalog: CatalogRead | null;
   latest: DeploymentInfo | null;
   version: string | null;
+  analytics: {
+    today: { views: number; uniques: number; events: Record<string, number> };
+    last7: { views: number; uniques: number; events: Record<string, number> };
+    live: number;
+    topPages: Array<{ path: string; views: number }>;
+  } | null;
+  pendingTasks: number | null;
 };
 
 export function statusText(d: StatusData): string {
@@ -108,6 +124,14 @@ export function statusText(d: StatusData): string {
     lines.push(
       `📦 Katalog: ${d.catalog.games.length} game · ${d.catalog.products.length} produk · ${d.catalog.categories.length} kategori`
     );
+  }
+  if (d.analytics) {
+    lines.push(
+      `🟢 Online: <b>${d.analytics.live}</b> · 👀 Hari ini: ${d.analytics.today.views} views (${d.analytics.today.uniques} unik)`
+    );
+  }
+  if (d.pendingTasks !== null) {
+    lines.push(`⏰ Tugas menunggu: ${d.pendingTasks}`);
   }
   if (d.version) lines.push(`🏷 Versi app: v${esc(d.version)}`);
   if (d.latest) {
@@ -542,6 +566,27 @@ export function inputPromptText(kind: string): string {
       "📱 <b>Nomor WhatsApp baru</b> lengkap kode negara — contoh: <code>+628886567888</code>.\n\n/cancel untuk batal.",
     "announcement-text":
       "📣 <b>Announcement baru</b> (tampil di storefront).\n\nKetik <code>-</code> untuk menghapus.\n\n/cancel untuk batal.",
+    "chat-reply":
+      "💬 Tulis <b>balasanmu</b> — pesan ini tampil langsung di widget chat pengunjung (maks 800 karakter).\n\n/cancel untuk batal.",
+    "promo-title": "🏷 <b>Nama promo</b> — contoh: <i>Promo Gajian</i>.\n\n/cancel untuk batal.",
+    "promo-percent":
+      "💰 <b>Besar diskon</b> dalam persen (1–90) — contoh: <code>10</code>.\n\n/cancel untuk batal.",
+    "promo-duration":
+      "⏳ <b>Berakhir kapan</b> (opsional).\n\nFormat: <code>+6</code> (6 jam lagi), <code>21:00</code> (jam WIB berikutnya), <code>2026-03-01 21:00</code>, atau <code>-</code> tanpa batas.\n\n/cancel untuk batal.",
+    "banner-title": "📣 <b>Judul banner</b> — contoh: <i>Libur sementara</i>.\n\n/cancel untuk batal.",
+    "banner-message":
+      "📝 <b>Pesan banner</b> yang tampil di seluruh storefront (maks 300 karakter).\n\n/cancel untuk batal.",
+    "banner-cta-label":
+      "🔗 <b>Teks tombol CTA</b> (opsional) — contoh: <i>Lihat promo</i>.\n\nKetik <code>-</code> untuk tanpa tombol.\n\n/cancel untuk batal.",
+    "banner-cta-href":
+      "🌐 <b>Tautan tujuan tombol</b> — rute internal (<code>/games</code>) atau URL lengkap.\n\n/cancel untuk batal.",
+    "banner-duration":
+      "⏳ <b>Berakhir kapan</b> (opsional).\n\nFormat: <code>+6</code> (6 jam), <code>21:00</code>, <code>2026-03-01 21:00</code>, atau <code>-</code> tanpa batas.\n\n/cancel untuk batal.",
+    "task-label": "⏰ <b>Nama tugas</b> — contoh: <i>Maintenance tengah malam</i>.\n\n/cancel untuk batal.",
+    "task-time":
+      "🕒 <b>Kapan tugas dijalankan</b> (WIB).\n\nFormat: <code>+2</code> (2 jam lagi), <code>02:00</code> (jam WIB berikutnya), atau <code>2026-03-01 02:00</code>.\n\n/cancel untuk batal.",
+    "task-text": "📝 <b>Isi teks</b> untuk pengingat/announcement (maks 500 karakter).\n\n/cancel untuk batal.",
+    "task-note": "🛠 <b>Pesan/alasan</b> yang tampil ke pengunjung (opsional, maks 300 karakter).\n\nKetik <code>-</code> untuk default.\n\n/cancel untuk batal.",
   };
   return prompts[kind] ?? "Masukkan nilai:";
 }
@@ -651,5 +696,327 @@ export function priceNewPrompt(product: { name: string; denomination: string; pr
     "Ketik harga baru (angka Rupiah, contoh: <code>61000</code>).",
     "",
     "Kirim /cancel untuk batal.",
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// v1.3.0 — Obrolan, Promo, Banner, Analitik, Tugas Terjadwal.
+// ---------------------------------------------------------------------------
+
+export function chatNotifyKeyboard(conversationId: string): InlineKeyboard {
+  return [
+    [
+      { text: "💬 Balas", callback_data: `cht:rp:${conversationId}` },
+      { text: "✅ Tandai dibaca", callback_data: `cht:rd:${conversationId}` },
+    ],
+    [{ text: "📬 Semua obrolan", callback_data: "cht" }],
+  ];
+}
+
+export function chatNotifyText(name: string | null, text: string, isLocal: boolean): string {
+  const preview = text.length > 180 ? `${text.slice(0, 180)}…` : text;
+  return [
+    "💬 <b>PESAN BARU DARI PENGGUNA</b>",
+    "",
+    `Nama: <b>${esc(name ?? "Tanpa nama")}</b>`,
+    `Sumber: ${isLocal ? "pratinjau sandbox" : "produksi"}`,
+    "",
+    esc(preview),
+    "",
+    "Balas lewat tombol di bawah — pesanmu tampil di widget chat pengunjung.",
+  ].join("\n");
+}
+
+export function chatMenuText(conversations: Array<{ name: string | null; lastMessageAt: string; unreadByOwner: number; lastText: string }>): string {
+  if (conversations.length === 0) {
+    return [
+      "💬 <b>OBROLAN LANGSUNG</b>",
+      "",
+      "Belum ada percakapan. Pengunjung memulai obrolan lewat tombol chat di pojok kanan bawah storefront.",
+    ].join("\n");
+  }
+  const rows = conversations.slice(0, 8).map((c, i) => {
+    const unread = c.unreadByOwner > 0 ? ` 🔴${c.unreadByOwner}` : "";
+    const preview = c.lastText.length > 40 ? `${c.lastText.slice(0, 40)}…` : c.lastText;
+    return `${i + 1}. <b>${esc(c.name ?? "Tanpa nama")}</b>${unread} — ${esc(preview)} (${relTime(Date.parse(c.lastMessageAt))})`;
+  });
+  return [
+    "💬 <b>OBROLAN LANGSUNG</b>",
+    "",
+    ...rows,
+    "",
+    `Total: ${conversations.length} percakapan · ketuk tombol untuk membuka alurnya.`,
+  ].join("\n");
+}
+
+export function chatMenuKeyboard(count: number): InlineKeyboard {
+  const rows: InlineKeyboard = [];
+  for (let i = 0; i < Math.min(count, 8); i++) {
+    rows.push([{ text: `💬 Percakapan ${i + 1}`, callback_data: `cht:v:${i}` }]);
+  }
+  rows.push([{ text: "🔄 Muat ulang", callback_data: "cht" }, { text: "⬅️ Menu", callback_data: "menu" }]);
+  return rows;
+}
+
+export function chatThreadText(
+  conv: { name: string | null; messages: Array<{ from: "user" | "owner"; text: string; at: string }> },
+  origin: "local" | "prod"
+): string {
+  const tail = conv.messages.slice(-8);
+  const lines = tail.map(
+    (m) => `${m.from === "user" ? "👤" : "🛡"} <b>${m.from === "user" ? esc(conv.name ?? "Pengunjung") : "Kamu"}:</b> ${esc(m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text)} <i>(${relTime(Date.parse(m.at))})</i>`
+  );
+  return [
+    `💬 <b>${esc(conv.name ?? "Tanpa nama")}</b>`,
+    `Sumber: ${origin === "local" ? "pratinjau sandbox" : "produksi"}`,
+    "",
+    ...lines,
+  ].join("\n");
+}
+
+export function chatThreadKeyboard(conversationId: string): InlineKeyboard {
+  return [
+    [{ text: "💬 Balas", callback_data: `cht:rp:${conversationId}` }],
+    [
+      { text: "✅ Tandai dibaca", callback_data: `cht:rd:${conversationId}` },
+      { text: "⬅️ Obrolan", callback_data: "cht" },
+    ],
+  ];
+}
+
+export function promoMenuText(promos: Array<{ title: string; scope: string; gameId?: string; percentOff: number; active: boolean; endsAt: string | null }>, gameNames: Map<string, string>): string {
+  if (promos.length === 0) {
+    return [
+      "🏷 <b>EVENT PROMO</b>",
+      "",
+      "Belum ada promo. Promo aktif otomatis mengubah harga di seluruh storefront —",
+      "kartu produk, keranjang, dan pesan WhatsApp — tanpa deploy.",
+    ].join("\n");
+  }
+  const now = Date.now();
+  const rows = promos.slice(0, 10).map((p, i) => {
+    const scope = p.scope === "global" ? "semua game" : `khusus ${esc(gameNames.get(p.gameId ?? "") ?? "?")}`;
+    const expired = p.endsAt && Date.parse(p.endsAt) <= now;
+    const state = p.active && !expired ? "🟢" : "⚪️";
+    const end = p.endsAt ? ` · s.d. ${relTime(Date.parse(p.endsAt))}` : "";
+    return `${state} ${i + 1}. <b>${esc(p.title)}</b> -${p.percentOff}% (${scope})${end}`;
+  });
+  return ["🏷 <b>EVENT PROMO</b>", "", ...rows].join("\n");
+}
+
+export function promoMenuKeyboard(count: number): InlineKeyboard {
+  const rows: InlineKeyboard = [[{ text: "➕ Promo baru", callback_data: "prm:new" }]];
+  for (let i = 0; i < Math.min(count, 10); i++) {
+    rows.push([{ text: `#${i + 1} aktif/nonaktif`, callback_data: `prm:off:${i}` }]);
+  }
+  rows.push([{ text: "⬅️ Menu", callback_data: "menu" }]);
+  return rows;
+}
+
+export function promoConfirmText(title: string, percent: number, scopeLabel: string, endsAt: string | null): string {
+  return [
+    "🏷 <b>KONFIRMASI PROMO BARU</b>",
+    "",
+    `Nama: <b>${esc(title)}</b>`,
+    `Diskon: <b>${percent}%</b> (harga dibulatkan ke bawah per Rp500)`,
+    `Cakupan: ${esc(scopeLabel)}`,
+    `Berakhir: ${endsAt ? esc(endsAt) : "tanpa batas waktu"}`,
+    "",
+    "Harga storefront menyusul dalam ≤30 detik. Tanpa deploy.",
+  ].join("\n");
+}
+
+export function bannerMenuText(banners: Array<{ severity: string; title: string; message: string; enabled: boolean }>): string {
+  if (banners.length === 0) {
+    return [
+      "📣 <b>BANNER PENGUMUMAN</b>",
+      "",
+      "Belum ada banner. Banner tampil sebagai pita berwarna di seluruh storefront",
+      "dengan tombol ajakan opsional — terbit dalam ≤30 detik.",
+    ].join("\n");
+  }
+  const icon: Record<string, string> = { info: "ℹ️", sukses: "✅", peringatan: "⚠️", penting: "🚨" };
+  const rows = banners.slice(0, 10).map(
+    (b, i) => `${b.enabled ? "🟢" : "⚪️"} ${i + 1}. ${icon[b.severity] ?? "ℹ️"} <b>${esc(b.title)}</b> — ${esc(b.message.length > 60 ? `${b.message.slice(0, 60)}…` : b.message)}`
+  );
+  return ["📣 <b>BANNER PENGUMUMAN</b>", "", ...rows].join("\n");
+}
+
+export function bannerMenuKeyboard(count: number): InlineKeyboard {
+  const rows: InlineKeyboard = [[{ text: "➕ Banner baru", callback_data: "bnr:new" }]];
+  for (let i = 0; i < Math.min(count, 10); i++) {
+    rows.push([{ text: `#${i + 1} tampil/sembunyi`, callback_data: `bnr:off:${i}` }]);
+  }
+  rows.push([{ text: "⬅️ Menu", callback_data: "menu" }]);
+  return rows;
+}
+
+export function bannerConfirmText(severity: string, title: string, message: string, ctaLabel: string | null, ctaHref: string | null, endsAt: string | null): string {
+  return [
+    "📣 <b>KONFIRMASI BANNER BARU</b>",
+    "",
+    `Level: <b>${esc(severity)}</b>`,
+    `Judul: <b>${esc(title)}</b>`,
+    `Pesan: ${esc(message)}`,
+    ctaLabel && ctaHref ? `Tombol: ${esc(ctaLabel)} → <code>${esc(ctaHref)}</code>` : "Tanpa tombol CTA",
+    `Berakhir: ${endsAt ? esc(endsAt) : "tanpa batas waktu"}`,
+    "",
+    "Tampil di seluruh storefront dalam ≤30 detik.",
+  ].join("\n");
+}
+
+export function analyticsText(d: {
+  today: { views: number; uniques: number; events: Record<string, number> };
+  last7: { views: number; uniques: number; events: Record<string, number> };
+  live: number;
+  totalViews: number;
+  topPages: Array<{ path: string; views: number }>;
+  topReferrers: Array<{ referrer: string; views: number }>;
+  devices: Array<{ device: string; views: number }>;
+}): string {
+  const top3 = d.topPages.slice(0, 3).map((p) => `   • <code>${esc(p.path)}</code> — ${p.views} views`) || ["   • —"];
+  const ref = d.topReferrers.slice(0, 3).map((r) => `   • ${esc(r.referrer)} — ${r.views}`) || ["   • —"];
+  const dev = d.devices.map((x) => `${esc(x.device)} ${x.views}`).join(" · ") || "—";
+  return [
+    "📊 <b>ANALITIK PENGUNJUNG</b>",
+    "",
+    `🟢 Online sekarang: <b>${d.live}</b>`,
+    `👀 Hari ini: ${d.today.views} views · ${d.today.uniques} unik`,
+    `📅 7 hari: ${d.last7.views} views · ${d.last7.uniques} unik`,
+    `💬 Chat dibuka (7h): ${d.last7.events["chat_open"] ?? 0}`,
+    `🛒 Lanjut order (7h): ${d.last7.events["order_click"] ?? 0} · ke WA: ${d.last7.events["wa_handoff"] ?? 0}`,
+    "",
+    "Halaman populer (30 hari):",
+    ...top3,
+    "Sumber trafik (30 hari):",
+    ...ref,
+    `Perangkat: ${dev}`,
+    "",
+    "Digest harian otomatis terkirim 21:00 WIB.",
+  ].join("\n");
+}
+
+export function analyticsKeyboard(): InlineKeyboard {
+  return [
+    [{ text: "🔄 Muat ulang", callback_data: "stx" }],
+    [{ text: "⬅️ Menu", callback_data: "menu" }],
+  ];
+}
+
+export function taskMenuText(tasks: Array<{ label: string; type: string; runAt: string; status: string; lastResult?: string }>): string {
+  if (tasks.length === 0) {
+    return [
+      "⏰ <b>TUGAS TERJADWAL</b>",
+      "",
+      "Belum ada tugas. Contoh: nyalakan maintenance malam ini jam 02:00,",
+      "aktifkan promo besok pagi, atau pengingat ke Telegram.",
+    ].join("\n");
+  }
+  const icon: Record<string, string> = { pending: "🕓", done: "✅", failed: "❌", cancelled: "🚫" };
+  const typeLabel: Record<string, string> = {
+    "maintenance-on": "maintenance ON", "maintenance-off": "maintenance OFF",
+    "lockdown-on": "lockdown ON", "lockdown-off": "lockdown OFF",
+    "banner-on": "banner ON", "banner-off": "banner OFF",
+    "promo-on": "promo ON", "promo-off": "promo OFF",
+    "announcement-set": "set announcement", reminder: "pengingat",
+  };
+  const rows = tasks.slice(0, 10).map((t) => {
+    const ms = Date.parse(t.runAt) - Date.now();
+    const when = t.status === "pending" && ms > 0
+      ? ms < 3600_000
+        ? `${Math.round(ms / 60_000)} menit lagi`
+        : `${Math.floor(ms / 3600_000)} jam ${Math.round((ms % 3600_000) / 60_000)} menit lagi`
+      : relTime(Date.parse(t.runAt));
+    return `${icon[t.status] ?? "🕓"} <b>${esc(t.label)}</b> — ${typeLabel[t.type] ?? t.type} · ${when}`;
+  });
+  return ["⏰ <b>TUGAS TERJADWAL</b>", "", ...rows].join("\n");
+}
+
+export function taskMenuKeyboard(pendingCount: number, total: number): InlineKeyboard {
+  const rows: InlineKeyboard = [[{ text: "➕ Tugas baru", callback_data: "tsk:new" }]];
+  for (let i = 0; i < Math.min(pendingCount, 10); i++) {
+    rows.push([{ text: `Batal #${i + 1}`, callback_data: `tsk:cancel:${i}` }]);
+  }
+  if (total > 0) rows.push([{ text: "🗑 Bersihkan selesai", callback_data: "tsk:clean" }]);
+  rows.push([{ text: "⬅️ Menu", callback_data: "menu" }]);
+  return rows;
+}
+
+export function taskTypeKeyboard(): InlineKeyboard {
+  return [
+    [
+      { text: "🛠 Maintenance ON", callback_data: "tsk:t:maintenance-on" },
+      { text: "🟢 Maintenance OFF", callback_data: "tsk:t:maintenance-off" },
+    ],
+    [
+      { text: "🔒 Lockdown ON", callback_data: "tsk:t:lockdown-on" },
+      { text: "🔓 Lockdown OFF", callback_data: "tsk:t:lockdown-off" },
+    ],
+    [
+      { text: "📣 Banner ON", callback_data: "tsk:t:banner-on" },
+      { text: "🔕 Banner OFF", callback_data: "tsk:t:banner-off" },
+    ],
+    [
+      { text: "🏷 Promo ON", callback_data: "tsk:t:promo-on" },
+      { text: "💸 Promo OFF", callback_data: "tsk:t:promo-off" },
+    ],
+    [
+      { text: "📢 Set announcement", callback_data: "tsk:t:announcement-set" },
+      { text: "⏰ Pengingat", callback_data: "tsk:t:reminder" },
+    ],
+    [{ text: "❌ Batal", callback_data: "cancel" }],
+  ];
+}
+
+export function taskTypePickText(): string {
+  return [
+    "⏰ <b>TUGAS TERJADWAL</b>",
+    "",
+    "Pilih <b>jenis tugas</b>:",
+  ].join("\n");
+}
+
+export function taskConfirmText(label: string, type: string, runAt: string, extra: string | null): string {
+  return [
+    "⏰ <b>KONFIRMASI TUGAS</b>",
+    "",
+    `Nama: <b>${esc(label)}</b>`,
+    `Jenis: ${esc(type)}`,
+    `Jalan: <b>${esc(runAt)}</b> (WIB)`,
+    extra ? `Detail: ${esc(extra)}` : "",
+    "",
+    "Eksekusi otomatis oleh layanan bot — hasil diberitahu ke Telegram.",
+  ].filter(Boolean).join("\n");
+}
+
+export function taskDoneText(task: { label: string }, ok: boolean, result: string): string {
+  return [
+    ok ? "✅ <b>TUGAS SELESAI</b>" : "❌ <b>TUGAS GAGAL</b>",
+    "",
+    `Nama: <b>${esc(task.label)}</b>`,
+    `Hasil: ${esc(result)}`,
+  ].join("\n");
+}
+
+export function digestText(d: {
+  today: { views: number; uniques: number; events: Record<string, number> };
+  last7: { views: number; uniques: number; events: Record<string, number> };
+  live: number;
+  topPages: Array<{ path: string; views: number }>;
+}): string {
+  const top = d.topPages.slice(0, 3).map((p) => `   • <code>${esc(p.path)}</code> — ${p.views} views`);
+  return [
+    "📊 <b>DIGEST HARIAN — NEXA STORE</b>",
+    "21:00 WIB",
+    "",
+    `👀 Views hari ini: <b>${d.today.views}</b> (${d.today.uniques} pengunjung unik)`,
+    `🟢 Sedang online: ${d.live}`,
+    `📅 7 hari: ${d.last7.views} views · ${d.last7.uniques} unik`,
+    `💬 Chat dibuka: ${d.last7.events["chat_open"] ?? 0} · 🛒 Order: ${d.last7.events["order_click"] ?? 0} · WhatsApp: ${d.last7.events["wa_handoff"] ?? 0}`,
+    "",
+    "Halaman terpopuler:",
+    ...(top.length ? top : ["   • belum ada data"]),
+    "",
+    "Sampai besok — jaga kesehatan. 🌙",
   ].join("\n");
 }

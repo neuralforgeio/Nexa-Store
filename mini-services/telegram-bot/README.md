@@ -13,11 +13,19 @@ Bot: **@nexastoregamebot** · Service port: **3005** (health probe).
 | ---- | ---- |
 | 🔒 Lockdown | Total, rute tertentu (`/`, `/games`, `/games/*`, `/help`), dengan alasan; angkat lockdown |
 | 🛠 Perbaikan | Maintenance total / rute dengan pesan; akhiri perbaikan |
+| 💬 Obrolan | Notifikasi pesan baru dari pengunjung (instan); daftar percakapan; balas & tandai dibaca — balasan tampil di widget chat storefront |
+| 🏷 Promo | Buat event diskon (nama → persen → cakupan semua game / satu game → durasi); aktif/nonaktif promo |
+| 📣 Banner | Terbitkan banner pengumuman 4 level dengan tombol CTA opsional + durasi; tampil/sembunyikan |
+| 📊 Analitik | Pengunjung online, views hari ini/7 hari, halaman populer, sumber trafik, perangkat |
+| ⏰ Tugas | Jadwalkan otomasi berwaktu: maintenance/lockdown ON/OFF, banner/promo ON/OFF, set announcement, pengingat Telegram |
 | 👮 Admin | Blokir admin (dengan alasan, sesi langsung dicabut) / buka blokir |
 | 📦 Katalog | Tambah game (ikon via foto di chat), kategori, produk; ubah harga; aktif/nonaktif game & produk |
 | 🚀 Deployment | Deploy ulang commit terbaru, pilih commit mana pun dari daftar, atau deploy ulang dari deployment produksi lama (rollback) — progres build dipantau dan dilaporkan |
 | ⚙️ Setelan | Ubah nomor WhatsApp & announcement; lihat template checkout |
-| 📊 Status | Gate, jumlah katalog, versi app, build produksi terakhir |
+| 📊 Status | Gate, katalog, analitik singkat, tugas menunggu, versi app, build terakhir |
+
+Otomatis di latar belakang: notifikasi obrolan baru (polling produksi 25 dtk),
+eksekutor tugas terjadwal (cek 30 dtk), dan digest analitik harian 21:00 WIB.
 
 Perintah cepat: `/menu`, `/status`, `/cancel`, `/help`.
 

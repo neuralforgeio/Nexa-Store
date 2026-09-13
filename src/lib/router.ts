@@ -33,13 +33,23 @@ export type DeveloperSection =
   | "git"
   | "data"
   | "diagnostics"
-  | "deployment";
+  | "deployment"
+  | "chat"
+  | "promo"
+  | "banner"
+  | "analytics"
+  | "schedule";
 
 const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout"];
 const DEVELOPER_SECTIONS: DeveloperSection[] = [
   "dashboard",
   "access",
   "control",
+  "promo",
+  "banner",
+  "chat",
+  "analytics",
+  "schedule",
   "git",
   "data",
   "diagnostics",

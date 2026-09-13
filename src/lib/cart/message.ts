@@ -9,6 +9,9 @@ import type { CartRecipient } from "./types";
  * ONE structured WhatsApp message for the whole cart, written for a human
  * store administrator: plain text, numbered items, explicit account data per
  * item (each game has its own identifiers), and a single total.
+ *
+ * Promo items carry both prices so the admin can verify the discount at a
+ * glance — the effective price is what the customer was charged.
  */
 
 const REF_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
@@ -30,6 +33,9 @@ export type CartMessageItem = {
   /** Full product title, e.g. "1000 + 50 Valorant Points". */
   productName: string;
   priceIdr: number;
+  /** Harga sebelum promo — hadir hanya saat diskon aktif. */
+  basePriceIdr?: number;
+  promoTitle?: string;
   recipient: CartRecipient;
   orderFields: OrderField[];
 };
@@ -39,15 +45,21 @@ export function buildCartWhatsAppMessage(input: {
   reference: string;
   items: CartMessageItem[];
   total: number;
+  promoTotalSaved?: number;
 }): string {
-  const { storeName, reference, items, total } = input;
+  const { storeName, reference, items, total, promoTotalSaved } = input;
   const line = "────────────────";
 
   const blocks = items.map((item, i) => {
     const rows: string[] = [];
     rows.push(`${i + 1}. ${item.gameName.toUpperCase()}`);
     rows.push(`Produk: ${item.productName}`);
-    rows.push(`Harga: ${formatIdr(item.priceIdr)}`);
+    if (item.basePriceIdr && item.basePriceIdr > item.priceIdr) {
+      const promoLabel = item.promoTitle ? ` (promo ${item.promoTitle})` : "";
+      rows.push(`Harga: ${formatIdr(item.priceIdr)}${promoLabel} — normal ${formatIdr(item.basePriceIdr)}`);
+    } else {
+      rows.push(`Harga: ${formatIdr(item.priceIdr)}`);
+    }
     rows.push(`Nama: ${item.recipient.customerName.trim() || "—"}`);
     for (const f of item.orderFields) {
       const value = (item.recipient.fields[f.key] ?? "").trim();
@@ -58,6 +70,11 @@ export function buildCartWhatsAppMessage(input: {
     return rows.join("\n");
   });
 
+  const promoLines: string[] = [];
+  if (promoTotalSaved && promoTotalSaved > 0) {
+    promoLines.push(`Hemat promo: ${formatIdr(promoTotalSaved)}`);
+  }
+
   return [
     `Halo ${storeName}, saya ingin melakukan pemesanan.`,
     "",
@@ -66,6 +83,7 @@ export function buildCartWhatsAppMessage(input: {
     blocks.join("\n\n"),
     line,
     `Total (${items.length} item): ${formatIdr(total)}`,
+    ...promoLines,
     "",
     "Mohon dikonfirmasi kembali sebelum proses.",
   ].join("\n");

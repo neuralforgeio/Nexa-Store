@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { productTitle } from "@/lib/whatsapp/template";
+import { formatIdr } from "@/lib/format/idr";
 import { useCartStore } from "@/lib/cart/store";
 import { validateRecipient } from "@/lib/cart/validate";
 import type { ResolvedCartItem } from "@/lib/cart/resolve";
@@ -33,7 +34,7 @@ export function CartItemCard({
   onToggle: (id: string, open: boolean) => void;
   showErrors: boolean;
 }) {
-  const { item, game, product } = resolved;
+  const { item, game, product, price } = resolved;
   const updateRecipient = useCartStore((s) => s.updateRecipient);
   const removeItem = useCartStore((s) => s.removeItem);
   const reducedMotion = useReducedMotion();
@@ -92,7 +93,19 @@ export function CartItemCard({
           <p className="truncate font-display text-sm font-semibold leading-snug">
             {productTitle(product)}
           </p>
-          <PriceTag value={product.priceIdr} size="md" className="mt-1" />
+          {price.percentOff > 0 ? (
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-primary px-1.5 py-0.5 font-mono text-[10px] font-bold tabular text-primary-foreground">
+                -{price.percentOff}%
+              </span>
+              <span className="text-[11px] text-muted-foreground line-through tabular">
+                {formatIdr(price.base)}
+              </span>
+              <PriceTag value={price.price} size="md" className="text-primary" />
+            </span>
+          ) : (
+            <PriceTag value={product.priceIdr} size="md" className="mt-1" />
+          )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <button
