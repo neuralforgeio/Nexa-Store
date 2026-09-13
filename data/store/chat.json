@@ -10,9 +10,15 @@
           "from": "user",
           "text": "Halo",
           "at": "2026-09-13T19:45:53.986Z"
+        },
+        {
+          "id": "m_mu085n4u2huo",
+          "from": "owner",
+          "text": "Baik kak Dearly, ada yang bisa saya bantu?",
+          "at": "2026-09-13T19:46:20.382Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T19:45:53.986Z",
+      "lastMessageAt": "2026-09-13T19:46:20.382Z",
       "unreadByOwner": 0,
       "ownerLastReadAt": "2026-09-13T19:46:06.468Z"
     },
