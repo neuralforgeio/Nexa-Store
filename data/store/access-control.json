@@ -1,13 +1,12 @@
 {
   "adminBlocked": false,
   "lockdown": {
-    "active": true,
+    "active": false,
     "scope": "routes",
     "routes": [
       "/help"
     ],
-    "note": "Uji coba lockdown produksi — akan langsung dinonaktifkan.",
-    "updatedAt": "2026-09-13T10:57:09.898Z",
+    "updatedAt": "2026-09-13T10:57:51.208Z",
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
