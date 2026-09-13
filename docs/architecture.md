@@ -50,3 +50,25 @@ HMAC-SHA256 signed token `base64url(payload).sig` in HTTP-only `SameSite=Lax` co
 ## Key decisions
 
 See `.plans/decision_matrix.md` (D1–D6) and assumptions ledger (A1–A14). ADR-worthy: dual-adapter persistence, hash-SPA routing, custom session vs next-auth, batch mutation contract.
+
+## Site gates — lockdown & maintenance (v1.1.0)
+
+```text
+Browser → proxy.ts (propagates original pathname via x-pathname)
+        → app/page.tsx (server component, force-dynamic)
+        → resolveSiteGate(pathname, sessionRole)
+            ├── lockdown active & route covered & role ≠ DEVELOPER → redirect /lockdown
+            ├── maintenance active & route covered & role ∉ {DEVELOPER, ADMIN} → redirect /maintenance
+            └── ok → render storefront shell
+```
+
+- Gate state lives in `data/store/access-control.json` (`lockdown`,
+  `maintenance`), written only by the Developer through
+  `POST /api/developer/access` (conflict-detected repo write).
+- `src/lib/catalog/site-control.ts` — shared, import-free matching logic
+  (lockable routes, staff-path exemption, gating rules).
+- Soft navigations poll `GET /api/store-status?path=…` (role-aware `applies`)
+  and hard-swap to the gate screen.
+- Gate screens are real routes (`/lockdown`, `/maintenance`), server-rendered
+  with the Developer's reason/message; a developer visiting them gets a
+  shortcut to the control panel.

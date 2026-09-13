@@ -87,18 +87,41 @@ export const CANONICAL_FILES: Record<CanonicalFileKey, string> = {
   "access-control": "data/store/access-control.json",
 };
 
+/**
+ * One site-wide gate mode (lockdown or maintenance), controlled by the
+ * Developer. `note` is the lockdown reason / maintenance message shown on the
+ * gate screen; `routes` references LOCKABLE_ROUTES ids when scope="routes".
+ */
+export type SiteGateState = {
+  active: boolean;
+  scope: "all" | "routes";
+  routes: string[];
+  note?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+};
+
 /** Admin access state — developer-controlled (D8). Kept out of Admin's reach. */
 export type AccessControlState = {
   adminBlocked: boolean;
   updatedAt?: string;
   updatedBy?: string;
   reason?: string;
+  /** Total or route-scoped lockdown (red gate at /lockdown). */
+  lockdown?: SiteGateState;
+  /** Total or route-scoped maintenance (amber gate at /maintenance). */
+  maintenance?: SiteGateState;
 };
 
 export type SessionInfo = {
   authenticated: boolean;
   role: Role | null;
   email: string | null;
+  /**
+   * Present when the caller's Admin access was revoked by the Developer —
+   * drives the blocking modal in the dashboard (D8).
+   */
+  blocked?: { byRole: Role; reason: string | null } | null;
 };
 
 export type AdapterMode = "local" | "github";

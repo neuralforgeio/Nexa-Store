@@ -14,7 +14,9 @@ export class ApiError extends Error {
     public readonly code: string,
     message: string,
     public readonly status: number,
-    public readonly issues?: unknown[]
+    public readonly issues?: unknown[],
+    /** Extra fields carried by the error envelope (e.g. block reason). */
+    public readonly extra?: Record<string, unknown>
   ) {
     super(message);
     this.name = "ApiError";
@@ -43,7 +45,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       err?.code ?? "unknown",
       err?.message ?? "Terjadi kesalahan tak terduga.",
       res.status,
-      err?.issues
+      err?.issues,
+      // Whole envelope error object — carries extra fields like block reason.
+      err ? (err as unknown as Record<string, unknown>) : undefined
     );
   }
   return envelope.data;

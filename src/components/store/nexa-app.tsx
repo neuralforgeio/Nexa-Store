@@ -14,6 +14,7 @@ import { HelpView } from "./help-view";
 import { LoginView } from "./login-view";
 import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { RouteLink } from "@/components/shared/route-link";
+import { BlockedAdminDialog } from "@/components/shared/blocked-admin-dialog";
 import { CartProvider } from "@/components/store/cart/cart-ui-context";
 import { ManagementShell } from "@/components/admin/management-shell";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
@@ -24,6 +25,7 @@ import { AdminSettings } from "@/components/admin/admin-settings";
 import { AdminCheckout } from "@/components/admin/admin-checkout";
 import { DevDashboard } from "@/components/developer/dev-dashboard";
 import { DevAccess } from "@/components/developer/dev-access";
+import { DevControl } from "@/components/developer/dev-control";
 import { DevGit } from "@/components/developer/dev-git";
 import { DevData } from "@/components/developer/dev-data";
 import { DevDiagnostics } from "@/components/developer/dev-diagnostics";
@@ -50,9 +52,26 @@ export function NexaApp() {
 function AppFrame() {
   const [route, navigate] = useAppRoute();
   const reducedMotion = useReducedMotion();
-  const session = useSession();
-
   const isManagement = route.view === "admin" || route.view === "developer";
+  // Poll the session inside the dashboard so a mid-session Admin block (D8)
+  // surfaces as the blocking modal instead of a silent logout.
+  const session = useSession(isManagement ? 20_000 : false);
+  const [blockedDismissed, setBlockedDismissed] = useState(false);
+  const [stickyBlock, setStickyBlock] = useState<{ reason: string | null } | null>(null);
+
+  // The session endpoint clears the revoked cookie in the same response that
+  // reports the block — the next poll then arrives WITHOUT the block info.
+  // Hold the last-seen block so the modal stays until dismissed (rAF keeps
+  // this off the effect body, per the React hooks lint rule).
+  useEffect(() => {
+    const info = session.data?.blocked;
+    if (!info) return;
+    const raf = requestAnimationFrame(() => setStickyBlock(info));
+    return () => cancelAnimationFrame(raf);
+  }, [session.data?.blocked]);
+
+  const blocked = !blockedDismissed ? (stickyBlock ?? session.data?.blocked ?? null) : null;
+
   const isPublic =
     route.view === "home" || route.view === "games" || route.view === "game" || route.view === "help";
 
@@ -65,9 +84,11 @@ function AppFrame() {
   useEffect(() => {
     if (session.isPending || route.view === "login" || !isManagement) return;
     if (!session.data?.authenticated) {
+      // Blocked Admins stay put — the blocking modal takes over the screen.
+      if (stickyBlock || session.data?.blocked) return;
       navigate("/login");
     }
-  }, [session.isPending, session.data, route.view, isManagement, navigate]);
+  }, [session.isPending, session.data, stickyBlock, route.view, isManagement, navigate]);
 
   // Redirect authenticated users away from the login view (effect, not render).
   useEffect(() => {
@@ -75,6 +96,43 @@ function AppFrame() {
       navigate(session.data.role === "DEVELOPER" ? "/dev" : "/admin", { replace: true });
     }
   }, [route.view, session.data, navigate]);
+
+  // Site-gate watcher: the server gates hard navigations (see app/page.tsx);
+  // this keeps soft, client-side navigations honest too — if the current
+  // route becomes locked down or under maintenance, swap to the gate screen.
+  const pathKey = route.view === "game" ? `game:${route.slug}` : route.view;
+  useEffect(() => {
+    if (isManagement || route.view === "login" || route.view === "not-found") return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch(
+          `/api/store-status?path=${encodeURIComponent(window.location.pathname)}`
+        );
+        const json = (await res.json()) as {
+          ok: boolean;
+          data?: {
+            lockdown: { applies: boolean };
+            maintenance: { applies: boolean };
+          };
+        };
+        if (cancelled || !json.ok || !json.data) return;
+        if (json.data.lockdown.applies) {
+          window.location.replace("/lockdown");
+        } else if (json.data.maintenance.applies) {
+          window.location.replace("/maintenance");
+        }
+      } catch {
+        // Network hiccup — the next interval re-checks.
+      }
+    };
+    check();
+    const timer = window.setInterval(check, 20_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [pathKey, isManagement, route.view]);
 
   const viewTransition = reducedMotion
     ? { initial: { opacity: 1 }, animate: { opacity: 1 }, exit: { opacity: 1 } }
@@ -168,6 +226,30 @@ function AppFrame() {
     return null;
   }, [route, session.data, session.isPending, navigate, isManagement]);
 
+  // Revoked Admin: a dark stage with the blocking modal dead center. Placed
+  // after all hooks so the hook order stays stable across renders.
+  if (blocked) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[oklch(0.165_0.015_25)] px-4">
+        <span
+          aria-hidden="true"
+          className="mb-8 flex h-10 w-10 items-center justify-center rounded-xl border border-[oklch(0.45_0.16_25_/_0.4)] bg-[oklch(0.22_0.04_25)] font-display text-lg font-bold text-[oklch(0.55_0.14_25)]"
+        >
+          N
+        </span>
+        <BlockedAdminDialog
+          open
+          onOpenChange={(open) => {
+            if (open) return;
+            setBlockedDismissed(true);
+            navigate("/login", { replace: true });
+          }}
+          reason={blocked.reason}
+        />
+      </div>
+    );
+  }
+
   // Login and dashboards are standalone: no storefront header/footer.
   if (route.view === "login" || isManagement) {
     return (
@@ -227,6 +309,8 @@ function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSecti
       return <DevDashboard role="DEVELOPER" onNavigate={onNavigate} />;
     case "access":
       return <DevAccess />;
+    case "control":
+      return <DevControl />;
     case "git":
       return <DevGit />;
     case "data":

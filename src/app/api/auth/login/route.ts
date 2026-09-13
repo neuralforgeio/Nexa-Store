@@ -5,7 +5,7 @@ import { clientIp } from "@/lib/api/http";
 import { verifyCredentials, authConfigured } from "@/lib/auth/credentials";
 import { createSessionToken, SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/auth/session";
 import { checkRateLimit, recordAttempt } from "@/lib/auth/rate-limit";
-import { isAdminBlocked } from "@/lib/auth/access";
+import { readAccessControl, isAdminBlocked } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
   // A blocked Admin cannot log back in (D8). Revealed only after the
   // credentials verify, so it leaks nothing about account existence.
   if (role === "ADMIN" && (await isAdminBlocked())) {
-    return jsonError(403, "admin-blocked", "Akses admin sedang diblokir oleh Developer.");
+    const control = await readAccessControl();
+    return jsonError(403, "admin-blocked", "Akses admin sedang diblokir oleh Developer.", {
+      blocked: true,
+      reason: control.reason ?? null,
+      updatedBy: control.updatedBy ?? null,
+    });
   }
 
   const email = parsed.data.email.trim().toLowerCase();

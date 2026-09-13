@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { formatWib } from "@/lib/format/date";
 import type { Role } from "@/lib/catalog/types";
-import { Database, GitBranch, Activity, KeyRound, Rocket } from "lucide-react";
+import { Database, GitBranch, Activity, KeyRound, Power, Rocket } from "lucide-react";
 
 /** Developer dashboard: engineering overview + tool entry points. */
 export function DevDashboard({ role, onNavigate }: { role: Role; onNavigate: (hash: string) => void }) {
@@ -24,6 +24,7 @@ export function DevDashboard({ role, onNavigate }: { role: Role; onNavigate: (ha
 
   const tools = [
     { hash: "/dev/access", icon: KeyRound, title: "Akses", desc: "Kontrol akses Admin: blokir atau buka kembali login Admin." },
+    { hash: "/dev/control", icon: Power, title: "Kontrol Situs", desc: "Lockdown total atau per-route, dan mode pemeliharaan situs." },
     { hash: "/dev/git", icon: GitBranch, title: "Git Sync", desc: "Status penyimpanan, riwayat commit, validasi, dan restore berorientasi inspeksi." },
     { hash: "/dev/data", icon: Database, title: "Data Inspector", desc: "Berkas kanonik ternormalisasi. Telusuri, filter, salin, ekspor." },
     { hash: "/dev/diagnostics", icon: Activity, title: "Diagnostics", desc: "Konfigurasi lingkungan, kesehatan penyimpanan, dan laporan validasi." },

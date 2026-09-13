@@ -7,10 +7,10 @@
 🌐 **Live**: <https://nexastoregame.vercel.app>
 
 A production-ready digital game top-up storefront with a multi-item cart,
-per-game account forms, admin & developer panels, and a file-based catalog
-that can persist through GitHub.
+per-game account forms, admin & developer panels, total/route lockdown &
+maintenance modes, and a file-based catalog that can persist through GitHub.
 
-![Version](https://img.shields.io/badge/version-1.0.0-amber)
+![Version](https://img.shields.io/badge/version-1.1.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -37,8 +37,12 @@ that can persist through GitHub.
 - **Cart persistence** — the cart survives reloads via `localStorage`; stale
   entries (deleted/disabled products) are reconciled away with a clear notice.
 - **Local order history** — lightweight, clearly labeled as device-local.
+- **Scroll-aware edge fades** — horizontal scrollers only dim the side where
+  more content exists; the last card always renders at full strength.
 - Dark / light / system themes, scroll-reveal animations, `prefers-reduced-motion`
   respected, keyboard-accessible flows, mobile-first checkout.
+- **Footer** with auto-year copyright and the developer credit
+  ([Dearly Febriano](https://dearlyfebriano.vercel.app)) + visible app version.
 
 ### Admin panel (hidden route `/login`)
 - Games, categories, products, prices — edited live with **conflict detection**
@@ -46,9 +50,24 @@ that can persist through GitHub.
 - Game **icon upload** (client-side canvas crop → WebP data URI).
 - Store settings: name, WhatsApp number, announcement, maintenance mode.
 - WhatsApp order template management with placeholder validation.
+- **Collapsible sidebar** — the collapse toggle sits in the header next to the
+  logo, with a global **Ctrl/Cmd+B** shortcut; state persists per browser.
 
 ### Developer panel (role-gated)
-- Admin blocking (a blocked admin cannot log back in — enforced server-side).
+- **Admin blocking** — a blocked admin cannot log back in (enforced
+  server-side). The block reason set by the Developer is shown to the admin in
+  a full-screen **blocking modal** (skull + block icon), both on a login
+  attempt and as a live takeover of an already-active dashboard session.
+- **Kontrol Situs (site control)**:
+  - **LOCKDOWN** — total or route-scoped (`/`, `/games`, `/games/…`, `/help`).
+    Affected visitors are redirected to a red `/lockdown` screen that shows
+    the Developer's reason. Enforced server-side (no storefront flash) and on
+    soft navigations. Staff routes (`/login`, `/admin`, `/dev`) are never
+    gated so the gate can always be lifted.
+  - **Maintenance mode** — total or route-scoped, amber `/maintenance` screen
+    with the Developer's message and a retry button.
+  - Bypass rules: Developer passes everything; Admin is exempt from
+    maintenance but subject to lockdown. If both cover a route, lockdown wins.
 - Git sync status & history, data inspector, schema validation,
   diagnostics, deployment info.
 
@@ -133,24 +152,27 @@ The app is a standard Next.js project — deploy with one click:
 
 ```
 src/
-├─ app/                  # App Router — single storefront route + API handlers
-│  ├─ api/               #   catalog (public), auth, management, developer
-│  └─ page.tsx           #   the storefront SPA shell
+├─ app/                  # App Router — storefront route + API + gate screens
+│  ├─ api/               #   catalog, auth, management, developer, store-status
+│  ├─ lockdown/          #   red LOCKDOWN gate screen (server-rendered reason)
+│  ├─ maintenance/       #   amber maintenance gate screen
+│  └─ page.tsx           #   the storefront SPA shell (gates enforced here)
 ├─ components/
-│  ├─ store/             # storefront views + cart (drawer, item cards)
-│  ├─ admin/             # admin panel views
-│  ├─ developer/         # developer tools
-│  ├─ shared/            # theme toggle, reveal, price tag, game mark…
+│  ├─ store/             # storefront views + cart (drawer, item cards) + gate/
+│  ├─ admin/             # admin panel views (management shell + Ctrl+B)
+│  ├─ developer/         # developer tools (access, site control, git, data…)
+│  ├─ shared/            # theme toggle, reveal, price tag, dialogs…
 │  └─ ui/                # shadcn/ui primitives
+├─ proxy.ts              # propagates the original pathname for gate enforcement
 └─ lib/
-   ├─ catalog/           # domain: schemas, validation, mutations, repositories
+   ├─ catalog/           # domain: schemas, validation, mutations, repositories, site-control
    ├─ cart/              # cart store, resolver, validation, WA message builder
-   ├─ auth/              # session (HMAC cookie), credentials, permissions
+   ├─ auth/              # session (HMAC cookie), credentials, permissions, site gates
    └─ whatsapp/          # template engine + deep link builder
 
 data/
 ├─ catalog/              # games / products / categories (canonical JSON)
-└─ store/                # settings, checkout template, access control
+└─ store/                # settings, checkout template, access control (blocks + gates)
 ```
 
 ## 🔒 Security notes
@@ -158,6 +180,9 @@ data/
 - Signed, HTTP-only session cookies; timing-safe credential comparison;
   server-side permission matrix (admin vs developer) on every protected route.
 - Login rate limiting; blocked-admin enforcement on session + route level.
+- Site gates are Developer-only writes through the same conflict-detected
+  repository as the catalog; the store-status probe is role-aware so gate
+  bypasses can't be forged from the client.
 - The public catalog API never exposes disabled records or adapter internals.
 - Cart state is client-owned but **prices are always resolved from the live
   catalog** — client-side price tampering has no effect.
@@ -181,6 +206,34 @@ rework (UI/backend/language overhaul) jumps to the next MAJOR (`2.0.0`).
 The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
+## 📋 Changelog
+
+### v1.1.0 — Site control & polish (2026-09-13)
+- **Added**: Developer *Kontrol Situs* — total or route-scoped **lockdown**
+  (`/lockdown`, red, reason shown) and **maintenance mode** (`/maintenance`,
+  amber, message shown), enforced server-side before the storefront renders
+  plus on client-side navigation; role-aware bypass (Developer all, Admin
+  maintenance only); public `/api/store-status` probe.
+- **Added**: blocked-admin takeover modal (skull + block icon + the
+  Developer's reason) on login attempts and mid-session revocations.
+- **Added**: sidebar collapse toggle in the header next to the logo with a
+  global **Ctrl+B** shortcut.
+- **Added**: footer developer credit (Dearly Febriano → portfolio) and
+  auto-year copyright.
+- **Improved**: login page brand panel — tilted mini-storefront + floating
+  product cards from the live catalog, dark lighting, entrance & drift
+  animations.
+- **Fixed**: featured-games scroller kept darkening the rightmost card at
+  scroll end (static edge mask replaced with a scroll-aware one).
+- Version semantics: feature release → minor bump (`1.0.0` → `1.1.0`).
+
+### v1.0.0 — Initial release (2026-09-13)
+- Storefront with multi-item cart, per-game account forms, one structured
+  WhatsApp checkout; admin & developer panels; conflict-detected catalog
+  mutations; hidden login route; dark/light themes; game icon upload;
+  admin blocking; 61 seeded products across 8 games.
+
 ## 📄 License
 
 Released under the [MIT License](LICENSE) — © 2026 neuralforgeio.
+Developed with 💛 by [Dearly Febriano](https://dearlyfebriano.vercel.app).

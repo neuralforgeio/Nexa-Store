@@ -5,7 +5,11 @@ import { useCatalog } from "@/lib/queries";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
 import { displayPhone } from "@/lib/format/phone";
 import { APP_VERSION } from "@/lib/version";
-import { Gamepad2, LifeBuoy, MessageCircle } from "lucide-react";
+import { Code2, Gamepad2, LifeBuoy, MessageCircle } from "lucide-react";
+
+/** Developer credit — portfolio link (clickable). */
+const DEVELOPER_PORTFOLIO = "https://dearlyfebriano.vercel.app";
+const DEVELOPER_NAME = "Dearly Febriano";
 
 /** Storefront footer — sits at the bottom of the viewport on short pages. */
 export function SiteFooter() {
@@ -69,11 +73,35 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            Pesanan diproses pada jam operasional. Konfirmasi terakhir selalu dari admin.
+        {/* Bottom bar — copyright (auto year) + developer credit + version. */}
+        <div className="mt-8 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-gradient-to-br from-primary to-primary/80 font-display text-[10px] font-bold text-primary-foreground"
+            >
+              N
+            </span>
+            <span>
+              © {new Date().getFullYear()} {storeName}. Semua hak cipta dilindungi.
+            </span>
           </p>
-          <p className="font-mono text-xs text-muted-foreground/70">v{APP_VERSION}</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Code2 aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
+              <span>Dikembangkan oleh</span>{" "}
+              <a
+                href={DEVELOPER_PORTFOLIO}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-foreground underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary hover:decoration-primary"
+              >
+                {DEVELOPER_NAME}
+              </a>
+            </p>
+            <span aria-hidden="true" className="hidden h-3.5 w-px bg-border sm:block" />
+            <p className="font-mono text-xs text-muted-foreground/70">v{APP_VERSION}</p>
+          </div>
         </div>
       </div>
     </footer>

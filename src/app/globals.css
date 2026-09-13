@@ -264,4 +264,40 @@
     opacity: 0.028;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+
+  /* Pulsing red halo for the blocked-admin modal (D8). */
+  @keyframes blocked-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.92);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.12);
+    }
+  }
+
+  /* Slow red sweep for the lockdown gate screen. */
+  @keyframes lockdown-sweep {
+    0% {
+      transform: translateX(-120%) skewX(-14deg);
+    }
+    100% {
+      transform: translateX(240%) skewX(-14deg);
+    }
+  }
+
+  /* Spinning gear for the maintenance gate screen. */
+  @keyframes gear-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gate-anim {
+      animation: none !important;
+    }
+  }
 }

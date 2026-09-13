@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { ProductCard } from "./product-card";
 import { GameCard } from "./game-card";
+import { EdgeFadeScroller } from "@/components/shared/edge-fade-scroller";
 import { OrderSheet } from "./order-sheet";
 import { Reveal } from "@/components/shared/reveal";
 import { GameMark } from "@/components/shared/game-mark";
@@ -326,20 +327,16 @@ export function HomeView() {
           {derived.games.length === 0 ? (
             <EmptyState className="mt-5" title="Belum ada game" description="Game yang tersedia akan muncul di sini." />
           ) : (
-            <div
-              role="list"
-              className="no-scrollbar -mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0"
-              style={{
-                maskImage: "linear-gradient(to right, black 88%, transparent)",
-                WebkitMaskImage: "linear-gradient(to right, black 88%, transparent)",
-              }}
+            <EdgeFadeScroller
+              ariaLabel="Pilihan game"
+              className="-mx-4 mt-5 px-4 sm:mx-0 sm:px-0"
             >
               {derived.games.map((game, i) => (
                 <div role="listitem" key={game.id}>
                   <GameCard game={game} variant="tile" index={i} />
                 </div>
               ))}
-            </div>
+            </EdgeFadeScroller>
           )}
         </section>
 

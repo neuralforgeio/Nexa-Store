@@ -238,6 +238,8 @@ export const SEED: CatalogSnapshot = {
   },
   accessControl: {
     adminBlocked: false,
+    lockdown: { active: false, scope: "all", routes: [] },
+    maintenance: { active: false, scope: "all", routes: [] },
   },
 };
 

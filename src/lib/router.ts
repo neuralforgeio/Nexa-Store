@@ -26,10 +26,25 @@ export type AdminSection =
   | "settings"
   | "checkout";
 
-export type DeveloperSection = "dashboard" | "access" | "git" | "data" | "diagnostics" | "deployment";
+export type DeveloperSection =
+  | "dashboard"
+  | "access"
+  | "control"
+  | "git"
+  | "data"
+  | "diagnostics"
+  | "deployment";
 
 const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout"];
-const DEVELOPER_SECTIONS: DeveloperSection[] = ["dashboard", "access", "git", "data", "diagnostics", "deployment"];
+const DEVELOPER_SECTIONS: DeveloperSection[] = [
+  "dashboard",
+  "access",
+  "control",
+  "git",
+  "data",
+  "diagnostics",
+  "deployment",
+];
 
 export function parsePath(rawPath: string): Route {
   const clean = rawPath.split("?")[0].replace(/\/+$/, "");

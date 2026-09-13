@@ -83,11 +83,23 @@ const checkoutTemplateSchema = z.object({
   updatedBy: z.string().optional(),
 });
 
+const siteGateSchema = z.object({
+  active: z.boolean(),
+  scope: z.enum(["all", "routes"]),
+  routes: z.array(z.string()).max(12),
+  note: z.string().max(300).optional(),
+  updatedAt: z.string().optional(),
+  updatedBy: z.string().optional(),
+});
+
 const accessControlSchema = z.object({
   adminBlocked: z.boolean(),
   updatedAt: z.string().optional(),
   updatedBy: z.string().optional(),
   reason: z.string().max(300).optional(),
+  // Site gates are optional so pre-gate data files keep parsing.
+  lockdown: siteGateSchema.optional(),
+  maintenance: siteGateSchema.optional(),
 });
 
 export const gamesFileSchema = z.object({

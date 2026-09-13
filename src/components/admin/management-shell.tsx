@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession, useLogout } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -22,6 +22,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Power,
   Rocket,
   Settings2,
   ShieldCheck,
@@ -50,6 +51,7 @@ const ADMIN_NAV: Array<NavEntry<AdminSection>> = [
 const DEVELOPER_NAV: Array<NavEntry<DeveloperSection>> = [
   { key: "dashboard", label: "Developer", icon: ShieldCheck },
   { key: "access", label: "Akses", icon: KeyRound },
+  { key: "control", label: "Kontrol Situs", icon: Power },
   { key: "git", label: "Git Sync", icon: GitBranch },
   { key: "data", label: "Data Inspector", icon: Database },
   { key: "diagnostics", label: "Diagnostics", icon: Activity },
@@ -95,6 +97,24 @@ export function ManagementShell({
       return next;
     });
   };
+
+  // Ctrl/Cmd+B toggles the sidebar from anywhere in the dashboard.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "b") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      toggleCollapsed();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const current = (s: Section) => active.group === s.group && active.key === s.key;
 
@@ -177,10 +197,11 @@ export function ManagementShell({
           collapsed ? "w-[72px]" : "w-64"
         )}
       >
+        {/* Header — logo with the collapse toggle beside it (Ctrl+B). */}
         <div
           className={cn(
             "flex h-16 shrink-0 items-center border-b border-sidebar-border",
-            collapsed ? "justify-center px-2" : "px-4"
+            collapsed ? "flex-col justify-center gap-1.5 px-2" : "justify-between px-4"
           )}
         >
           <RouteLink href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Kembali ke store">
@@ -201,31 +222,28 @@ export function ManagementShell({
               </span>
             ) : null}
           </RouteLink>
-        </div>
-
-        <div className="scroll-slim flex-1 overflow-y-auto p-2.5">{renderNav(() => undefined, collapsed)}</div>
-
-        <div className="p-2.5">
-          {sidebarFooter(collapsed)}
           <button
             type="button"
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Perlebar sidebar" : "Persempit sidebar"}
+            aria-keyshortcuts="Control+B"
+            title={collapsed ? "Perlebar sidebar (Ctrl+B)" : "Persempit sidebar (Ctrl+B)"}
             className={cn(
-              "mt-1 flex w-full items-center rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
-              collapsed ? "justify-center" : "gap-2.5"
+              "flex items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2",
+              "h-8 w-8"
             )}
           >
             {collapsed ? (
-              <PanelLeftOpen aria-hidden="true" className="h-4 w-4" />
+              <PanelLeftOpen aria-hidden="true" className="h-4.5 w-4.5" />
             ) : (
-              <>
-                <PanelLeftClose aria-hidden="true" className="h-4 w-4" />
-                Persempit
-              </>
+              <PanelLeftClose aria-hidden="true" className="h-4.5 w-4.5" />
             )}
           </button>
         </div>
+
+        <div className="scroll-slim flex-1 overflow-y-auto p-2.5">{renderNav(() => undefined, collapsed)}</div>
+
+        <div className="p-2.5">{sidebarFooter(collapsed)}</div>
       </aside>
 
       {/* Mobile: slim utility bar (menu trigger only, not a site navbar). */}
@@ -295,6 +313,12 @@ export function ManagementShell({
         <div className="hidden items-center gap-3 border-b border-border/70 px-6 py-2 lg:flex">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             {isDeveloper ? "Peran: Developer" : "Peran: Admin"}
+          </p>
+          <p className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+            <kbd className="rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>
+            <span className="text-[10px]">+</span>
+            <kbd className="rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono text-[10px]">B</kbd>
+            <span className="ml-1">sidebar</span>
           </p>
         </div>
         <main id="main" className="flex-1 p-4 pb-20 sm:p-6 sm:pb-20">

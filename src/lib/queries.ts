@@ -9,6 +9,7 @@ import type {
   OrderField,
   Product,
   SessionInfo,
+  SiteGateState,
   SyncRevision,
   ValidationReport,
 } from "@/lib/catalog/types";
@@ -51,11 +52,14 @@ export function useCatalog() {
   });
 }
 
-export function useSession() {
+export function useSession(refreshMs: number | false = false) {
   return useQuery({
     queryKey: ["session"],
     queryFn: () => api.get<SessionInfo>("/api/auth/session"),
     staleTime: 30_000,
+    // While inside the dashboard the session is polled so a mid-session
+    // Admin block surfaces as the blocking modal within seconds.
+    refetchInterval: refreshMs,
   });
 }
 
@@ -201,12 +205,14 @@ export function useCatalogMutation() {
 
 export type SyncRevisionInfo = SyncRevision;
 
-/** Admin access control (developer-only, D8). */
+/** Admin access control + site gates (developer-only, D8 + site control). */
 export type AccessControlInfo = {
   adminBlocked: boolean;
   updatedAt: string | null;
   updatedBy: string | null;
   reason: string | null;
+  lockdown: SiteGateState;
+  maintenance: SiteGateState;
   revision: string;
   fileShas: Record<string, string>;
   adapter: "local" | "github";
@@ -229,6 +235,30 @@ export function useAccessControlMutation() {
       adminBlocked: boolean;
       reason?: string;
     }) => api.post<{ revision: string }>("/api/developer/access", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["access-control"] });
+    },
+  });
+}
+
+/** Site gates (lockdown / maintenance) — developer-only writes. */
+export function useSiteControlMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      baseRevision: string;
+      baseFileShas: Record<string, string>;
+      siteControl: {
+        lockdown?: SiteGateState;
+        maintenance?: SiteGateState;
+      };
+    }) =>
+      api.post<{
+        revision: string;
+        commitMessage: string;
+        lockdown: SiteGateState | null;
+        maintenance: SiteGateState | null;
+      }>("/api/developer/access", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["access-control"] });
     },
