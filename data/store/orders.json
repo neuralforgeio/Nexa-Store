@@ -13,15 +13,20 @@
         }
       ],
       "total": 189000,
-      "status": "pending",
-      "statusReason": null,
-      "statusUpdatedAt": null,
+      "status": "processing",
+      "statusReason": "Sedang diproses joki, estimasi 10 menit.",
+      "statusUpdatedAt": "2026-09-13T20:52:54.532Z",
       "createdAt": "2026-09-13T20:52:37.293Z",
       "history": [
         {
           "status": "pending",
           "at": "2026-09-13T20:52:37.293Z",
           "reason": null
+        },
+        {
+          "status": "processing",
+          "at": "2026-09-13T20:52:54.532Z",
+          "reason": "Sedang diproses joki, estimasi 10 menit."
         }
       ]
     }
