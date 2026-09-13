@@ -1,11 +1,3 @@
 {
-  "subs": {
-    "c_3ba3f5f43b92602683c19aee": {
-      "endpoint": "https://fcm.googleapis.com/fcm/send/uji",
-      "p256dh": "uji-key",
-      "auth": "uji-auth",
-      "name": "Uji Push",
-      "at": "2026-09-13T20:53:14.384Z"
-    }
-  }
+  "subs": {}
 }
