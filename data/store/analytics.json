@@ -1,29 +1,29 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 45,
-      "uniques": 9,
+      "views": 47,
+      "uniques": 10,
       "byPath": {
         "/login": 6,
-        "/": 24,
+        "/": 25,
         "/admin/chat": 2,
         "/help": 1,
         "/reports": 4,
-        "/track": 6,
+        "/track": 7,
         "/dev": 1,
         "/admin/reports": 1
       },
       "byReferrer": {
-        "langsung": 41,
+        "langsung": 43,
         "localhost": 1,
         "preview-chat-e975b689-25fb-45b7-be17-ac84c61b7173.space-z.ai": 3
       },
       "byDevice": {
         "desktop": 27,
-        "mobile": 18
+        "mobile": 20
       },
       "events": {
-        "chat_open": 5,
+        "chat_open": 6,
         "order_track": 2
       }
     }
@@ -37,7 +37,8 @@
     "79c1f64b8d1e079931a234e8": "2026-09-14",
     "65801b8cef714f2f59419d85": "2026-09-14",
     "c521e552f519ee560e78d648": "2026-09-14",
-    "3b29781cd243ebaff310ee25": "2026-09-14"
+    "3b29781cd243ebaff310ee25": "2026-09-14",
+    "d548fe6d02428c984993d1b5": "2026-09-14"
   },
   "recent": [
     1789319955843,
@@ -84,6 +85,8 @@
     1789333128277,
     1789333128277,
     1789333128277,
-    1789333161242
+    1789333161242,
+    1789340812637,
+    1789340812637
   ]
 }
