@@ -3,7 +3,8 @@
  * Setelah pairing, hanya Telegram user id pemilik yang dikenal bot.
  */
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { OrderField, GateKey, GameRecord, ProductRecord } from "./nexa";
 import type { ConversationRecord, PromoRecord, BannerRecord, ScheduleRecord } from "./nexa";
 import type { CommitInfo } from "./gitops";
@@ -22,7 +23,9 @@ function resolveStatePath(): string {
   if (override) return override;
   if (process.env.VERCEL) return "/tmp/nexa-bot-state.json";
   try {
-    return new URL("../.state.json", import.meta.url).pathname;
+    // Dihitung runtime — literal new URL(\"..\", import.meta.url) dianggap aset
+    // oleh Turbopack produksi dan gagal resolve di Vercel.
+    return join(dirname(fileURLToPath(import.meta.url)), "..", ".state.json");
   } catch {
     return "/tmp/nexa-bot-state.json";
   }

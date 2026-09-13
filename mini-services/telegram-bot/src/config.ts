@@ -3,6 +3,8 @@
  * Nilai dibaca dari environment (Bun memuat .env dari cwd secara otomatis),
  * dengan fallback parser manual agar aman dijalankan dari direktori mana pun.
  */
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 function loadDotEnvFile(path: string): void {
   // Best-effort: abaikan error (file bisa absen saat dijalankan dari luar).
@@ -30,7 +32,12 @@ function loadDotEnvFile(path: string): void {
   }
 }
 
-loadDotEnvFile(new URL("../.env", import.meta.url).pathname);
+// Path .env dihitung runtime — BUKAN new URL("../.env", import.meta.url) literal:
+// Turbopack produksi (Vercel) mengangkap pola itu sebagai referensi aset dan
+// mencoba meng-bundle .env yang memang tidak di-upload (env dipasang lewat
+// dashboard Vercel). Di serverless berkas ini absen dan loader diam-diam lewat.
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+loadDotEnvFile(join(moduleDir, "..", ".env"));
 loadDotEnvFile(`${process.cwd()}/.env`);
 
 function env(key: string, fallback = ""): string {
