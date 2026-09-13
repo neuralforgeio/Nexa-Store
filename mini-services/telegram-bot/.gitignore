@@ -1,0 +1,7 @@
+# rahasia & state lokal — jangan commit
+.env
+.state.json
+
+# dependensi
+node_modules
+bot.log

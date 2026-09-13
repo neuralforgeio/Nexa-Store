@@ -8,9 +8,10 @@
 
 A production-ready digital game top-up storefront with a multi-item cart,
 per-game account forms, admin & developer panels, total/route lockdown &
-maintenance modes, and a file-based catalog that can persist through GitHub.
+maintenance modes, a file-based catalog that persists through GitHub, and a
+private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.1.1-amber)
+![Version](https://img.shields.io/badge/version-1.2.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -80,6 +81,29 @@ maintenance modes, and a file-based catalog that can persist through GitHub.
   - `github` — commits every mutation to the repo via the GitHub API
     (single-commit batch writes), so catalog edits on production survive
     redeploys. Selected automatically when `GITHUB_*` env is complete.
+
+### Telegram bot — developer control from anywhere (`mini-services/telegram-bot`)
+- **One-tap site control**: activate/lift total **lockdown**, route-scoped
+  lockdown, site-wide **maintenance**, or route-scoped maintenance — each with a
+  custom reason/message that appears on the gate screen. Every action writes
+  through the same conflict-detected API as the dashboard (so the GitHub-backed
+  persistence and audit trail apply), then the sandbox repo auto-syncs.
+- **Deploy any past commit** — list recent commits or production deployments,
+  pick one, and Vercel rebuilds production from that exact sha (rollback).
+  Build progress is monitored and reported back in chat.
+- **Admin access control** — block/unblock the admin account with a reason,
+  immediately revoking active sessions.
+- **Catalog management** — add games (with a photo icon straight from Telegram),
+  categories, and products; change prices; enable/disable games and products.
+- **Store settings** — update the WhatsApp number and the storefront
+  announcement; view the checkout template.
+- **Live status** — gate states, catalog counts, app version, and the latest
+  Vercel build, in one `/status` command.
+- **Security**: single-owner pairing code (first-run claim), silently rejects
+  every other account, secrets only in `.env` (gitignored), and the bot talks
+  to the site through the developer-authenticated API — never raw file writes.
+- Runs as an independent Bun service (port `3005` for a health probe) with
+  long polling; see `mini-services/telegram-bot/README.md`.
 
 ## 🛒 Order flow
 
@@ -173,6 +197,11 @@ src/
 data/
 ├─ catalog/              # games / products / categories (canonical JSON)
 └─ store/                # settings, checkout template, access control (blocks + gates)
+
+mini-services/
+└─ telegram-bot/         # developer Telegram bot (Bun service, port 3005)
+   ├─ src/               #   config, telegram, nexa (store API), vercel, gitops, ui, handlers
+   └─ .env.example       #   bot token, pairing code, developer credentials, Vercel/GitHub keys
 ```
 
 ## 🔒 Security notes
@@ -207,6 +236,31 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.2.0 — Telegram bot control center (2026-09-13)
+- **Added**: `@nexastoregamebot` — a private Telegram bot that gives the
+  developer full remote control of the store, with inline buttons and guided
+  text input for every flow (runs as an independent Bun service inside
+  `mini-services/telegram-bot`, health probe on port 3005).
+- **Bot — site control**: total lockdown, route-scoped lockdown, site-wide
+  maintenance, and route-scoped maintenance, each collecting a
+  reason/message before a confirmation step; lifting gates is one tap away.
+- **Bot — deployment**: redeploy any past commit (list from GitHub or from
+  existing Vercel deployments) — Vercel builds production from the chosen
+  sha and the bot reports back when the build finishes.
+- **Bot — admin access**: block/unblock the admin with a reason (sessions are
+  revoked server-side, exactly like the dashboard flow).
+- **Bot — catalog**: add games with an icon (photo sent straight in chat),
+  add categories, add products (game → name → denomination → price → bonus),
+  change product prices, and enable/disable games & products.
+- **Bot — settings & status**: update the WhatsApp number and announcement;
+  `/status` shows gate states, catalog counts, app version, and the latest
+  production build.
+- **Bot — security**: first-run pairing code claims the single owner slot;
+  all other accounts are rejected; the bot authenticates to the site as the
+  developer through the same HMAC-cookie API (no bypasses, no raw writes);
+  secrets stay in a gitignored `.env`.
+- Version semantics: feature release → minor bump (`1.1.1` → `1.2.0`).
 
 ### v1.1.1 — Fixes & stealth hardening (2026-09-13)
 - **Fixed**: game icons missing in the admin dashboard's *Game dengan produk

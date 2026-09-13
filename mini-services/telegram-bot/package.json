@@ -1,0 +1,10 @@
+{
+  "name": "nexastore-telegram-bot",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Nexa Store — bot kendali Developer via Telegram: lockdown, maintenance, deployment, katalog, akses admin.",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts"
+  }
+}

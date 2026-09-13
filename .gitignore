@@ -48,12 +48,13 @@ server.log
 /db
 /prisma
 /examples
-/mini-services
 /skills
 /.agent-browser
 /.claude
 /.z-ai-config
 TODO
+# catatan: mini-services TIDAK diabaikan — bot telegram adalah bagian repo
+# (rahasianya di mini-services/telegram-bot/.env yang sudah digitignore)
 
 # local-mode runtime artifacts
 /data/store/.sync.json
