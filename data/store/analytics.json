@@ -1,24 +1,24 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 8,
-      "uniques": 4,
+      "views": 9,
+      "uniques": 5,
       "byPath": {
         "/login": 3,
-        "/": 4,
+        "/": 5,
         "/admin/chat": 1
       },
       "byReferrer": {
-        "langsung": 6,
+        "langsung": 7,
         "localhost": 1,
         "preview-chat-e975b689-25fb-45b7-be17-ac84c61b7173.space-z.ai": 1
       },
       "byDevice": {
-        "desktop": 6,
+        "desktop": 7,
         "mobile": 2
       },
       "events": {
-        "chat_open": 1
+        "chat_open": 2
       }
     }
   },
@@ -26,7 +26,8 @@
     "3379e1ba22dea9319a83deb5": "2026-09-14",
     "9e5a37f9c83e85168880a2f9": "2026-09-14",
     "f48fa956448ca67a847a1cfe": "2026-09-14",
-    "bed5108881fc75a0e0fbeaa1": "2026-09-14"
+    "bed5108881fc75a0e0fbeaa1": "2026-09-14",
+    "9a261c0164fcd9b28a66e54c": "2026-09-14"
   },
   "recent": [
     1789319955843,
@@ -36,6 +37,7 @@
     1789328072175,
     1789328226498,
     1789328226498,
-    1789328226498
+    1789328226498,
+    1789328242078
   ]
 }
