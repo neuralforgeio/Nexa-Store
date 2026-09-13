@@ -9,6 +9,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { config } from "./config";
 import { rememberChatOrigin } from "./state";
+import { markNotified } from "./chat-watcher";
 import { pushToConversation } from "./chat-bridge";
 import { notifyOwner } from "./owner";
 import { chatNotifyKeyboard, chatNotifyText } from "./ui";
@@ -19,6 +20,8 @@ type ChatNotifyBody = {
   conversationId: string;
   name: string | null;
   text: string;
+  lastMessageAt?: string;
+  messageId?: string | null;
   messageCount: number;
   origin: "local" | string;
 };
@@ -81,6 +84,22 @@ export async function handleInternal(req: IncomingMessage, res: ServerResponse):
         chatNotifyText(payload.name ?? null, payload.text ?? "", payload.origin === "local"),
         chatNotifyKeyboard(payload.conversationId)
       );
+      console.log(`[bridge] chat-notify diterima: ${payload.conversationId} (${payload.name ?? "tanpa nama"})`);
+      // Tandai sudah diberitahukan supaya chat-watcher (poll 25 dtk) tidak
+      // mengirim ping kedua untuk pesan yang sama (bug notifikasi ganda).
+      if (payload?.conversationId && payload.lastMessageAt) {
+        markNotified({
+          id: payload.conversationId,
+          name: payload.name ?? null,
+          createdAt: payload.lastMessageAt,
+          lastMessageAt: payload.lastMessageAt,
+          unreadByOwner: 0,
+          messageCount: payload.messageCount ?? 0,
+          lastText: payload.text ?? "",
+          lastFrom: "user",
+          messages: [],
+        });
+      }
       send(res, 200, { ok: true });
       return;
     }

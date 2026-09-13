@@ -82,8 +82,9 @@ export function DevChat() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-        {/* Conversation list */}
-        <div className="rounded-xl border bg-card/40">
+        {/* Conversation list — min-w-0 wajib: tanpa itu min-content teks panjang
+            (lastText truncate) melebarkan kolom grid hingga overflow mobile. */}
+        <div className="min-w-0 rounded-xl border bg-card/40">
           <div className="border-b border-border/60 px-4 py-3">
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <MessagesSquare aria-hidden="true" className="h-3.5 w-3.5" />
@@ -132,7 +133,7 @@ export function DevChat() {
         </div>
 
         {/* Thread */}
-        <div className="flex min-h-[420px] flex-col overflow-hidden rounded-xl border bg-card/40">
+        <div className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-xl border bg-card/40">
           {active ? (
             <>
               <div className="flex flex-none items-center justify-between gap-3 border-b border-border/60 px-4 py-3">

@@ -312,6 +312,10 @@ function AdminSectionView({
       return <DevPromo />;
     case "banner":
       return <DevBanner />;
+    // Obrolan (v1.5.0) — Admin juga boleh membalas pengunjung, bukan hanya
+    // Developer; izin dikontrol capability chat.manage.
+    case "chat":
+      return <DevChat />;
   }
 }
 

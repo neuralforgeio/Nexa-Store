@@ -3,7 +3,8 @@ import { z } from "zod";
 import { jsonError, jsonOk, clientIp } from "@/lib/api/http";
 import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-features/store";
 import { parseChat } from "@/lib/site-features/schema";
-import { notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
+import { chatBridgeEnabled, notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
+import { sendOwnerChatNotification } from "@/lib/telegram-notify";
 import type { ChatConversation } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
@@ -142,8 +143,15 @@ export async function POST(req: NextRequest) {
       return { conversations: prune(conversations) };
     });
 
-    // Sandbox bridge: instant Telegram ping to the owner (fire-and-forget).
-    if (updated) notifyBotOfUserMessage(updated);
+    // Notifikasi pemilik: bridge instan di sandbox, kirim langsung ke
+    // Telegram Bot API di lingkungan tanpa layanan bot (produksi/Vercel).
+    if (updated) {
+      if (chatBridgeEnabled()) {
+        notifyBotOfUserMessage(updated);
+      } else {
+        void sendOwnerChatNotification(updated, req.nextUrl.origin);
+      }
+    }
     return jsonOk({ sent: true, message });
   } catch {
     return jsonError(502, "chat.send-failed", "Pesan gagal terkirim. Coba lagi.");

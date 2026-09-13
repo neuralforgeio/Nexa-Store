@@ -49,6 +49,7 @@ const ADMIN_CAPABILITIES = new Set<Capability>([
   "gitSync.viewLimited",
   "promos.manage",
   "banners.manage",
+  "chat.manage",
 ]);
 
 const DEVELOPER_CAPABILITIES = new Set<Capability>([

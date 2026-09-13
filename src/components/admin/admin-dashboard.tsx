@@ -98,6 +98,9 @@ export function AdminDashboard({ role, onNavigate }: { role: Role; onNavigate: (
           <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/banner")}>
             Banner pengumuman
           </Button>
+          <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/chat")}>
+            Balas obrolan
+          </Button>
           <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/settings")}>
             Pengaturan store
           </Button>

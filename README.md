@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.4.0-amber)
+![Version](https://img.shields.io/badge/version-1.5.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -51,6 +51,11 @@ private **Telegram bot** for full remote control from the developer's pocket.
 - Game **icon upload** (client-side canvas crop → WebP data URI).
 - Store settings: name, WhatsApp number, announcement, maintenance mode.
 - WhatsApp order template management with placeholder validation.
+- **Event promo & banner management** — schedule store-wide or per-game
+  discounts and announcement banners (same consoles as the Developer panel,
+  permissions enforced server-side).
+- **Live chat replies** — the admin answers visitor messages from the
+  storefront chat widget in `/admin/chat`, with an unread badge on the sidebar.
 - **Collapsible sidebar** — the collapse toggle sits in the header next to the
   logo, with a global **Ctrl/Cmd+B** shortcut; state persists per browser.
 
@@ -99,6 +104,12 @@ private **Telegram bot** for full remote control from the developer's pocket.
   announcement; view the checkout template.
 - **Live status** — gate states, catalog counts, app version, and the latest
   Vercel build, in one `/status` command.
+- **Chat notifications, two runtimes** — visitor messages reach Telegram in
+  seconds: instantly via the local bot bridge (sandbox) or sent **directly by
+  the deployed app** through the Telegram Bot API (Vercel — needs only
+  `TELEGRAM_BOT_TOKEN` + the owner pairing in the `bot-state` store). No
+  double pings: the instant bridge marks messages as notified so the 25-second
+  watcher never repeats them.
 - **Security**: single-owner pairing code (first-run claim), silently rejects
   every other account, secrets only in `.env` (gitignored), and the bot talks
   to the site through the developer-authenticated API — never raw file writes.
@@ -238,6 +249,28 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.5.0 — Obrolan untuk Admin + notifikasi chat dua arah (2026-09-14)
+- **💬 Obrolan di panel Admin** — Admin kini bisa membalas pengunjung lewat
+  `/admin/chat` (bukan cuma Developer): item nav “Obrolan” dengan badge
+  merah jumlah pesan belum dibaca, aksi cepat “Balas obrolan” di dashboard,
+  izin dikontrol server-side lewat capability `chat.manage`.
+- **📩 Notifikasi chat ke Telegram — dua jalur**:
+  - *Sandbox*: bridge instan dipulihkan (env `BOT_SERVICE_INTERNAL_URL` +
+    rahasia bersama `BOT_INTERNAL_SECRET`) — pesan pengunjung ping Telegram
+    dalam hitungan detik lengkap dengan tombol balas interaktif.
+  - *Produksi (Vercel)*: aplikasi kirim sendiri lewat Telegram Bot API saat
+    bridge tidak ada — cukup env `TELEGRAM_BOT_TOKEN` + pairing pemilik di
+    data store `bot-state`; tombol “Balas di dashboard” menuju `/admin/chat`.
+- **🐛 Fix notifikasi ganda** — pesan yang sudah di-ping bridge ditandai
+  (`markNotified`) sehingga chat-watcher 25 detik tidak mengirim ulang.
+- **🐛 Fix listener bot saat hot reload** — listener HTTP lama ditutup penuh
+  sebelum bind baru (race EADDRINUSE senyap) + socket.io di-attach ulang;
+  tambah log `[bridge]` untuk observabilitas.
+- **🐛 Fix tombol URL Telegram** — tombol hanya dikirim untuk URL `https://`
+  (Telegram menolak `http://`); pesan tetap terkirim tanpa tombol di uji lokal.
+- Pairing pemilik bot disinkronkan ke data store `bot-state` (chat id untuk
+  jalur notifikasi produksi).
 
 ### v1.4.0 — Bot di Vercel + Admin promo/banner (2026-09-13)
 

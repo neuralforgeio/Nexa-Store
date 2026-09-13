@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession, useLogout } from "@/lib/queries";
+import { useSession, useLogout, useChatConsole } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { RouteLink } from "@/components/shared/route-link";
@@ -51,6 +51,7 @@ const ADMIN_NAV: Array<NavEntry<AdminSection>> = [
   { key: "products", label: "Produk", icon: Package },
   { key: "promo", label: "Event Promo", icon: Percent },
   { key: "banner", label: "Banner", icon: Megaphone },
+  { key: "chat", label: "Obrolan", icon: MessagesSquare },
   { key: "settings", label: "Pengaturan", icon: Settings2 },
   { key: "checkout", label: "Checkout", icon: MessageSquareText },
 ];
@@ -84,6 +85,9 @@ export function ManagementShell({
   children: React.ReactNode;
 }) {
   const logout = useLogout();
+  // Badge obrolan belum dibaca — polling ringan (30 dtk) untuk item nav "Obrolan".
+  const chat = useChatConsole(true, 30_000);
+  const chatUnread = chat.data?.unreadTotal ?? 0;
   const [navOpen, setNavOpen] = useState(false);
   // Client-only component (renders after session resolution): the lazy
   // initializer reads localStorage without an effect, so no cascading render.
@@ -150,6 +154,7 @@ export function ManagementShell({
           href={`/admin/${item.key}`}
           collapsed={compact}
           active={current({ group: "admin", key: item.key })}
+          badge={item.key === "chat" ? chatUnread : 0}
           onClick={() => onPick(`/admin/${item.key}`)}
         />
       ))}
@@ -171,6 +176,7 @@ export function ManagementShell({
               href={`/dev/${item.key}`}
               collapsed={compact}
               active={current({ group: "developer", key: item.key })}
+              badge={item.key === "chat" ? chatUnread : 0}
               onClick={() => onPick(`/dev/${item.key}`)}
             />
           ))}
@@ -344,6 +350,7 @@ function NavItem({
   href,
   collapsed,
   active,
+  badge = 0,
   onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -351,6 +358,7 @@ function NavItem({
   href: string;
   collapsed?: boolean;
   active: boolean;
+  badge?: number;
   onClick: () => void;
 }) {
   return (
@@ -358,7 +366,7 @@ function NavItem({
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
-      aria-label={collapsed ? label : undefined}
+      aria-label={collapsed ? (badge > 0 ? `${label} — ${badge} belum dibaca` : label) : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center rounded-lg text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
@@ -379,6 +387,17 @@ function NavItem({
       ) : null}
       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       {!collapsed ? <span className="truncate">{label}</span> : null}
+      {badge > 0 ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold tabular text-white",
+            collapsed ? "absolute right-1 top-1 h-4 min-w-4 px-0.5 text-[9px]" : "ml-auto"
+          )}
+        >
+          {badge > 9 ? "9+" : badge}
+        </span>
+      ) : null}
     </RouteLink>
   );
 }

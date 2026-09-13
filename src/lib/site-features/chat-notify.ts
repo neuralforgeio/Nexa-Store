@@ -27,6 +27,10 @@ export function notifyBotOfUserMessage(conversation: ChatConversation): void {
       conversationId: conversation.id,
       name: conversation.name,
       text: last?.text ?? "",
+      // lastMessageAt + id pesan memungkinkan bot menandai pesan ini sudah
+      // diberitahukan → chat-watcher (poll 25 dtk) tidak mengirim ping ganda.
+      lastMessageAt: conversation.lastMessageAt,
+      messageId: last?.id ?? null,
       messageCount: conversation.messages.length,
       // "local" tells the bot this conversation lives on the sandbox instance
       // (http://127.0.0.1:3000) instead of the production API.

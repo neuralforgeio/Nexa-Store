@@ -50,54 +50,74 @@ function startHttpServer(): void {
     log("mode headless — tanpa server HTTP/WS (polling Telegram + scheduler + watcher tetap aktif)");
     return;
   }
-  const server = createServer((req, res) => {
-    if (stale()) return; // generasi lama tidak melayani lagi
-    const url = req.url ?? "/";
-    if (url === "/health" || url === "/") {
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(
-        JSON.stringify({
-          ok: true,
-          service: "nexastore-telegram-bot",
-          uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
-          paired: isPaired(),
-          lastUpdateAt,
-          pollErrors,
-          target: config.apiBase,
-          chatBridge: bridgeStats(),
-        })
-      );
-      return;
-    }
-    if (url.startsWith("/internal/")) {
-      void handleInternal(req, res).catch(() => {
-        if (!res.writableEnded) {
-          res.writeHead(500, { "content-type": "application/json" });
-          res.end(JSON.stringify({ ok: false }));
-        }
-      });
-      return;
-    }
-    res.writeHead(404, { "content-type": "application/json" });
-    res.end(JSON.stringify({ ok: false }));
-  });
-
-  attachChatBridge(server);
-
-  server.listen(config.port, () => {
-    log(`health + chat bridge aktif di :${config.port}`);
-  });
-  // Tutup listener generasi lama bila ada (hot reload).
   const g = globalThis as { __nexaBotHttpServer?: ReturnType<typeof createServer> };
-  if (g.__nexaBotHttpServer && g.__nexaBotHttpServer !== server) {
+
+  const boot = (): void => {
+    const server = createServer((req, res) => {
+      if (stale()) return; // generasi lama tidak melayani lagi
+      const url = req.url ?? "/";
+      if (url === "/health" || url === "/") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(
+          JSON.stringify({
+            ok: true,
+            service: "nexastore-telegram-bot",
+            uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+            paired: isPaired(),
+            lastUpdateAt,
+            pollErrors,
+            target: config.apiBase,
+            chatBridge: bridgeStats(),
+          })
+        );
+        return;
+      }
+      if (url.startsWith("/internal/")) {
+        void handleInternal(req, res).catch(() => {
+          if (!res.writableEnded) {
+            res.writeHead(500, { "content-type": "application/json" });
+            res.end(JSON.stringify({ ok: false }));
+          }
+        });
+        return;
+      }
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ ok: false }));
+    });
+
+    attachChatBridge(server);
+    server.on("error", (e) => log(`http server error: ${(e as Error).message}`));
+    server.listen(config.port, () => {
+      log(`health + chat bridge aktif di :${config.port}`);
+    });
+    g.__nexaBotHttpServer = server;
+  };
+
+  // Hot reload: tutup dulu listener generasi lama sampai benar-benar lepas,
+  // BARU bind yang baru — bind bareng port lama bikin EADDRINUSE senyap.
+  const old = g.__nexaBotHttpServer;
+  if (old && typeof old.close === "function") {
+    let booted = false;
     try {
-      g.__nexaBotHttpServer.close();
+      old.close(() => {
+        booted = true;
+        if (!stale()) boot();
+      });
       log("listener generasi lama ditutup");
     } catch {
-      // abaikan
+      // abaikan — lanjut boot
     }
+    // close() tanpa koneksi aktif memanggil callback-nya sinkron; bila 2 dtk
+    // juga belum (koneksi keep-alive nyangkut), boot paksa agar port tetap hidup.
+    setTimeout(() => {
+      if (!booted && !stale()) {
+        log("listener lama lambat dilepas — bind paksa");
+        boot();
+      }
+    }, 2000);
+  } else {
+    boot();
   }
-  g.__nexaBotHttpServer = server;
 }
 
 // ---------------------------------------------------------------------------

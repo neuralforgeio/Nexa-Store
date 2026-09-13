@@ -26,7 +26,8 @@ export type AdminSection =
   | "settings"
   | "checkout"
   | "promo"
-  | "banner";
+  | "banner"
+  | "chat";
 
 export type DeveloperSection =
   | "dashboard"
@@ -42,7 +43,7 @@ export type DeveloperSection =
   | "analytics"
   | "schedule";
 
-const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout", "promo", "banner"];
+const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout", "promo", "banner", "chat"];
 const DEVELOPER_SECTIONS: DeveloperSection[] = [
   "dashboard",
   "access",

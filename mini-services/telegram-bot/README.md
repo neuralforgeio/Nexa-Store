@@ -87,6 +87,21 @@ yang hanya bisa dijangkau lewat satu jalur.
   curl    http://localhost:3000/api/bot-service   # status
   ```
 
+## Bridge chat instan (v1.5.0)
+
+Aplikasi sandbox meneruskan pesan baru pengunjung ke bot **detik itu juga**
+lewat `POST /internal/chat-notify` (dilindungi header `x-nexa-internal`):
+
+- `.env` aplikasi: `BOT_SERVICE_INTERNAL_URL=http://127.0.0.1:3005` +
+  `BOT_SERVICE_INTERNAL_SECRET=<rahasia>`.
+- `.env` bot: `BOT_INTERNAL_SECRET=<rahasia yang sama>` — tanpa ini endpoint
+  internal membalas 404.
+- Payload menyertakan `lastMessageAt`; bot langsung `markNotified` supaya
+  chat-watcher (poll 25 dtk) tidak mengirim ping ganda.
+- Di Vercel (tanpa bot lokal) aplikasi mengirim notifikasi sendiri langsung ke
+  Telegram Bot API — jalur ini hanya butuh `TELEGRAM_BOT_TOKEN` + pairing
+  pemilik di data store `bot-state`.
+
 ## Arsitektur
 
 ```

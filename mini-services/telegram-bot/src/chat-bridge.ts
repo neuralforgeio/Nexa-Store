@@ -19,7 +19,16 @@ export function conversationIdForToken(token: string): string {
 let io: Server | null = null;
 
 export function attachChatBridge(server: HttpServer): Server {
-  if (io) return io;
+  // Hot reload: server HTTP baru tidak boleh memakai instance socket.io lama
+  // yang menempel di listener mati — tutup dulu, lalu pasang yang baru.
+  if (io) {
+    try {
+      io.close();
+    } catch {
+      // abaikan — mungkin sudah mati
+    }
+    io = null;
+  }
   io = new Server(server, {
     path: "/socket.io",
     cors: { origin: "*", methods: ["GET", "POST"] },
