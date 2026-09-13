@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_97e9c5d2ff7f57e62f3a52c6",
+      "name": "Uji Sistem",
+      "createdAt": "2026-09-13T20:05:22.982Z",
+      "messages": [
+        {
+          "id": "m_mu08u4rqbw9l",
+          "from": "user",
+          "text": "[Uji otomatis] Verifikasi notifikasi produksi → Telegram (bot Vercel). Abaikan.",
+          "at": "2026-09-13T20:05:22.982Z"
+        }
+      ],
+      "lastMessageAt": "2026-09-13T20:05:22.982Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_b56128dced6bf1f319ab52ba",
       "name": "Dearly",
       "createdAt": "2026-09-13T19:45:53.986Z",
