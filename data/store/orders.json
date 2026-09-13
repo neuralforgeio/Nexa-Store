@@ -1,0 +1,29 @@
+{
+  "orders": [
+    {
+      "id": "NEXA-260913-BKWV",
+      "source": "instant",
+      "summary": "Valorant — 2050 Points",
+      "customerName": "Uji Sistem",
+      "items": [
+        {
+          "gameName": "Valorant",
+          "productName": "2050 Points Valorant",
+          "price": 189000
+        }
+      ],
+      "total": 189000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-09-13T20:52:37.293Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-09-13T20:52:37.293Z",
+          "reason": null
+        }
+      ]
+    }
+  ]
+}
