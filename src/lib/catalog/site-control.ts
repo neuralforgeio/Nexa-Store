@@ -37,6 +37,16 @@ export const LOCKABLE_ROUTES: LockableRoute[] = [
     label: "Bantuan",
     description: "Pusat bantuan dan FAQ",
   },
+  {
+    id: "/track",
+    label: "Lacak Pesanan",
+    description: "Cek status pesanan lewat ID Order",
+  },
+  {
+    id: "/reports",
+    label: "Laporan",
+    description: "Laporan bug, saran fitur, dan lainnya",
+  },
 ];
 
 /** Paths that must never be redirected to a gate screen. */

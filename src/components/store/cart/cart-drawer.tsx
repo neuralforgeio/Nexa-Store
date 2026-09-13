@@ -231,6 +231,30 @@ function CartDrawerInner({
     setStep("success");
     setExpanded(new Set());
 
+    // Pesanan terlacak (v1.6.0): simpan di server + notifikasi Telegram
+    // admin lengkap dengan tombol status. Best-effort — gagal ≠ batal WA.
+    void (async () => {
+      try {
+        await fetch("/api/orders", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            reference: snapshot.reference,
+            source: "cart",
+            summary: `${snapshot.items.length} item — keranjang`,
+            items: snapshot.items.map((it) => ({
+              gameName: it.gameName,
+              productName: it.productName,
+              price: it.priceIdr,
+            })),
+            total: snapshot.total,
+          }),
+        });
+      } catch {
+        // offline / server sibuk — WA tetap terkirim
+      }
+    })();
+
     try {
       const url = buildWhatsAppUrl(data.store.whatsappNumber, message);
       // open() with "noopener" always returns null by spec — open plain, then
@@ -250,7 +274,7 @@ function CartDrawerInner({
         // Cross-origin windows may reject the assignment. Safe to ignore.
       }
       toast.success("WhatsApp dibuka", {
-        description: "Kirim pesan yang sudah disiapkan untuk menyelesaikan pesanan.",
+        description: `ID Order kamu ${snapshot.reference} — simpan untuk melacak status.`,
       });
     } catch {
       toast.error("Nomor WhatsApp store tidak valid", {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RouteLink } from "@/components/shared/route-link";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { GameMark } from "@/components/shared/game-mark";
 import { PriceTag } from "@/components/shared/price-tag";
@@ -136,9 +137,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
         </span>
 
         <div className="relative flex shrink-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-primary/80 font-display text-base font-bold text-primary-foreground shadow-[var(--glow-primary)]">
-            N
-          </span>
+          <BrandMark size={32} />
           <span className="font-display text-base font-semibold uppercase tracking-tight">Nexa Store</span>
         </div>
 
@@ -317,9 +316,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
           className="w-full max-w-sm"
         >
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-primary/80 font-display text-base font-bold text-primary-foreground shadow-[var(--glow-primary)]">
-              N
-            </span>
+            <BrandMark size={32} />
             <span className="font-display text-base font-semibold uppercase tracking-tight">Nexa Store</span>
           </div>
 

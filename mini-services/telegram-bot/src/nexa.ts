@@ -460,3 +460,65 @@ export async function chatMarkRead(conversationId: string, base?: string): Promi
     base ?? config.apiBase
   );
 }
+
+export async function chatClearOne(conversationId: string, base?: string): Promise<Record<string, unknown>> {
+  return request(
+    "POST",
+    "/api/developer/chat",
+    { action: "clearOne", conversationId },
+    true,
+    base ?? config.apiBase
+  );
+}
+
+export async function chatClearAll(base?: string): Promise<Record<string, unknown>> {
+  return request("POST", "/api/developer/chat", { action: "clearAll" }, true, base ?? config.apiBase);
+}
+
+// ---------------------------------------------------------------------------
+// Pesanan terlacak (v1.6.0)
+// ---------------------------------------------------------------------------
+
+export type TrackedOrder = {
+  id: string;
+  summary: string;
+  source: "instant" | "cart";
+  items: Array<{ gameName: string; productName: string; price: number }>;
+  total: number;
+  status: "pending" | "processing" | "success" | "cancel";
+  statusReason: string | null;
+  statusUpdatedAt: string | null;
+  createdAt: string;
+  history: Array<{ status: "pending" | "processing" | "success" | "cancel"; at: string; reason: string | null }>;
+};
+
+/** Lacak pesanan via endpoint publik — tanpa sesi, jalan di base mana pun. */
+export async function orderTrack(orderId: string, base?: string): Promise<TrackedOrder | null> {
+  try {
+    const res = await fetch(
+      `${(base ?? config.apiBase).replace(/\/+$/, "")}/api/orders/track?id=${encodeURIComponent(orderId)}`,
+      { signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { ok: boolean; data?: TrackedOrder };
+    return json.ok && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ubah status + keterangan pesanan (perlu sesi admin/developer). */
+export async function orderSetStatus(
+  orderId: string,
+  status: "pending" | "processing" | "success" | "cancel",
+  reason: string,
+  base?: string
+): Promise<Record<string, unknown>> {
+  return request(
+    "PATCH",
+    "/api/developer/orders",
+    { id: orderId, status, reason: reason || undefined },
+    true,
+    base ?? config.apiBase
+  );
+}

@@ -35,7 +35,7 @@ const bodySchema = z.object({
   events: z
     .array(
       z.object({
-        type: z.enum(["view", "chat_open", "order_click", "wa_handoff"]),
+        type: z.enum(["view", "chat_open", "order_click", "wa_handoff", "report_submit", "order_track"]),
         path: z.string().min(1).max(120),
         referrer: z.string().max(300).optional(),
         device: z.enum(["mobile", "desktop"]).optional(),

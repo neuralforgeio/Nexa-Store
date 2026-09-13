@@ -7,7 +7,10 @@ import {
   EMPTY_BANNERS,
   EMPTY_BOT_STATE,
   EMPTY_CHAT,
+  EMPTY_ORDERS,
   EMPTY_PROMOS,
+  EMPTY_PUSH_SUBS,
+  EMPTY_REPORTS,
   EMPTY_SCHEDULES,
   parseAnalytics,
   parseBanners,
@@ -18,7 +21,10 @@ import {
   bannersFileSchema,
   botStateFileSchema,
   chatFileSchema,
+  ordersFileSchema,
   promosFileSchema,
+  pushSubsFileSchema,
+  reportsFileSchema,
   schedulesFileSchema,
 } from "./schema";
 import type { AnalyticsFile } from "./types";
@@ -36,7 +42,16 @@ import type { BannersFile, ChatFile, PromosFile, SchedulesFile } from "./schema"
  * ignoreCommand skips rebuilds (data is read at runtime, no rebuild needed).
  */
 
-export type FeatureKey = "promos" | "banners" | "schedules" | "chat" | "analytics" | "bot-state";
+export type FeatureKey =
+  | "promos"
+  | "banners"
+  | "schedules"
+  | "chat"
+  | "analytics"
+  | "bot-state"
+  | "reports"
+  | "orders"
+  | "push-subs";
 
 const FILES: Record<FeatureKey, string> = {
   promos: "data/store/promos.json",
@@ -45,6 +60,9 @@ const FILES: Record<FeatureKey, string> = {
   chat: "data/store/chat.json",
   analytics: "data/store/analytics.json",
   "bot-state": "data/store/bot-state.json",
+  reports: "data/store/reports.json",
+  orders: "data/store/orders.json",
+  "push-subs": "data/store/push-subs.json",
 };
 
 const API = "https://api.github.com";
@@ -191,7 +209,13 @@ function validate(key: FeatureKey, raw: string): void {
             ? chatFileSchema.safeParse(data)
             : key === "bot-state"
               ? botStateFileSchema.safeParse(data)
-              : analyticsFileSchema.safeParse(data);
+              : key === "reports"
+                ? reportsFileSchema.safeParse(data)
+                : key === "orders"
+                  ? ordersFileSchema.safeParse(data)
+                  : key === "push-subs"
+                    ? pushSubsFileSchema.safeParse(data)
+                    : analyticsFileSchema.safeParse(data);
   if (!check.success) {
     const issue = check.error?.issues?.[0];
     throw new FeatureStoreError(
@@ -247,6 +271,12 @@ function defaultFor(key: FeatureKey): unknown {
       return EMPTY_ANALYTICS;
     case "bot-state":
       return EMPTY_BOT_STATE;
+    case "reports":
+      return EMPTY_REPORTS;
+    case "orders":
+      return EMPTY_ORDERS;
+    case "push-subs":
+      return EMPTY_PUSH_SUBS;
   }
 }
 

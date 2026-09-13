@@ -35,7 +35,7 @@ di data store (`data/store/bot-state.json`, commit `ops:*` tanpa rebuild).
 | ---- | ---- |
 | 🔒 Lockdown | Total, rute tertentu (`/`, `/games`, `/games/*`, `/help`), dengan alasan; angkat lockdown |
 | 🛠 Perbaikan | Maintenance total / rute dengan pesan; akhiri perbaikan |
-| 💬 Obrolan | Notifikasi pesan baru dari pengunjung (instan); daftar percakapan; balas & tandai dibaca — balasan tampil di widget chat storefront |
+| 💬 Obrolan | Notifikasi pesan baru dari pengunjung (instan); daftar percakapan; balas & tandai dibaca — balasan tampil di widget chat storefront; 🔍 cari percakapan; 🗑 hapus satu / 🧹 hapus semua (v1.6.0) |
 | 🏷 Promo | Buat event diskon (nama → persen → cakupan semua game / satu game → durasi); aktif/nonaktif promo |
 | 📣 Banner | Terbitkan banner pengumuman 4 level dengan tombol CTA opsional + durasi; tampil/sembunyikan |
 | 📊 Analitik | Pengunjung online, views hari ini/7 hari, halaman populer, sumber trafik, perangkat |
@@ -45,6 +45,8 @@ di data store (`data/store/bot-state.json`, commit `ops:*` tanpa rebuild).
 | 🚀 Deployment | Deploy ulang commit terbaru, pilih commit mana pun dari daftar, atau deploy ulang dari deployment produksi lama (rollback) — progres build dipantau dan dilaporkan |
 | ⚙️ Setelan | Ubah nomor WhatsApp & announcement; lihat template checkout |
 | 📊 Status | Gate, katalog, analitik singkat, tugas menunggu, versi app, build terakhir |
+| 📦 Lacak Pesanan | `/lacak_order <ID>` → kartu pesanan (item, total, riwayat, keterangan) + tombol status pending/proses/sukses/batal → kirim keterangan → pengunjung membacanya di /track (v1.6.0). Notifikasi pesanan baru tampil otomatis dengan tombol status |
+| 🚩 Laporan | Laporan bug/saran pengguna dari /reports masuk ke chat pemilik lengkap waktu WIB, nama, tipe, dan lampiran media (v1.6.0) |
 
 Otomatis di latar belakang: notifikasi obrolan baru (polling produksi 25 dtk),
 eksekutor tugas terjadwal (cek 30 dtk), dan digest analitik harian 21:00 WIB.
@@ -55,8 +57,10 @@ Ketik `/` di chat dan Telegram menampilkan seluruh perintah berdeskripsi
 (terdaftar otomatis via `setMyCommands`):
 
 `/menu` · `/status` · `/lockdown` · `/maintenance` · `/promo` · `/banner` ·
-`/chat` · `/tasks` · `/analytics` · `/admin` · `/catalog` · `/deploy` ·
-`/settings` · `/runtime` · `/cancel` · `/help`
+`/chat` · `/lacak_order` · `/tasks` · `/analytics` · `/admin` · `/catalog` ·
+`/deploy` · `/settings` · `/runtime` · `/cancel` · `/help`
+
+(17 perintah)
 
 Setiap perintah membuka menu yang sama dengan tombolnya — tidak ada fitur
 yang hanya bisa dijangkau lewat satu jalur.

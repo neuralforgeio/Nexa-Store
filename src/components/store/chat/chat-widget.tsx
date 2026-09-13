@@ -6,7 +6,17 @@ import { toast } from "sonner";
 import type { Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, X, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/shared/brand-mark";
+import {
+  Bell,
+  BellOff,
+  Check,
+  MessageCircle,
+  Send,
+  Trash2,
+  X,
+  ShieldCheck,
+} from "lucide-react";
 import { track } from "@/lib/analytics/tracker";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +32,7 @@ import { cn } from "@/lib/utils";
 const TOKEN_KEY = "nexa.chat.token";
 const NAME_KEY = "nexa.chat.name";
 const SEEN_KEY = "nexa.chat.seen";
+const PUSH_KEY = "nexa.chat.push";
 const WS_QUERY = "/?XTransformPort=3005";
 
 type ChatMessageDto = { id: string; from: "user" | "owner"; text: string; at: string };
@@ -50,6 +61,9 @@ export function ChatWidget() {
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
   const [wsLive, setWsLive] = useState(false);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const tokenRef = useRef<string>("");
   const seenAtRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,6 +71,105 @@ export function ChatWidget() {
   const openRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const focusNameRef = useRef(false);
+
+  // Setujui/munculkan notifikasi browser (Web Push, v1.6.0).
+  const togglePush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (pushOn) {
+        // Matikan: berhenti berlangganan + hapus di server.
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) await sub.unsubscribe();
+        } catch {
+          // SW bisa absen — lanjut hapus di server.
+        }
+        await fetch("/api/chat/subscribe", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "unsubscribe", token: tokenRef.current }),
+        });
+        setPushOn(false);
+        try {
+          window.localStorage.removeItem(PUSH_KEY);
+        } catch {
+          // ignore
+        }
+        toast.success("Notifikasi dimatikan");
+        return;
+      }
+
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        toast.error("Browser ini tidak mendukung notifikasi.");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        toast.info("Izin notifikasi tidak diberikan", {
+          description: "Kamu bisa mengaktifkannya nanti lewat ikon bel.",
+        });
+        return;
+      }
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+      if (!publicKey) {
+        toast.error("Notifikasi belum dikonfigurasi di server.");
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey,
+      });
+      const json = sub.toJSON();
+      const res = await fetch("/api/chat/subscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "subscribe",
+          token: tokenRef.current,
+          subscription: { endpoint: json.endpoint, keys: json.keys },
+          name: name.trim() || undefined,
+        }),
+      });
+      const out = (await res.json()) as { ok: boolean; error?: { message: string } };
+      if (!res.ok || !out.ok) throw new Error(out.error?.message ?? "Gagal menyimpan langganan.");
+      setPushOn(true);
+      try {
+        window.localStorage.setItem(PUSH_KEY, "1");
+      } catch {
+        // ignore
+      }
+      toast.success("Notifikasi aktif", {
+        description: "Kamu akan diberi tahu saat store membalas obrolanmu.",
+      });
+    } catch (e) {
+      toast.error("Gagal mengatur notifikasi", { description: (e as Error).message });
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  // Bersihkan obrolan milik sendiri (v1.6.0).
+  const clearChat = async () => {
+    setConfirmClear(false);
+    try {
+      const res = await fetch("/api/chat/clear", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token: tokenRef.current }),
+      });
+      const json = (await res.json()) as { ok: boolean; error?: { message: string } };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? "Gagal membersihkan obrolan.");
+      setMessages([]);
+      setUnread(0);
+      toast.success("Obrolan dibersihkan");
+    } catch (e) {
+      toast.error("Gagal membersihkan obrolan", { description: (e as Error).message });
+    }
+  };
 
   useEffect(() => {
     tokenRef.current = loadToken();
@@ -68,6 +181,12 @@ export function ChatWidget() {
         setNameEdit(false);
       }
       seenAtRef.current = window.localStorage.getItem(SEEN_KEY) ?? "";
+      // Push: cek cepat izin + langganan aktif (tanpa network).
+      if (window.localStorage.getItem(PUSH_KEY) === "1" && "Notification" in window && Notification.permission === "granted") {
+        setPushOn(true);
+      } else {
+        window.localStorage.removeItem(PUSH_KEY);
+      }
     } catch {
       // ignore
     }
@@ -233,12 +352,7 @@ export function ChatWidget() {
       >
         {/* Header */}
         <div className="flex flex-none items-center gap-2.5 border-b border-border/70 bg-background/95 px-4 py-3">
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 font-display text-sm font-bold text-primary"
-          >
-            N
-          </span>
+          <BrandMark size={34} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-sm font-semibold">Obrolan Nexa Store</p>
             <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -248,6 +362,35 @@ export function ChatWidget() {
           </div>
           <button
             type="button"
+            aria-label={pushOn ? "Matikan notifikasi balasan" : "Nyalakan notifikasi balasan"}
+            aria-pressed={pushOn}
+            title={pushOn ? "Notifikasi aktif" : "Diberi tahu saat dibalas"}
+            onClick={() => void togglePush()}
+            disabled={pushBusy}
+            className={cn(
+              "rounded-md p-1.5 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+              pushOn ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            {pushOn ? (
+              <Bell aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              <BellOff aria-hidden="true" className="h-4 w-4" />
+            )}
+          </button>
+          {messages.length > 0 ? (
+            <button
+              type="button"
+              aria-label="Bersihkan obrolan"
+              title="Bersihkan obrolan"
+              onClick={() => setConfirmClear(true)}
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+            </button>
+          ) : null}
+          <button
+            type="button"
             aria-label="Tutup obrolan"
             onClick={() => setOpen(false)}
             className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -255,6 +398,24 @@ export function ChatWidget() {
             <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
+
+        {confirmClear ? (
+          <div role="alertdialog" aria-label="Konfirmasi bersihkan obrolan" className="flex-none border-b border-border/70 bg-muted/40 px-4 py-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Hapus seluruh pesan obrolan ini dari perangkatmu? Riwayat di sisi
+              pemilik juga ikut terhapus.
+            </p>
+            <div className="mt-2.5 flex gap-2">
+              <Button size="sm" variant="destructive" className="h-7 gap-1.5" onClick={() => void clearChat()}>
+                <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                Ya, bersihkan
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7" onClick={() => setConfirmClear(false)}>
+                Batal
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Messages */}
         <div ref={scrollRef} className="scroll-slim min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
@@ -369,7 +530,7 @@ export function ChatWidget() {
         </div>
       </motion.div>
     ),
-    [reduced, wsLive, messages, name, nameEdit, draft, sending]
+    [reduced, wsLive, messages, name, nameEdit, draft, sending, pushOn, pushBusy, confirmClear]
   );
 
   return (

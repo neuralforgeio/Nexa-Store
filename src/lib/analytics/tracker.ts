@@ -13,7 +13,13 @@
 const TOKEN_KEY = "nexa.analytics.token";
 const QUEUE_FLUSH_MS = 2500;
 
-export type TrackType = "view" | "chat_open" | "order_click" | "wa_handoff";
+export type TrackType =
+  | "view"
+  | "chat_open"
+  | "order_click"
+  | "wa_handoff"
+  | "report_submit"
+  | "order_track";
 type QueuedEvent = { type: TrackType; path: string; referrer?: string; device?: "mobile" | "desktop" };
 
 let queue: QueuedEvent[] = [];

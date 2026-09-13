@@ -182,6 +182,13 @@ async function dispatchRoot(chatId: number, s: Session, data: string): Promise<v
       await send(ui.chatMenuText(all), ui.chatMenuKeyboard(all.length));
       return;
     }
+    case "ord": {
+      clearFlow(s);
+      s.stage = "input";
+      s.input = "order-id";
+      await send(ui.orderIdPromptText());
+      return;
+    }
     case "prm": {
       clearFlow(s);
       const [promos, catalog] = await Promise.all([
@@ -606,6 +613,102 @@ async function onCallback(q: NonNullable<tg.TelegramUpdate["callback_query"]>): 
         s.stage = "input";
         s.input = "chat-reply";
         await send(ui.inputPromptText("chat-reply"));
+        return;
+      }
+      case data === "cht:s": {
+        clearFlow(s);
+        s.stage = "input";
+        s.input = "chat-search";
+        await send(ui.chatSearchPromptText());
+        return;
+      }
+      case data.startsWith("cht:cl:"): {
+        const id = data.slice(7);
+        const origin = chatOrigin(id);
+        const conv = (s.lists.conversations ?? []).find((c) => c.id === id);
+        clearFlow(s);
+        s.stage = "confirm";
+        s.pending = { type: "chat-clear", conversationId: id, origin };
+        await send(
+          [
+            "🗑 <b>HAPUS PERCAKAPAN</b>",
+            "",
+            `Percakapan: <b>${tg.esc(conv?.name ?? id)}</b> (${origin === "local" ? "sandbox" : "produksi"})`,
+            "",
+            "Seluruh pesan akan dihapus permanen dari sisi pemilik.",
+          ].join("\n"),
+          ui.confirmKeyboard("🗑 Ya, hapus")
+        );
+        return;
+      }
+      case data === "cht:clall": {
+        clearFlow(s);
+        s.stage = "confirm";
+        s.pending = { type: "chat-clear-all" };
+        await send(
+          [
+            "🧹 <b>HAPUS SEMUA OBROLAN</b>",
+            "",
+            "Seluruh percakapan — milik semua pengunjung — akan dihapus",
+            "permanen, di produksi maupun sandbox. Tindakan ini tidak bisa",
+            "dibatalkan.",
+          ].join("\n"),
+          ui.confirmKeyboard("🧹 Ya, hapus semua")
+        );
+        return;
+      }
+
+      // ----- v1.6.0: lacak pesanan -----
+      case data === "ord": {
+        clearFlow(s);
+        s.stage = "input";
+        s.input = "order-id";
+        await send(ui.orderIdPromptText());
+        return;
+      }
+      case data.startsWith("ord:"): {
+        const rest = data.slice(4); // "<id>[:<status|p|l>]"
+        const [orderId, tail] = rest.split(":");
+        if (!orderId) return void (await ok("ID Order tidak valid."));
+
+        // Tombol "coba di sumber lain" dari layar tidak-ditemukan.
+        if (tail === "p" || tail === "l") {
+          const base = tail === "l" ? config.localBase : undefined;
+          const order = await nexa.orderTrack(orderId, base);
+          if (!order) {
+            await edit(ui.orderNotFoundText(orderId, tail === "l" ? "local" : "prod"), ui.orderNotFoundKeyboard(orderId));
+            return;
+          }
+          await edit(ui.orderCardText(order, tail === "l" ? "local" : "prod"), ui.orderStatusKeyboard(orderId));
+          return;
+        }
+
+        if (tail === "pending" || tail === "processing" || tail === "success" || tail === "cancel") {
+          // Cari pesanan dulu untuk menentukan asal (produksi/sandbox).
+          const inProd = await nexa.orderTrack(orderId);
+          const origin: "local" | "prod" = inProd ? "prod" : "local";
+          if (!inProd) {
+            const inLocal = await nexa.orderTrack(orderId, config.localBase);
+            if (!inLocal) {
+              await ok("Pesanan tidak ditemukan. Kirim /lacak_order untuk ID lain.");
+              return;
+            }
+          }
+          clearFlow(s);
+          s.orderCtx = { orderId, origin, status: tail };
+          s.stage = "input";
+          s.input = "order-reason";
+          await send(ui.orderReasonPromptText(orderId, tail));
+          return;
+        }
+
+        // ord:<id> tanpa status → tampilkan kartu pesanan.
+        const order = (await nexa.orderTrack(orderId)) ?? (await nexa.orderTrack(orderId, config.localBase));
+        if (!order) {
+          await edit(ui.orderNotFoundText(orderId, "prod"), ui.orderNotFoundKeyboard(orderId));
+          return;
+        }
+        await edit(ui.orderCardText(order, "prod"), ui.orderStatusKeyboard(orderId));
         return;
       }
 
@@ -1376,6 +1479,75 @@ async function onInputText(chatId: number, s: Session, kind: string, text: strin
       );
       return;
     }
+    case "chat-search": {
+      const q = text.trim().toLowerCase();
+      if (q.length < 2) {
+        await send("\u26a0\ufe0f Minimal 2 karakter untuk mencari.");
+        return;
+      }
+      const all = s.lists.conversations ?? [];
+      const filtered = all.filter(
+        (c) =>
+          (c.name ?? "").toLowerCase().includes(q) ||
+          (c.lastText ?? "").toLowerCase().includes(q) ||
+          c.messages.some((m) => m.text.toLowerCase().includes(q))
+      );
+      s.stage = "idle";
+      s.input = undefined;
+      if (filtered.length === 0) {
+        await send(ui.chatNoResultText(q), [
+          [{ text: "\ud83d\udcec Semua obrolan", callback_data: "cht" }],
+          [{ text: "\u2b05\ufe0f Menu", callback_data: "menu" }],
+        ]);
+        return;
+      }
+      // Simpan hasil filter sebagai daftar aktif — indeks cht:v:N tetap valid.
+      s.lists.conversations = filtered;
+      await send(ui.chatMenuText(filtered), ui.chatMenuKeyboard(filtered.length));
+      return;
+    }
+    case "order-id": {
+      const id = text.trim().toUpperCase();
+      if (!/^NEXA-\d{6}-[A-HJKMNP-TV-Z23-9]{4}$/.test(id)) {
+        await send("\u26a0\ufe0f Format ID salah. Contoh benar: <code>NEXA-260914-A7KP</code>");
+        return;
+      }
+      await send("\ud83d\udd0d Mencari pesanan\u2026");
+      const inProd = await nexa.orderTrack(id);
+      const order = inProd ?? (await nexa.orderTrack(id, config.localBase));
+      if (!order) {
+        s.stage = "idle";
+        s.input = undefined;
+        await send(ui.orderNotFoundText(id, "prod"), ui.orderNotFoundKeyboard(id));
+        return;
+      }
+      s.stage = "idle";
+      s.input = undefined;
+      await send(ui.orderCardText(order, inProd ? "prod" : "local"), ui.orderStatusKeyboard(id));
+      return;
+    }
+    case "order-reason": {
+      const reason = text.trim().slice(0, 500);
+      if (reason.length < 1) {
+        await send("\u26a0\ufe0f Tulis keterangannya (atau \u2014 bila tanpa keterangan).");
+        return;
+      }
+      const ctx = s.orderCtx;
+      if (!ctx) {
+        await send("\u26a0\ufe0f Tidak ada pesanan aktif. Buka /lacak_order dulu.");
+        return;
+      }
+      s.stage = "confirm";
+      s.pending = {
+        type: "order-status",
+        orderId: ctx.orderId,
+        origin: ctx.origin,
+        status: ctx.status,
+        reason: reason === "\u2014" ? "" : reason,
+      };
+      await send(ui.orderStatusConfirmText(ctx.orderId, ctx.status, reason), ui.confirmKeyboard("\u2705 Ya, ubah status"));
+      return;
+    }
 
     // ----- v1.3.0: promo -----
     case "promo-title": {
@@ -1821,6 +1993,78 @@ async function executePending(chatId: number, messageId: number, pending: NonNul
           );
         } finally {
           s.chatCtx = undefined;
+        }
+        return;
+      }
+      case "chat-clear": {
+        try {
+          await nexa.chatClearOne(
+            pending.conversationId,
+            pending.origin === "local" ? config.localBase : undefined
+          );
+          await edit(
+            [
+              "\u2705 <b>PERCAKAPAN DIHAPUS</b>",
+              "",
+              `Sumber: ${pending.origin === "local" ? "sandbox" : "produksi"}`,
+            ].join("\n"),
+            [
+              [{ text: "\ud83d\udcec Semua obrolan", callback_data: "cht" }],
+              [{ text: "\u2b05\ufe0f Menu", callback_data: "menu" }],
+            ]
+          );
+        } catch (e) {
+          await send(`Gagal: ${(e as Error).message.slice(0, 80)}`);
+        }
+        return;
+      }
+      case "chat-clear-all": {
+        try {
+          await nexa.chatClearAll();
+          await nexa.chatClearAll(config.localBase).catch(() => undefined);
+          await edit(
+            [
+              "\u2705 <b>SEMUA OBROLAN DIHAPUS</b>",
+              "",
+              "Riwayat percakapan seluruh pengunjung sudah dibersihkan",
+              "(produksi dan sandbox).",
+            ].join("\n"),
+            [[{ text: "\u2b05\ufe0f Menu", callback_data: "menu" }]]
+          );
+        } catch (e) {
+          await send(`Gagal: ${(e as Error).message.slice(0, 80)}`);
+        }
+        return;
+      }
+      case "order-status": {
+        try {
+          await nexa.orderSetStatus(
+            pending.orderId,
+            pending.status,
+            pending.reason,
+            pending.origin === "local" ? config.localBase : undefined
+          );
+          await edit(
+            [
+              "\u2705 <b>STATUS PESANAN DIPERBARUI</b>",
+              "",
+              `ID: <code>${tg.esc(pending.orderId)}</code>`,
+              `Status: <b>${ui.ORDER_STATUS_LABEL[pending.status] ?? pending.status}</b>`,
+              pending.reason ? `Keterangan: ${tg.esc(pending.reason)}` : "",
+              "",
+              "Pengunjung melihat perubahan ini di halaman Lacak Pesanan.",
+            ]
+              .filter(Boolean)
+              .join("\n"),
+            [
+              [{ text: "\ud83d\udd01 ID lain", callback_data: "ord" }],
+              [{ text: "\u2b05\ufe0f Menu", callback_data: "menu" }],
+            ]
+          );
+        } catch (e) {
+          await send(`Gagal: ${(e as Error).message.slice(0, 80)}`);
+        } finally {
+          s.orderCtx = undefined;
         }
         return;
       }

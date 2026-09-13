@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.5.0-amber)
+![Version](https://img.shields.io/badge/version-1.6.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -38,6 +38,17 @@ private **Telegram bot** for full remote control from the developer's pocket.
 - **Cart persistence** — the cart survives reloads via `localStorage`; stale
   entries (deleted/disabled products) are reconciled away with a clear notice.
 - **Local order history** — lightweight, clearly labeled as device-local.
+- **Trackable orders (v1.6.0)** — every checkout (instant or cart) registers a
+  server-side order with ID `NEXA-YYMMDD-XXXX`; the ID rides along in the
+  WhatsApp message to the store and as a Telegram notification to the owner,
+  and visitors follow the status (pending → processing → success/cancel +
+  admin's reason) on the **`/track` page**.
+- **Reports (v1.6.0)** — `/reports` lets visitors file bugs, feature requests
+  or general messages, optionally with an image/video attachment (forwarded
+  straight to the owner's Telegram with a timestamped, formatted card).
+- **Web Push notifications (v1.6.0)** — visitors who opt in (bell toggle in
+  the chat widget) get a browser notification when the store replies, even
+  after the tab is closed. VAPID keys, service worker, consent-first.
 - **Scroll-aware edge fades** — horizontal scrollers only dim the side where
   more content exists; the last card always renders at full strength.
 - Dark / light / system themes, scroll-reveal animations, `prefers-reduced-motion`
@@ -56,6 +67,13 @@ private **Telegram bot** for full remote control from the developer's pocket.
   permissions enforced server-side).
 - **Live chat replies** — the admin answers visitor messages from the
   storefront chat widget in `/admin/chat`, with an unread badge on the sidebar.
+- **Chat tools (v1.6.0)** — search conversations by name/content, delete a
+  single conversation, or clear all conversations (mirrored as buttons in the
+  Telegram bot); visitors can also clear their own chat from the widget.
+- **Reports console (v1.6.0)** — `/admin/reports` lists incoming bug/feature
+  reports with metadata and attachment indicators (media lives in Telegram).
+- **No duplicated nav** — sections shared by Admin & Developer (promo, banner,
+  chat, reports) appear once in the sidebar (v1.6.0).
 - **Collapsible sidebar** — the collapse toggle sits in the header next to the
   logo, with a global **Ctrl/Cmd+B** shortcut; state persists per browser.
 
@@ -249,6 +267,34 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.6.0 — Lacak pesanan, laporan, push notification, logo baru (2026-09-14)
+- **📦 Lacak pesanan end-to-end** — checkout instant & keranjang kini
+  membuat rekaman pesanan ber-ID `NEXA-YYMMDD-XXXX` (tersimpan di data store,
+  write-through GitHub). ID tercantum di pesan WhatsApp + notifikasi Telegram
+  dengan tombol status; admin/dev mengubah status (`pending/processing/
+  success/cancel`) + keterangan lewat bot `/lacak_order` atau API — dan
+  pengunjung membacanya di halaman `/track` (navbar: **Lacak Pesanan**).
+- **🚩 Halaman Laporan `/reports`** — bug/saran/lainnya + lampiran gambar/video
+  (≤2.5MB/4MB) diteruskan ke Telegram pemilik dengan format waktu WIB, nama,
+  dan tipe; metadata tersimpan dan tampil di panel `/admin/reports` (hapus
+  satu / hapus semua).
+- **🔔 Web Push (opt-in)** — tombol bel di widget chat: izin browser →
+  langganan VAPID → balasan pemilik jadi notifikasi browser meski tab
+  tertutup. Langganan kedaluwarsa dibersihkan otomatis.
+- **🗑 Obrolan bisa dibersihkan dua arah** — pengunjung hapus obrolan sendiri
+  (ikon tempat sampah + konfirmasi); admin/dev hapus satu percakapan atau
+  semua (tombol juga ada di bot Telegram). Pencarian percakapan di panel
+  (nama/isi pesan) + tombol 🔍 Cari di bot.
+- **🎨 Logo baru** — “N” emas dengan sparkle (upload pemilik) dipasang di
+  header, footer, login, widget chat, layar admin-blocked + favicon.
+- **🧭 Navbar & footer** — link baru: Lacak Pesanan, Laporan.
+- **🧹 Panel anti-dobel** — section bersama admin/dev tampil sekali.
+- **🔑 Login sandbox = produksi** — kredensial sandbox disinkronkan dari env
+  produksi agar pemilik bisa menguji di preview panel dengan akun yang sama.
+- **🤖 Bot: `/lacak_order`** terdaftar di menu "/" (17 perintah); notifikasi
+  pesanan baru dengan tombol status; pesan laporan pengguna masuk ke chat
+  pemilik. Pair code tetap `NEXA-STORE-2026`.
 
 ### v1.5.0 — Obrolan untuk Admin + notifikasi chat dua arah (2026-09-14)
 - **💬 Obrolan di panel Admin** — Admin kini bisa membalas pengunjung lewat

@@ -18,6 +18,7 @@ import {
   KeyRound,
   LayoutDashboard,
   Layers,
+  Flag,
   LogOut,
   Megaphone,
   Menu,
@@ -52,17 +53,21 @@ const ADMIN_NAV: Array<NavEntry<AdminSection>> = [
   { key: "promo", label: "Event Promo", icon: Percent },
   { key: "banner", label: "Banner", icon: Megaphone },
   { key: "chat", label: "Obrolan", icon: MessagesSquare },
+  { key: "reports", label: "Laporan", icon: Flag },
   { key: "settings", label: "Pengaturan", icon: Settings2 },
   { key: "checkout", label: "Checkout", icon: MessageSquareText },
 ];
 
+/**
+ * Nav developer TIDAK mengulang section yang sudah ada di panel admin
+ * (promo/banner/chat/reports) — developer melihat ADMIN_NAV juga, jadi
+ * section bersama cukup sekali di sana (anti-dobel, v1.6.0).
+ * URL /dev/promo dll. tetap berfungsi bila diakses langsung.
+ */
 const DEVELOPER_NAV: Array<NavEntry<DeveloperSection>> = [
   { key: "dashboard", label: "Developer", icon: ShieldCheck },
   { key: "access", label: "Akses", icon: KeyRound },
   { key: "control", label: "Kontrol Situs", icon: Power },
-  { key: "promo", label: "Event Promo", icon: Percent },
-  { key: "banner", label: "Banner", icon: Megaphone },
-  { key: "chat", label: "Obrolan", icon: MessagesSquare },
   { key: "analytics", label: "Analitik", icon: BarChart3 },
   { key: "schedule", label: "Tugas Terjadwal", icon: AlarmClock },
   { key: "git", label: "Git Sync", icon: GitBranch },

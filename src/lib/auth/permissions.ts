@@ -31,6 +31,8 @@ export type Capability =
   | "banners.manage"
   | "schedules.manage"
   | "chat.manage"
+  | "reports.manage"
+  | "orders.manage"
   | "analytics.read";
 
 const ADMIN_CAPABILITIES = new Set<Capability>([
@@ -50,6 +52,8 @@ const ADMIN_CAPABILITIES = new Set<Capability>([
   "promos.manage",
   "banners.manage",
   "chat.manage",
+  "reports.manage",
+  "orders.manage",
 ]);
 
 const DEVELOPER_CAPABILITIES = new Set<Capability>([

@@ -18,7 +18,7 @@ const VISITOR_CAP = 20000;
 const RECENT_CAP = 400;
 
 export type TrackEvent = {
-  type: "view" | "chat_open" | "order_click" | "wa_handoff";
+  type: "view" | "chat_open" | "order_click" | "wa_handoff" | "report_submit" | "order_track";
   path: string;
   referrer?: string;
   device?: "mobile" | "desktop";

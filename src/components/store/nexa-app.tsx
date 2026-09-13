@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAppRoute, type AdminSection, type DeveloperSection } from "@/lib/router";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { useSession, useCatalog } from "@/lib/queries";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -11,6 +12,8 @@ import { HomeView } from "./home-view";
 import { GamesView } from "./games-view";
 import { GameDetailView } from "./game-detail-view";
 import { HelpView } from "./help-view";
+import { TrackView } from "./track-view";
+import { ReportsView } from "./reports-view";
 import { LoginView } from "./login-view";
 import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { RouteLink } from "@/components/shared/route-link";
@@ -36,6 +39,7 @@ import { DevDeployment } from "@/components/developer/dev-deployment";
 import { DevChat } from "@/components/developer/dev-chat";
 import { DevPromo } from "@/components/developer/dev-promo";
 import { DevBanner } from "@/components/developer/dev-banner";
+import { DevReports } from "@/components/developer/dev-reports";
 import { DevAnalytics } from "@/components/developer/dev-analytics";
 import { DevSchedule } from "@/components/developer/dev-schedule";
 import { Button } from "@/components/ui/button";
@@ -81,7 +85,12 @@ function AppFrame() {
   const blocked = !blockedDismissed ? (stickyBlock ?? session.data?.blocked ?? null) : null;
 
   const isPublic =
-    route.view === "home" || route.view === "games" || route.view === "game" || route.view === "help";
+    route.view === "home" ||
+    route.view === "games" ||
+    route.view === "game" ||
+    route.view === "help" ||
+    route.view === "track" ||
+    route.view === "reports";
 
   // Scroll to top on view change.
   useEffect(() => {
@@ -184,6 +193,8 @@ function AppFrame() {
     if (route.view === "games") return <GamesView />;
     if (route.view === "game") return <GameDetailView slug={route.slug} />;
     if (route.view === "help") return <HelpView />;
+    if (route.view === "track") return <TrackView />;
+    if (route.view === "reports") return <ReportsView />;
 
     if (route.view === "not-found") {
       return <NotFoundView />;
@@ -235,12 +246,7 @@ function AppFrame() {
   if (blocked) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[oklch(0.165_0.015_25)] px-4">
-        <span
-          aria-hidden="true"
-          className="mb-8 flex h-10 w-10 items-center justify-center rounded-xl border border-[oklch(0.45_0.16_25_/_0.4)] bg-[oklch(0.22_0.04_25)] font-display text-lg font-bold text-[oklch(0.55_0.14_25)]"
-        >
-          N
-        </span>
+        <BrandMark size={40} className="mb-8" />
         <BlockedAdminDialog
           open
           onOpenChange={(open) => {
@@ -316,6 +322,9 @@ function AdminSectionView({
     // Developer; izin dikontrol capability chat.manage.
     case "chat":
       return <DevChat />;
+    // Laporan pengguna (v1.6.0) — bug/saran/lainnya dari /reports.
+    case "reports":
+      return <DevReports />;
   }
 }
 

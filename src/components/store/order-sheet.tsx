@@ -234,10 +234,42 @@ function OrderSheetBody({
     }
   };
 
-  const submitToWhatsApp = handleSubmit(() => {
+  const submitToWhatsApp = handleSubmit(async (data) => {
     track("wa_handoff");
+    // Pesanan terlacak (v1.6.0): buat rekaman server dulu → ID Order ikut
+    // tercantum di pesan WhatsApp + notifikasi Telegram untuk admin.
+    // Gagal membuat → pesanan WA tetap jalan (degrade mulus).
+    let orderId: string | undefined;
     try {
-      const url = buildWhatsAppUrl(store.whatsappNumber, message);
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          source: "instant",
+          summary: `${domainGame.name} — ${productTitle(product)}`,
+          customerName: (data.customerName ?? "").trim() || undefined,
+          items: [
+            {
+              gameName: domainGame.name,
+              productName: productTitle(product),
+              price: promo.percentOff > 0 ? promo.price : product.priceIdr,
+            },
+          ],
+          total: promo.percentOff > 0 ? promo.price : product.priceIdr,
+        }),
+      });
+      const json = (await res.json()) as { ok: boolean; data?: { id: string } };
+      if (res.ok && json.ok && json.data?.id) orderId = json.data.id;
+    } catch {
+      // offline / server sibuk — WA tetap terkirim tanpa ID Order
+    }
+
+    const finalMessage = orderId
+      ? `${message}\nID Order: ${orderId}`
+      : message;
+
+    try {
+      const url = buildWhatsAppUrl(store.whatsappNumber, finalMessage);
       // NOTE: open() with the "noopener" feature always returns null by spec,
       // so the popup-blocked check would misfire. Open plain, then detach
       // the opener manually for the same security property.
@@ -248,7 +280,7 @@ function OrderSheetBody({
           description: "Pesan sudah disalin. Tempel manual di chat store.",
           duration: 8000,
         });
-        void copyMessage(message);
+        void copyMessage(finalMessage);
         return;
       }
       try {
@@ -257,7 +289,9 @@ function OrderSheetBody({
         // Cross-origin windows may reject the assignment. Safe to ignore.
       }
       toast.success("WhatsApp dibuka", {
-        description: "Kirim pesan yang sudah disiapkan untuk menyelesaikan pesanan.",
+        description: orderId
+          ? `ID Order kamu ${orderId} — simpan untuk melacak status.`
+          : "Kirim pesan yang sudah disiapkan untuk menyelesaikan pesanan.",
       });
       onDone();
     } catch {

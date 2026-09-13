@@ -13,6 +13,8 @@ export type Route =
   | { view: "games" }
   | { view: "game"; slug: string }
   | { view: "help" }
+  | { view: "track" }
+  | { view: "reports" }
   | { view: "login" }
   | { view: "admin"; section: AdminSection }
   | { view: "developer"; section: DeveloperSection }
@@ -27,7 +29,8 @@ export type AdminSection =
   | "checkout"
   | "promo"
   | "banner"
-  | "chat";
+  | "chat"
+  | "reports";
 
 export type DeveloperSection =
   | "dashboard"
@@ -43,7 +46,7 @@ export type DeveloperSection =
   | "analytics"
   | "schedule";
 
-const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout", "promo", "banner", "chat"];
+const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "settings", "checkout", "promo", "banner", "chat", "reports"];
 const DEVELOPER_SECTIONS: DeveloperSection[] = [
   "dashboard",
   "access",
@@ -71,6 +74,10 @@ export function parsePath(rawPath: string): Route {
       return { view: "games" };
     case "help":
       return { view: "help" };
+    case "track":
+      return { view: "track" };
+    case "reports":
+      return { view: "reports" };
     case "login":
       return { view: "login" };
     case "admin": {
@@ -100,6 +107,10 @@ export function routeToPath(route: Route): string {
       return `/games/${encodeURIComponent(route.slug)}`;
     case "help":
       return "/help";
+    case "track":
+      return "/track";
+    case "reports":
+      return "/reports";
     case "login":
       return "/login";
     case "admin":

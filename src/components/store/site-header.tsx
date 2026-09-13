@@ -8,7 +8,8 @@ import { useCartUI } from "@/components/store/cart/cart-ui-context";
 import { useCartStore } from "@/lib/cart/store";
 import { useCatalog } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, LifeBuoy, Menu, ShoppingCart, X } from "lucide-react";
+import { BrandMark } from "@/components/shared/brand-mark";
+import { Flag, Gamepad2, LifeBuoy, Menu, PackageSearch, ShoppingCart, X } from "lucide-react";
 
 /**
  * Storefront navigation with the cart entry point. The cart stays visible on
@@ -33,6 +34,8 @@ export function SiteHeader() {
 
   const links = [
     { href: "/games", label: "Game", Icon: Gamepad2 },
+    { href: "/track", label: "Lacak Pesanan", Icon: PackageSearch },
+    { href: "/reports", label: "Laporan", Icon: Flag },
     { href: "/help", label: "Bantuan", Icon: LifeBuoy },
   ];
 
@@ -44,12 +47,10 @@ export function SiteHeader() {
           className="group flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4"
           aria-label={`${storeName}, kembali ke beranda`}
         >
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-primary/80 font-display text-[15px] font-bold text-primary-foreground shadow-[var(--glow-primary)] transition-transform duration-200 group-hover:-translate-y-0.5"
-          >
-            N
-          </span>
+          <BrandMark
+            size={32}
+            className="transition-transform duration-200 group-hover:-translate-y-0.5"
+          />
           <span className="truncate font-display text-base font-semibold uppercase tracking-tight">
             {storeName}
           </span>

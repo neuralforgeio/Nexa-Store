@@ -1,11 +1,12 @@
 "use client";
 
 import { RouteLink } from "@/components/shared/route-link";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { useCatalog } from "@/lib/queries";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
 import { displayPhone } from "@/lib/format/phone";
 import { APP_VERSION } from "@/lib/version";
-import { Code2, Gamepad2, LifeBuoy, MessageCircle } from "lucide-react";
+import { Code2, Flag, Gamepad2, LifeBuoy, MessageCircle, PackageSearch } from "lucide-react";
 
 /** Developer credit — portfolio link (clickable). */
 const DEVELOPER_PORTFOLIO = "https://dearlyfebriano.vercel.app";
@@ -23,12 +24,7 @@ export function SiteFooter() {
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
             <div className="flex items-center gap-2.5">
-              <span
-                aria-hidden="true"
-                className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-gradient-to-br from-primary to-primary/80 font-display text-[13px] font-bold text-primary-foreground"
-              >
-                N
-              </span>
+              <BrandMark size={26} />
               <span className="font-display text-sm font-semibold uppercase tracking-tight">
                 {storeName}
               </span>
@@ -63,6 +59,18 @@ export function SiteFooter() {
                   </RouteLink>
                 </li>
                 <li>
+                  <RouteLink href="/track" className="inline-flex items-center gap-2 text-foreground/80 transition-colors hover:text-foreground">
+                    <PackageSearch aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
+                    Lacak pesanan
+                  </RouteLink>
+                </li>
+                <li>
+                  <RouteLink href="/reports" className="inline-flex items-center gap-2 text-foreground/80 transition-colors hover:text-foreground">
+                    <Flag aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
+                    Laporan
+                  </RouteLink>
+                </li>
+                <li>
                   <RouteLink href="/help" className="inline-flex items-center gap-2 text-foreground/80 transition-colors hover:text-foreground">
                     <LifeBuoy aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
                     Bantuan
@@ -76,12 +84,7 @@ export function SiteFooter() {
         {/* Bottom bar — copyright (auto year) + developer credit + version. */}
         <div className="mt-8 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span
-              aria-hidden="true"
-              className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-gradient-to-br from-primary to-primary/80 font-display text-[10px] font-bold text-primary-foreground"
-            >
-              N
-            </span>
+            <BrandMark size={18} />
             <span>
               © {new Date().getFullYear()} {storeName}. Semua hak cipta dilindungi.
             </span>

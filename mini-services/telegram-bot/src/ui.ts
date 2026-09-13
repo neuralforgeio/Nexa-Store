@@ -837,7 +837,8 @@ export function chatMenuKeyboard(count: number): InlineKeyboard {
   for (let i = 0; i < Math.min(count, 8); i++) {
     rows.push([{ text: `💬 Percakapan ${i + 1}`, callback_data: `cht:v:${i}` }]);
   }
-  rows.push([{ text: "🔄 Muat ulang", callback_data: "cht" }, { text: "⬅️ Menu", callback_data: "menu" }]);
+  rows.push([{ text: "🔍 Cari", callback_data: "cht:s" }, { text: "🔄 Muat ulang", callback_data: "cht" }]);
+  rows.push([{ text: "🧹 Hapus semua", callback_data: "cht:clall" }, { text: "⬅️ Menu", callback_data: "menu" }]);
   return rows;
 }
 
@@ -864,7 +865,144 @@ export function chatThreadKeyboard(conversationId: string): InlineKeyboard {
       { text: "✅ Tandai dibaca", callback_data: `cht:rd:${conversationId}` },
       { text: "⬅️ Obrolan", callback_data: "cht" },
     ],
+    [{ text: "🗑 Hapus percakapan", callback_data: `cht:cl:${conversationId}` }],
   ];
+}
+
+export function chatSearchPromptText(): string {
+  return [
+    "🔍 <b>CARI OBROLAN</b>",
+    "",
+    "Kirim nama pengunjung atau kata kunci dari isi pesan.",
+    "",
+    "Kirim /cancel untuk batal.",
+  ].join("\n");
+}
+
+export function chatNoResultText(query: string): string {
+  return [
+    "🔍 <b>TIDAK DITEMUKAN</b>",
+    "",
+    `Tidak ada percakapan yang cocok dengan <b>${esc(query)}</b>.`,
+    "",
+    "Coba kata kunci lain, atau buka semua obrolan.",
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// v1.6.0 — Pesanan terlacak (lacak-order).
+// ---------------------------------------------------------------------------
+
+export const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "⏳ Menunggu",
+  processing: "🔄 Diproses",
+  success: "✅ Selesai",
+  cancel: "❌ Dibatalkan",
+};
+
+export function orderIdPromptText(): string {
+  return [
+    "📦 <b>LACAK PESANAN</b>",
+    "",
+    "Kirim ID Order (contoh: <code>NEXA-260914-A7KP</code>).",
+    "ID tercantum di pesan WhatsApp pesanan pengunjung.",
+    "",
+    "Kirim /cancel untuk batal.",
+  ].join("\n");
+}
+
+export function orderNotFoundText(orderId: string, origin: "local" | "prod"): string {
+  return [
+    "📦 <b>PESANAN TIDAK DITEMUKAN</b>",
+    "",
+    `ID: <code>${esc(orderId)}</code>`,
+    `Dicari di: ${origin === "local" ? "pratinjau sandbox" : "produksi"}`,
+    "",
+    "Periksa kembali ID-nya, atau coba di sumber lain lewat tombol di bawah.",
+  ].join("\n");
+}
+
+export function orderNotFoundKeyboard(orderId: string): InlineKeyboard {
+  return [
+    [
+      { text: "🏠 Coba di produksi", callback_data: `ord:${orderId}:p` },
+      { text: "🧪 Coba di sandbox", callback_data: `ord:${orderId}:l` },
+    ],
+    [{ text: "🔁 ID lain", callback_data: "ord" }, { text: "⬅️ Menu", callback_data: "menu" }],
+  ];
+}
+
+export function orderCardText(
+  order: {
+    id: string;
+    summary: string;
+    source: "instant" | "cart";
+    items: Array<{ gameName: string; productName: string; price: number }>;
+    total: number;
+    status: string;
+    statusReason: string | null;
+    createdAt: string;
+    history: Array<{ status: string; at: string; reason: string | null }>;
+  },
+  origin: "local" | "prod"
+): string {
+  const lines = order.items
+    .slice(0, 10)
+    .map((it) => `• ${esc(it.productName)} — ${esc(it.gameName)}: Rp${it.price.toLocaleString("id-ID")}`);
+  return [
+    "📦 <b>PESANAN</b>",
+    "",
+    `ID: <code>${esc(order.id)}</code>`,
+    `Dibuat: ${relTime(Date.parse(order.createdAt))}`,
+    `Sumber: ${order.source === "cart" ? "keranjang" : "pesan instan"} · ${origin === "local" ? "sandbox" : "produksi"}`,
+    "",
+    ...lines,
+    "",
+    `Total: <b>Rp${order.total.toLocaleString("id-ID")}</b>`,
+    `Status: <b>${ORDER_STATUS_LABEL[order.status] ?? order.status}</b>`,
+    ...(order.statusReason ? ["", `Keterangan: ${esc(order.statusReason)}`] : []),
+    "",
+    "Untuk mengubah status, pilih tombol di bawah.",
+  ].join("\n");
+}
+
+export function orderStatusKeyboard(orderId: string): InlineKeyboard {
+  return [
+    [
+      { text: "⏳ Pending", callback_data: `ord:${orderId}:pending` },
+      { text: "🔄 Proses", callback_data: `ord:${orderId}:processing` },
+    ],
+    [
+      { text: "✅ Sukses", callback_data: `ord:${orderId}:success` },
+      { text: "❌ Batal", callback_data: `ord:${orderId}:cancel` },
+    ],
+    [{ text: "🔁 ID lain", callback_data: "ord" }, { text: "⬅️ Menu", callback_data: "menu" }],
+  ];
+}
+
+export function orderReasonPromptText(orderId: string, status: string): string {
+  return [
+    "📝 <b>KETERANGAN STATUS</b>",
+    "",
+    `Pesanan <code>${esc(orderId)}</code> → <b>${ORDER_STATUS_LABEL[status] ?? status}</b>`,
+    "",
+    "Kirim keterangan untuk pengunjung (mis. alasan pembatalan, estimasi",
+    "selesai, nomor pembayaran). Maks 500 karakter.",
+    "",
+    "Kirim /cancel untuk batal.",
+  ].join("\n");
+}
+
+export function orderStatusConfirmText(orderId: string, status: string, reason: string): string {
+  return [
+    "⚠️ <b>KONFIRMASI UBAH STATUS</b>",
+    "",
+    `Pesanan: <code>${esc(orderId)}</code>`,
+    `Status baru: <b>${ORDER_STATUS_LABEL[status] ?? status}</b>`,
+    `Keterangan: ${esc(reason) || "—"}`,
+    "",
+    "Pengunjung akan melihat perubahan ini di halaman Lacak Pesanan.",
+  ].join("\n");
 }
 
 export function promoMenuText(promos: Array<{ title: string; scope: string; gameId?: string; percentOff: number; active: boolean; endsAt: string | null }>, gameNames: Map<string, string>): string {

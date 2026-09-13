@@ -145,6 +145,9 @@ export function recordWrongPairing(userId: number): { blocked: boolean; remainin
 // Sesi percakapan per chat.
 // ---------------------------------------------------------------------------
 
+/** Status pesanan terlacak (v1.6.0) — cermin schema aplikasi. */
+export type OrderStatus = "pending" | "processing" | "success" | "cancel";
+
 export type InputKind =
   | "lockdown-reason"
   | "maintenance-reason"
@@ -165,6 +168,9 @@ export type InputKind =
   | "whatsapp-number"
   | "announcement-text"
   | "chat-reply"
+  | "chat-search"
+  | "order-id"
+  | "order-reason"
   | "promo-title"
   | "promo-percent"
   | "promo-duration"
@@ -193,6 +199,9 @@ export type PendingAction =
   | { type: "settings-announcement"; value: string | null }
   | { type: "deploy-sha"; sha: string; label: string }
   | { type: "chat-reply"; conversationId: string; origin: "local" | "prod"; text: string }
+  | { type: "chat-clear"; conversationId: string; origin: "local" | "prod" }
+  | { type: "chat-clear-all" }
+  | { type: "order-status"; orderId: string; origin: "local" | "prod"; status: OrderStatus; reason: string }
   | { type: "promo-create"; body: Record<string, unknown> }
   | { type: "promo-toggle"; promoId: string; active: boolean }
   | { type: "banner-create"; body: Record<string, unknown> }
@@ -246,6 +255,13 @@ export type ChatCtx = {
   name: string | null;
 };
 
+/** Konteks ubah status pesanan (v1.6.0). */
+export type OrderCtx = {
+  orderId: string;
+  origin: "local" | "prod";
+  status: OrderStatus;
+};
+
 export type Session = {
   chatId: number;
   stage: "idle" | "input" | "routes" | "confirm";
@@ -258,6 +274,7 @@ export type Session = {
   bannerDraft: BannerDraft;
   taskDraft: TaskDraft;
   chatCtx?: ChatCtx;
+  orderCtx?: OrderCtx;
   /** Konteks pemilih game: tambah produk / ubah harga / toggle produk / toggle game. */
   pickFor?: "add-product" | "price" | "toggle-product" | "toggle-game" | "promo-game";
   lists: {
@@ -304,4 +321,5 @@ export function clearFlow(s: Session): void {
   s.taskDraft = {};
   s.pickFor = undefined;
   s.chatCtx = undefined;
+  s.orderCtx = undefined;
 }

@@ -414,10 +414,42 @@ export function useChatConsole(enabled: boolean, refetchMs: number | false = 8_0
 export function useChatOwnerMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { conversationId: string; text?: string; action: "reply" | "markRead" }) =>
-      api.post<{ ok: boolean }>("/api/developer/chat", input),
+    mutationFn: (input: {
+      conversationId?: string;
+      text?: string;
+      action: "reply" | "markRead" | "clearOne" | "clearAll";
+    }) => api.post<{ ok: boolean; clearedCount?: number }>("/api/developer/chat", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["dev-chat"] });
+    },
+  });
+}
+
+export type ReportRecordView = {
+  id: string;
+  type: "bug" | "feature" | "other";
+  name: string | null;
+  text: string;
+  media: { kind: "image" | "video"; mime: string; size: number; fileName: string } | null;
+  createdAt: string;
+};
+
+export function useReportsConsole(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-reports"],
+    queryFn: () => api.get<{ reports: ReportRecordView[] }>("/api/developer/reports"),
+    enabled,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useReportsOwnerMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { action: "delete" | "clearAll"; id?: string }) =>
+      api.post<{ ok: boolean }>("/api/developer/reports", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-reports"] });
     },
   });
 }

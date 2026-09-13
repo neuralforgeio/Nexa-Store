@@ -19,6 +19,7 @@ export const CHECKOUT_PLACEHOLDERS = [
   "note",
   "orderDetails",
   "timestamp",
+  "orderId",
 ] as const;
 
 export type PlaceholderName = (typeof CHECKOUT_PLACEHOLDERS)[number];
@@ -48,6 +49,8 @@ export type TemplateContext = {
   note: string;
   orderDetails: string;
   timestamp: string;
+  /** ID Order terlacak (v1.6.0) — kosong bila pembuatan pesanan gagal. */
+  orderId: string | undefined;
 };
 
 /** Throws UnknownPlaceholderError when the template uses a non-allowlisted placeholder. */
@@ -71,7 +74,8 @@ export function buildTemplateContext(
   settings: StoreSettings,
   game: Game,
   product: Product,
-  values: OrderFormValues
+  values: OrderFormValues,
+  orderId?: string
 ): TemplateContext {
   const fieldLines = game.orderFieldSchema
     .map((f) => `${f.label}: ${values.fields[f.key]?.trim() || "—"}`)
@@ -88,6 +92,7 @@ export function buildTemplateContext(
     note: values.note.trim() || "—",
     orderDetails: fieldLines,
     timestamp: formatJakartaDateTime(new Date()),
+    orderId,
   };
 }
 

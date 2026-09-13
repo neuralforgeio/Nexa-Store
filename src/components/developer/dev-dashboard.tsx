@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { formatWib } from "@/lib/format/date";
 import type { Role } from "@/lib/catalog/types";
-import { Database, GitBranch, Activity, KeyRound, Power, Rocket, Percent, Megaphone, MessagesSquare, BarChart3, AlarmClock } from "lucide-react";
+import { Database, GitBranch, Activity, KeyRound, Power, Rocket, BarChart3, AlarmClock } from "lucide-react";
 
 /** Developer dashboard: engineering overview + tool entry points. */
 export function DevDashboard({ role, onNavigate }: { role: Role; onNavigate: (hash: string) => void }) {
@@ -22,12 +22,11 @@ export function DevDashboard({ role, onNavigate }: { role: Role; onNavigate: (ha
     );
   }
 
+  // Section bersama (promo/banner/chat/reports) ada di panel admin — tidak
+  // diulang di sini supaya tidak dobel (v1.6.0).
   const tools = [
     { hash: "/dev/access", icon: KeyRound, title: "Akses", desc: "Kontrol akses Admin: blokir atau buka kembali login Admin." },
     { hash: "/dev/control", icon: Power, title: "Kontrol Situs", desc: "Lockdown total atau per-route, dan mode pemeliharaan situs." },
-    { hash: "/dev/promo", icon: Percent, title: "Event Promo", desc: "Diskon terjadwal — harga storefront berubah otomatis tanpa deploy." },
-    { hash: "/dev/banner", icon: Megaphone, title: "Banner", desc: "Pengumuman berwarna dengan CTA, terbit instan ke seluruh storefront." },
-    { hash: "/dev/chat", icon: MessagesSquare, title: "Obrolan", desc: "Chat live pengunjung — balas dari sini atau langsung dari Telegram." },
     { hash: "/dev/analytics", icon: BarChart3, title: "Analitik", desc: "Pengunjung live, views, halaman populer, sumber trafik, perangkat." },
     { hash: "/dev/schedule", icon: AlarmClock, title: "Tugas Terjadwal", desc: "Otomasi berwaktu: gate, promo, banner, dan pengingat Telegram." },
     { hash: "/dev/git", icon: GitBranch, title: "Git Sync", desc: "Status penyimpanan, riwayat commit, validasi, dan restore berorientasi inspeksi." },

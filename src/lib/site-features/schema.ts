@@ -121,6 +121,72 @@ export type BannersFile = z.infer<typeof bannersFileSchema>;
 export type SchedulesFile = z.infer<typeof schedulesFileSchema>;
 export type ChatFile = z.infer<typeof chatFileSchema>;
 export type BotStateFile = z.infer<typeof botStateFileSchema>;
+export type ReportsFile = z.infer<typeof reportsFileSchema>;
+export type OrdersFile = z.infer<typeof ordersFileSchema>;
+export type PushSubsFile = z.infer<typeof pushSubsFileSchema>;
+
+/**
+ * Laporan pengguna (v1.6.0) — bug / saran fitur / lainnya. Metadata saja;
+ * lampiran media (gambar/video) diteruskan langsung ke Telegram pemilik.
+ */
+export const reportRecordSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(["bug", "feature", "other"]),
+  name: z.string().min(1).max(40).nullable(),
+  text: z.string().min(1).max(1500),
+  media: z
+    .object({
+      kind: z.enum(["image", "video"]),
+      mime: z.string().min(3).max(60),
+      size: z.number().int().min(1),
+      fileName: z.string().min(1).max(120),
+    })
+    .nullable(),
+  createdAt: z.string().datetime(),
+});
+
+/**
+ * Pesanan terlacak (v1.6.0) — dibuat saat checkout (instan/keranjang),
+ * status diperbarui admin/developer dari bot Telegram (/lacak-order).
+ */
+export const orderItemSchema = z.object({
+  gameName: z.string().min(1).max(80),
+  productName: z.string().min(1).max(120),
+  price: z.number().int().min(0),
+});
+
+export const orderHistorySchema = z.object({
+  status: z.enum(["pending", "processing", "success", "cancel"]),
+  at: z.string().datetime(),
+  reason: z.string().max(500).nullable(),
+});
+
+export const orderRecordSchema = z.object({
+  id: z.string().regex(/^NEXA-\d{6}-[A-HJKMNP-TV-Z23-9]{4}$/),
+  source: z.enum(["instant", "cart"]),
+  summary: z.string().min(1).max(200),
+  customerName: z.string().min(1).max(80).nullable(),
+  items: z.array(orderItemSchema).max(20),
+  total: z.number().int().min(0),
+  status: z.enum(["pending", "processing", "success", "cancel"]),
+  statusReason: z.string().max(500).nullable(),
+  statusUpdatedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  history: z.array(orderHistorySchema).max(30),
+});
+
+/** Langganan push notification per percakapan chat (v1.6.0). */
+export const pushSubSchema = z.object({
+  endpoint: z.string().url().max(500),
+  p256dh: z.string().min(1).max(200),
+  auth: z.string().min(1).max(200),
+  name: z.string().max(40).nullable(),
+  at: z.string().datetime(),
+});
+
+export const reportsFileSchema = z.object({ reports: z.array(reportRecordSchema).max(200) });
+export const ordersFileSchema = z.object({ orders: z.array(orderRecordSchema).max(300) });
+export const pushSubsFileSchema = z.object({ subs: z.record(z.string(), pushSubSchema) });
 
 // ---------------------------------------------------------------------------
 // Defaults + safe parsers (bad data degrades to empty, never 500s the store)
@@ -132,6 +198,9 @@ export const EMPTY_SCHEDULES: SchedulesFile = { tasks: [] };
 export const EMPTY_CHAT: ChatFile = { conversations: [] };
 export const EMPTY_ANALYTICS: AnalyticsFile = { days: {}, visitors: {}, recent: [] };
 export const EMPTY_BOT_STATE: BotStateFile = { owner: null };
+export const EMPTY_REPORTS: ReportsFile = { reports: [] };
+export const EMPTY_ORDERS: OrdersFile = { orders: [] };
+export const EMPTY_PUSH_SUBS: PushSubsFile = { subs: {} };
 
 export function parsePromos(raw: unknown): PromosFile {
   const parsed = promosFileSchema.safeParse(raw);
@@ -152,6 +221,18 @@ export function parseChat(raw: unknown): ChatFile {
 export function parseAnalytics(raw: unknown): AnalyticsFile {
   const parsed = analyticsFileSchema.safeParse(raw);
   return parsed.success ? parsed.data : EMPTY_ANALYTICS;
+}
+export function parseReports(raw: unknown): ReportsFile {
+  const parsed = reportsFileSchema.safeParse(raw);
+  return parsed.success ? parsed.data : EMPTY_REPORTS;
+}
+export function parseOrders(raw: unknown): OrdersFile {
+  const parsed = ordersFileSchema.safeParse(raw);
+  return parsed.success ? parsed.data : EMPTY_ORDERS;
+}
+export function parsePushSubs(raw: unknown): PushSubsFile {
+  const parsed = pushSubsFileSchema.safeParse(raw);
+  return parsed.success ? parsed.data : EMPTY_PUSH_SUBS;
 }
 
 export function emptyDayStat(): AnalyticsDayStat {

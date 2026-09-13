@@ -16,6 +16,9 @@ import type { ChatConversation } from "@/lib/site-features/types";
  *      pairing bot) atau env TELEGRAM_OWNER_CHAT_ID sebagai fallback manual.
  *
  * Selalu best-effort: kegagalan kirim tidak pernah mengganggu respons API.
+ *
+ * v1.6.0: + notifikasi laporan pengguna (dengan lampiran media) dan
+ *         + notifikasi pesanan baru (dengan tombol status untuk bot).
  */
 
 const NOTIFY_TIMEOUT_MS = 4_000;
@@ -38,9 +41,13 @@ async function resolveOwnerChatId(): Promise<number | null> {
   return null;
 }
 
+function botToken(): string | null {
+  return process.env.TELEGRAM_BOT_TOKEN?.trim() || null;
+}
+
 /** Kirim ping "pesan baru" ke Telegram pemilik — fire-and-forget. */
 export async function sendOwnerChatNotification(conversation: ChatConversation, origin: string): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const token = botToken();
   if (!token) return;
   const chatId = await resolveOwnerChatId();
   if (!chatId) return;
@@ -96,5 +103,193 @@ export async function sendOwnerChatNotification(conversation: ChatConversation, 
   } catch (e) {
     // jaringan/timeout — coba lagi di pesan berikutnya
     console.error("[telegram-notify] kirim error:", (e as Error).message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Laporan pengguna (v1.6.0)
+// ---------------------------------------------------------------------------
+
+export type ReportNotifyPayload = {
+  id: string;
+  type: "bug" | "feature" | "other";
+  name: string | null;
+  text: string;
+  createdAt: string;
+};
+
+const REPORT_TYPE_LABEL: Record<ReportNotifyPayload["type"], string> = {
+  bug: "🐞 Laporan Bug",
+  feature: "💡 Saran Fitur",
+  other: "📋 Lainnya",
+};
+
+/** Format teks laporan untuk Telegram (HTML). */
+export function reportNotifyText(r: ReportNotifyPayload, timeWib: string): string {
+  const preview = r.text.length > 1200 ? `${r.text.slice(0, 1200)}…` : r.text;
+  return [
+    `<b>${REPORT_TYPE_LABEL[r.type].toUpperCase()}</b>`,
+    "",
+    `ID: <code>${esc(r.id)}</code>`,
+    `Waktu: <b>${esc(timeWib)}</b> (WIB)`,
+    `Nama: <b>${esc(r.name ?? "Tanpa nama")}</b>`,
+    "",
+    esc(preview),
+  ].join("\n");
+}
+
+/**
+ * Kirim laporan pengguna ke Telegram pemilik. Lampiran media (opsional)
+ * di-upload multipart — sendPhoto untuk gambar, sendVideo untuk video,
+ * fallback sendDocument.
+ */
+export async function sendOwnerReportNotification(
+  report: ReportNotifyPayload,
+  timeWib: string,
+  media?: { blob: Blob; kind: "image" | "video"; fileName: string } | null
+): Promise<void> {
+  const token = botToken();
+  if (!token) return;
+  const chatId = await resolveOwnerChatId();
+  if (!chatId) return;
+
+  const caption = reportNotifyText(report, timeWib).slice(0, 1024);
+
+  const attempt = async (method: string, build: () => Promise<FormData>) => {
+    const fd = await build();
+    return fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      body: fd,
+      signal: AbortSignal.timeout(20_000),
+    });
+  };
+
+  try {
+    if (media) {
+      const buf = new Uint8Array(await media.blob.arrayBuffer());
+      const isVideo = media.kind === "video";
+      const method = isVideo ? "sendVideo" : "sendPhoto";
+      const field = isVideo ? "video" : "photo";
+
+      const build = () => {
+        const fd = new FormData();
+        fd.append("chat_id", String(chatId));
+        fd.append("caption", caption);
+        fd.append("parse_mode", "HTML");
+        fd.append(field, new Blob([buf], { type: media.blob.type }), media.fileName);
+        return Promise.resolve(fd);
+      };
+
+      let res = await attempt(method, build);
+      // Video terlalu besar / format ditolak → kirim sebagai dokumen.
+      if (!res.ok && isVideo) {
+        const buildDoc = () => {
+          const fd = new FormData();
+          fd.append("chat_id", String(chatId));
+          fd.append("caption", caption);
+          fd.append("parse_mode", "HTML");
+          fd.append("document", new Blob([buf], { type: media.blob.type }), media.fileName);
+          return Promise.resolve(fd);
+        };
+        res = await attempt("sendDocument", buildDoc);
+      }
+      if (!res.ok) {
+        console.error(`[telegram-notify] ${method} gagal:`, res.status, (await res.text()).slice(0, 200));
+      }
+      return;
+    }
+
+    // Tanpa media — teks saja.
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: reportNotifyText(report, timeWib),
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+      signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.error("[telegram-notify] report sendMessage gagal:", res.status);
+    }
+  } catch (e) {
+    console.error("[telegram-notify] laporan kirim error:", (e as Error).message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pesanan baru (v1.6.0) — tombol status ditangani runtime bot
+// (webhook Vercel / panel) lewat callback_data `ord:<id>:<status>`.
+// ---------------------------------------------------------------------------
+
+export type OrderNotifyPayload = {
+  id: string;
+  source: "instant" | "cart";
+  summary: string;
+  customerName: string | null;
+  items: Array<{ gameName: string; productName: string; price: number }>;
+  total: number;
+  createdAt: string;
+};
+
+export function orderNotifyText(o: OrderNotifyPayload, timeWib: string): string {
+  const lines = o.items
+    .slice(0, 10)
+    .map((it) => `• ${esc(it.productName)} — ${esc(it.gameName)}: Rp${it.price.toLocaleString("id-ID")}`);
+  return [
+    "🧾 <b>PESANAN BARU</b>",
+    "",
+    `ID Order: <code>${esc(o.id)}</code>`,
+    `Waktu: <b>${esc(timeWib)}</b> (WIB)`,
+    `Pembeli: <b>${esc(o.customerName ?? "—")}</b>`,
+    `Sumber: ${o.source === "cart" ? "Keranjang" : "Pesan instan"}`,
+    "",
+    ...lines,
+    "",
+    `Total: <b>Rp${o.total.toLocaleString("id-ID")}</b>`,
+  ].join("\n");
+}
+
+const ORDER_STATUS_BUTTONS: Array<{ label: string; status: string }> = [
+  { label: "⏳ Pending", status: "pending" },
+  { label: "🔄 Proses", status: "processing" },
+  { label: "✅ Sukses", status: "success" },
+  { label: "❌ Batal", status: "cancel" },
+];
+
+export async function sendOwnerOrderNotification(o: OrderNotifyPayload, timeWib: string): Promise<void> {
+  const token = botToken();
+  if (!token) return;
+  const chatId = await resolveOwnerChatId();
+  if (!chatId) return;
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: orderNotifyText(o, timeWib),
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: {
+          inline_keyboard: [
+            ORDER_STATUS_BUTTONS.map((b) => ({
+              text: b.label,
+              callback_data: `ord:${o.id}:${b.status}`,
+            })),
+            [{ text: "🔍 Detail / ubah status", callback_data: `ord:${o.id}` }],
+          ],
+        },
+      }),
+      signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.error("[telegram-notify] order sendMessage gagal:", res.status);
+    }
+  } catch (e) {
+    console.error("[telegram-notify] order kirim error:", (e as Error).message);
   }
 }

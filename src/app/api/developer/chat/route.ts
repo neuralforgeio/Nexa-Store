@@ -4,6 +4,7 @@ import { jsonError, jsonOk, requireCapability } from "@/lib/api/http";
 import { readFeature, updateFeature } from "@/lib/site-features/store";
 import { parseChat } from "@/lib/site-features/schema";
 import { notifyBotOfOwnerReply } from "@/lib/site-features/chat-notify";
+import { sendVisitorChatPush } from "@/lib/push-notify";
 import type { ChatConversation, ConversationSummary } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,13 @@ const replySchema = z.discriminatedUnion("action", [
     action: z.literal("markRead"),
     conversationId: z.string().min(6).max(64),
   }),
+  z.object({
+    action: z.literal("clearOne"),
+    conversationId: z.string().min(6).max(64),
+  }),
+  z.object({
+    action: z.literal("clearAll"),
+  }),
 ]);
 
 export async function POST(req: NextRequest) {
@@ -81,11 +89,24 @@ export async function POST(req: NextRequest) {
 
   try {
     let replied = false;
-    await updateFeature("chat", "chat: owner reply", (currentRaw) => {
+    let clearedCount = 0;
+    await updateFeature("chat", input.action === "reply" ? "chat: owner reply" : "chat: owner cleared", (currentRaw) => {
       const file = parseChat(currentRaw);
       const conversations = [...file.conversations];
+
+      if (input.action === "clearAll") {
+        clearedCount = conversations.length;
+        return { conversations: [] };
+      }
+
       const index = conversations.findIndex((c) => c.id === input.conversationId);
       if (index === -1) throw new Error("not-found");
+
+      if (input.action === "clearOne") {
+        conversations.splice(index, 1);
+        return { conversations };
+      }
+
       const prev = conversations[index];
       const now = new Date().toISOString();
 
@@ -109,12 +130,16 @@ export async function POST(req: NextRequest) {
       return { conversations };
     });
 
-    if (input.action === "reply") notifyBotOfOwnerReply(input.conversationId, input.text);
-    return jsonOk({ ok: true, replied });
+    if (input.action === "reply") {
+      notifyBotOfOwnerReply(input.conversationId, input.text);
+      // Push notification browser untuk pengunjung yang menyetujuinya.
+      void sendVisitorChatPush(input.conversationId, input.text);
+    }
+    return jsonOk({ ok: true, replied, clearedCount });
   } catch (e) {
     if ((e as Error).message === "not-found") {
       return jsonError(404, "chat.not-found", "Percakapan tidak ditemukan.");
     }
-    return jsonError(502, "chat.failed", "Balasan gagal terkirim. Coba lagi.");
+    return jsonError(502, "chat.failed", "Aksi gagal. Coba lagi.");
   }
 }
