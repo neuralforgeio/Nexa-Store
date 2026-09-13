@@ -5,7 +5,11 @@ berjalan lewat chat Telegram; setiap aksi dieksekusi lewat API aplikasi
 dengan sesi developer — validasi, deteksi konflik, dan persistensi GitHub
 ikut berlaku, sama seperti mengoperasikan dashboard dari browser.
 
-Bot: **@nexastoregamebot** · Service port: **3005** (health probe).
+Bot: **@nexastoregamebot** · Service port: **3005** (health probe + WebSocket chat bridge).
+
+Mode `BOT_HEADLESS=1` menjalankan bot tanpa server HTTP (polling Telegram,
+scheduler, dan watcher tetap aktif) — berguna saat proses harus lolos dari
+pembersihan sesi panel (listener TCP dibersihkan otomatis antar sesi).
 
 ## Kemampuan
 

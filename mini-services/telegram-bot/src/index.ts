@@ -40,6 +40,10 @@ function log(...args: unknown[]): void {
 // ---------------------------------------------------------------------------
 
 function startHttpServer(): void {
+  if (config.headless) {
+    log("mode headless — tanpa server HTTP/WS (polling Telegram + scheduler + watcher tetap aktif)");
+    return;
+  }
   const server = createServer((req, res) => {
     if (stale()) return; // generasi lama tidak melayani lagi
     const url = req.url ?? "/";

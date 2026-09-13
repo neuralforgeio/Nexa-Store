@@ -55,6 +55,8 @@ export const config = {
   githubBranch: env("GITHUB_BRANCH", "main"),
   repoDir: env("REPO_DIR", "/home/z/my-project"),
   port: 3005,
+  /** Tanpa server HTTP/WS — proses jadi orphan biasa yang lolos pembersihan sesi. */
+  headless: env("BOT_HEADLESS") === "1",
 } as const;
 
 /** Rute publik yang bisa dikunci — cermin LOCKABLE_ROUTES di aplikasi utama. */
