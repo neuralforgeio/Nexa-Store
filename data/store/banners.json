@@ -1,15 +1,3 @@
 {
-  "banners": [
-    {
-      "id": "bnn_8f982c9157",
-      "severity": "peringatan",
-      "title": "Sistem baru aktif",
-      "message": "Chat live, promo, dan analitik sudah aktif di Nexa Store.",
-      "startsAt": null,
-      "endsAt": null,
-      "enabled": true,
-      "createdAt": "2026-09-13T15:33:31.159Z",
-      "createdBy": "dearlyfebrianoi@gmail.com"
-    }
-  ]
+  "banners": []
 }
