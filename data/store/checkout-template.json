@@ -1,0 +1,5 @@
+{
+  "template": "Halo {storeName}, saya ingin melakukan pemesanan.\n\nProduk: {productName}\nGame: {gameName}\nHarga: {price}\n\nNama: {customerName}\n{orderDetails}\nTanggal Pemesanan: {timestamp}\n\nCatatan:\n{note}",
+  "updatedAt": "2026-09-13T07:14:43.664Z",
+  "updatedBy": "dearlyfebrianoi@gmail.com"
+}

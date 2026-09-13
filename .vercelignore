@@ -1,0 +1,24 @@
+# Vercel upload — exclude everything that is not part of the app.
+upload
+tool-results
+download
+.zscripts
+.plans
+.z-verify-*
+agent-ctx
+worklog.md
+Caddyfile
+db
+prisma
+examples
+mini-services
+skills
+tests
+docs
+scripts
+.env
+.env.*
+!.env.example
+*.log
+.git
+agent-browser
