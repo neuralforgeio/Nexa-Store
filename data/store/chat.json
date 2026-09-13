@@ -16,10 +16,16 @@
           "from": "owner",
           "text": "Baik kak Dearly, ada yang bisa saya bantu?",
           "at": "2026-09-13T19:46:20.382Z"
+        },
+        {
+          "id": "m_mu086f3yzgqu",
+          "from": "user",
+          "text": "Gini kak, saya ingin joki, tapi uang saya masih kurang, kalu misal membayar dengan uang yang ada dulu beberapa gimana kak?",
+          "at": "2026-09-13T19:46:56.638Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T19:46:20.382Z",
-      "unreadByOwner": 0,
+      "lastMessageAt": "2026-09-13T19:46:56.638Z",
+      "unreadByOwner": 1,
       "ownerLastReadAt": "2026-09-13T19:46:06.468Z"
     },
     {
