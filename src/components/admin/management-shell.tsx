@@ -49,6 +49,8 @@ const ADMIN_NAV: Array<NavEntry<AdminSection>> = [
   { key: "games", label: "Game", icon: Gamepad2 },
   { key: "categories", label: "Kategori", icon: Layers },
   { key: "products", label: "Produk", icon: Package },
+  { key: "promo", label: "Event Promo", icon: Percent },
+  { key: "banner", label: "Banner", icon: Megaphone },
   { key: "settings", label: "Pengaturan", icon: Settings2 },
   { key: "checkout", label: "Checkout", icon: MessageSquareText },
 ];

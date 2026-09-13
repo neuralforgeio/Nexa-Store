@@ -85,7 +85,10 @@ export function mainMenuKeyboard(): InlineKeyboard {
       { text: "📦 Katalog", callback_data: "cat" },
       { text: "🚀 Deployment", callback_data: "dep" },
     ],
-    [{ text: "⚙️ Setelan", callback_data: "set" }],
+    [
+      { text: "⚙️ Setelan", callback_data: "set" },
+      { text: "⚡ Runtime", callback_data: "rt" },
+    ],
   ];
 }
 
@@ -677,12 +680,92 @@ export function helpText(): string {
   return [
     "ℹ️ <b>BOT KENDALI NEXA STORE</b>",
     "",
-    "Perintah cepat:",
+    "Ketik <b>/</b> untuk melihat seluruh perintah berikut:",
     "/menu — buka menu utama",
     "/status — ringkasan kondisi situs",
-    "/cancel — batalkan langkah yang berjalan",
+    "/lockdown — kunci situs (total / rute)",
+    "/maintenance — mode perbaikan",
+    "/promo — event diskon storefront",
+    "/banner — banner pengumuman",
+    "/chat — obrolan pelanggan",
+    "/tasks — tugas terjadwal",
+    "/analytics — statistik pengunjung",
+    "/admin — blokir / buka blokir admin",
+    "/catalog — game, produk, kategori",
+    "/deploy — deploy & rollback Vercel",
+    "/settings — nomor WA & announcement",
+    "/runtime — pindah bot: panel ⇄ Vercel",
+    "/cancel — batalkan langkah berjalan",
     "",
     "Semua tombol berlabel ❌ Batal juga membatalkan langkah aktif.",
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// v1.4.0 — Runtime: panel (polling) ⇄ Vercel (webhook).
+// ---------------------------------------------------------------------------
+
+export type RuntimeInfo = {
+  webhookUrl: string | null;
+  pendingUpdates: number | null;
+  lastError: string | null;
+};
+
+export function runtimeMenuText(info: RuntimeInfo): string {
+  const onVercel = Boolean(info.webhookUrl);
+  const lines = [
+    "⚡ <b>RUNTIME BOT</b>",
+    "",
+    `Sekarang: ${onVercel ? "🚀 Vercel (webhook produksi)" : "🏠 Panel (polling layanan)"}`,
+    `Target API: ${esc(config.apiBase)}`,
+  ];
+  if (onVercel && info.webhookUrl) {
+    lines.push(`Webhook: <code>${esc(info.webhookUrl)}</code>`);
+  } else {
+    lines.push("Webhook: belum dipasang");
+  }
+  if (info.pendingUpdates !== null && info.pendingUpdates > 0) {
+    lines.push(`Update menunggu di webhook: ${info.pendingUpdates}`);
+  }
+  if (info.lastError) {
+    lines.push(`⚠️ Error terakhir webhook: ${esc(info.lastError)}`);
+  }
+  lines.push(
+    "",
+    "<b>Dua runtime, satu bot:</b>",
+    "🏠 <b>Panel</b> — lengkap: tugas terjadwal, notifikasi chat instan, digest harian. Hidup selama layanan panel menyala.",
+    "🚀 <b>Vercel</b> — webhook di serverless produksi: selalu hidup 24/7, tahan restart panel.",
+    "",
+    "Berpindah otomatis: polling panel standby saat webhook aktif, dan sebaliknya."
+  );
+  return lines.join("\n");
+}
+
+export function runtimeMenuKeyboard(onVercel: boolean): InlineKeyboard {
+  return onVercel
+    ? [
+        [{ text: "🏠 Kembali ke panel (polling)", callback_data: "rt:topanel" }],
+        [{ text: "⬅️ Menu", callback_data: "menu" }],
+      ]
+    : [
+        [{ text: "🚀 Pindah ke Vercel (webhook)", callback_data: "rt:tovercel" }],
+        [{ text: "⬅️ Menu", callback_data: "menu" }],
+      ];
+}
+
+/** Petunjuk saat webhook Vercel belum siap (env belum diisi). */
+export function runtimeSetupText(reason: string): string {
+  return [
+    "🚧 <b>VERCEL BELUM SIAP</b>",
+    "",
+    esc(reason),
+    "",
+    "Aktifkan sekali di dashboard Vercel (Project → Settings → Environment Variables):",
+    "1. <code>TELEGRAM_BOT_TOKEN</code> — token dari @BotFather",
+    "2. <code>TELEGRAM_WEBHOOK_SECRET</code> — kode rahasia webhook (sama dengan .env bot panel)",
+    "3. <code>NEXA_DEV_EMAIL</code> / <code>NEXA_DEV_PASSWORD</code> — kredensial developer produksi",
+    "",
+    "Lalu redeploy, dan jalankan /runtime lagi dari panel.",
   ].join("\n");
 }
 

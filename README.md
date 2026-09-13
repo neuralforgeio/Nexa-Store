@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.3.0-amber)
+![Version](https://img.shields.io/badge/version-1.4.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -156,6 +156,8 @@ the unlinked route `/login`.
 | `SESSION_SECRET` | ✅ | HMAC key for the signed session cookie |
 | `NEXT_PUBLIC_APP_VERSION` | – | Version label shown in the footer |
 | `GITHUB_OWNER`, `GITHUB_REPOSITORY`, `GITHUB_BRANCH`, `GITHUB_TOKEN` | – | Enables GitHub-backed catalog persistence |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_WEBHOOK_SECRET` | – | Enables the `/api/telegram/webhook` runtime — the Telegram bot runs on Vercel itself (24/7). `NEXA_API_BASE`, `NEXA_DEV_EMAIL`, `NEXA_DEV_PASSWORD` must also be set (the site's own URL + developer credentials) |
+| `BOT_SERVICE_LAUNCH` | – | Sandbox only: enables `POST /api/bot-service` + instrumentation auto-revive for the polling bot |
 
 Secrets live **only** in env vars — never in the repo, never in the client bundle.
 
@@ -236,6 +238,18 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.4.0 — Bot di Vercel + Admin promo/banner (2026-09-13)
+
+Bot Telegram kini bisa berjalan **langsung di Vercel** — tidak lagi mati saat panel sandbox berganti sesi:
+
+- **⚡ Runtime Ganda** — perintah `/runtime` (atau tombol di menu utama) memindahkan bot antara **panel** (polling, fitur lengkap) dan **Vercel** (webhook serverless, aktif 24/7). Poller panel otomatis standby saat webhook aktif dan mengambil alih kembali begitu webhook dilepas — tanpa konflik 409.
+- ** Endpoint webhook** `POST /api/telegram/webhook` — menjalankan kode bot yang sama di dalam fungsi serverless; pairing pemilik tersimpan permanen di data store (`ops:*`, tanpa rebuild) sehingga aman dari cold-start.
+- **☰ Menu perintah `/`** — 16 perintah terdaftar via `setMyCommands`: mengetik `/` di chat langsung memunculkan daftar lengkap dengan deskripsi; setiap perintah membuka menu yang sama dengan tombolnya.
+- **🛡️ Self-healing** — `src/instrumentation.ts` memantau layanan bot; mati/ter-restart dinyalakan ulang otomatis (cek 60 dtk saat gagal, 10 mnt saat sehat). Guard dobel-proses: health + PID file.
+- **🏷️ Promo & Banner di panel Admin** — sidebar Admin kini punya **Event Promo** dan **Banner** (konsol yang sama dengan Developer); izin dikontrol capability `promos.manage`/`banners.manage` di server.
+- **🐛 Fix** — kolom nama di widget chat tidak lagi menutup diri saat huruf pertama diketik (commit-on-blur + chip identitas “Sebagai …” dengan tombol Ubah).
+- Infra: alias `@bot/*` di tsconfig; gitops tetap jalan tanpa GITHUB_TOKEN (akses publik); state bot aman untuk Vercel (`BOT_STATE_FILE`, `/tmp`).
 
 ### v1.3.0 — Interaksi pengguna & otomasi (2026-09-13)
 

@@ -101,10 +101,26 @@ export const bannersFileSchema = z.object({ banners: z.array(bannerRecordSchema)
 export const schedulesFileSchema = z.object({ tasks: z.array(scheduleTaskSchema) });
 export const chatFileSchema = z.object({ conversations: z.array(chatConversationSchema).max(50) });
 
+/**
+ * State bot Telegram (v1.4.0) — dipakai runtime webhook serverless untuk
+ * menyimpan pairing pemilik secara permanen (write-through GitHub di produksi).
+ * TIDAK ikut bundle publik /api/site-features — hanya dibaca route webhook.
+ */
+export const botStateFileSchema = z.object({
+  owner: z
+    .object({
+      userId: z.number().int(),
+      chatId: z.number().int(),
+      pairedAt: z.string().datetime(),
+    })
+    .nullable(),
+});
+
 export type PromosFile = z.infer<typeof promosFileSchema>;
 export type BannersFile = z.infer<typeof bannersFileSchema>;
 export type SchedulesFile = z.infer<typeof schedulesFileSchema>;
 export type ChatFile = z.infer<typeof chatFileSchema>;
+export type BotStateFile = z.infer<typeof botStateFileSchema>;
 
 // ---------------------------------------------------------------------------
 // Defaults + safe parsers (bad data degrades to empty, never 500s the store)
@@ -115,6 +131,7 @@ export const EMPTY_BANNERS: BannersFile = { banners: [] };
 export const EMPTY_SCHEDULES: SchedulesFile = { tasks: [] };
 export const EMPTY_CHAT: ChatFile = { conversations: [] };
 export const EMPTY_ANALYTICS: AnalyticsFile = { days: {}, visitors: {}, recent: [] };
+export const EMPTY_BOT_STATE: BotStateFile = { owner: null };
 
 export function parsePromos(raw: unknown): PromosFile {
   const parsed = promosFileSchema.safeParse(raw);

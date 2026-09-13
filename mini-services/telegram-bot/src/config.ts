@@ -43,6 +43,7 @@ export const config = {
   apiBase: env("NEXA_API_BASE", "https://nexastoregame.vercel.app").replace(/\/+$/, ""),
   localBase: env("NEXA_LOCAL_BASE", "http://127.0.0.1:3000").replace(/\/+$/, ""),
   internalSecret: env("BOT_INTERNAL_SECRET"),
+  webhookSecret: env("TELEGRAM_WEBHOOK_SECRET"),
   devEmail: env("NEXA_DEV_EMAIL"),
   devPassword: env("NEXA_DEV_PASSWORD"),
   vercelToken: env("VERCEL_TOKEN"),
@@ -58,6 +59,11 @@ export const config = {
   /** Tanpa server HTTP/WS — proses jadi orphan biasa yang lolos pembersihan sesi. */
   headless: env("BOT_HEADLESS") === "1",
 } as const;
+
+/** URL webhook di aplikasi target — sama untuk sandbox maupun produksi. */
+export function webhookUrl(): string {
+  return `${config.apiBase}/api/telegram/webhook`;
+}
 
 /** Rute publik yang bisa dikunci — cermin LOCKABLE_ROUTES di aplikasi utama. */
 export const LOCKABLE_ROUTES: Array<{ id: string; label: string; code: string }> = [

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { spawn } from "node:child_process";
-import { closeSync, existsSync, openSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 export const dynamic = "force-dynamic";
@@ -45,23 +45,59 @@ async function botHealth(): Promise<Record<string, unknown> | null> {
   }
 }
 
+/** PID file ditulis proses bot saat boot — sinyal kedua (mode headless). */
+function botPid(): number | null {
+  try {
+    const raw = readFileSync(path.join(BOT_DIR, ".bot.pid"), "utf8").trim();
+    const pid = Number.parseInt(raw, 10);
+    return Number.isFinite(pid) && pid > 0 ? pid : null;
+  } catch {
+    return null;
+  }
+}
+
+function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    // EPERM = proses ada tapi bukan milik kita — tetap anggap hidup (konservatif).
+    return (e as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/** Hidup bila health menjawab ATAU PID proses bot masih bernyawa. */
+async function botRunning(): Promise<{ running: boolean; health: Record<string, unknown> | null; pid: number | null }> {
+  const health = await botHealth();
+  if (health) return { running: true, health, pid: null };
+  const pid = botPid();
+  if (pid && pidAlive(pid)) return { running: true, health: null, pid };
+  return { running: false, health: null, pid };
+}
+
 export async function GET() {
   if (!launchEnabled()) return notFound();
-  const health = await botHealth();
+  const { running, health, pid } = await botRunning();
   return NextResponse.json({
     ok: true,
-    data: { service: "telegram-bot", running: health !== null, health },
+    data: { service: "telegram-bot", running, health, pid },
   });
 }
 
 export async function POST() {
   if (!launchEnabled()) return notFound();
 
-  const running = await botHealth();
-  if (running) {
+  const state = await botRunning();
+  if (state.running) {
     return NextResponse.json({
       ok: true,
-      data: { service: "telegram-bot", running: true, health: running, note: "sudah berjalan" },
+      data: {
+        service: "telegram-bot",
+        running: true,
+        health: state.health,
+        pid: state.pid,
+        note: "sudah berjalan",
+      },
     });
   }
   if (!existsSync(path.join(BOT_DIR, "package.json"))) {
@@ -89,16 +125,17 @@ export async function POST() {
     });
     child.unref();
     child.on("error", () => undefined);
-    // Beri waktu boot, lalu laporkan hasilnya.
+    // Beri waktu boot, lalu laporkan hasilnya (health ATAU pid file).
     await new Promise((r) => setTimeout(r, 4000));
-    const health = await botHealth();
+    const after = await botRunning();
     return NextResponse.json({
       ok: true,
       data: {
         service: "telegram-bot",
-        running: health !== null,
+        running: after.running,
         pid: child.pid,
-        health,
+        health: after.health,
+        detectedPid: after.pid,
       },
     });
   } catch (e) {

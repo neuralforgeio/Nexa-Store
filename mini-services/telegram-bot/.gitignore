@@ -5,3 +5,6 @@
 # dependensi
 node_modules
 bot.log
+
+# pid file launcher
+.bot.pid

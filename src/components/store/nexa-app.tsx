@@ -306,6 +306,12 @@ function AdminSectionView({
       return <AdminSettings />;
     case "checkout":
       return <AdminCheckout />;
+    // Promo & banner kini bagian panel Admin — konsol yang sama dengan
+    // Developer, izin dikontrol server-side lewat capability promos/banners.manage.
+    case "promo":
+      return <DevPromo />;
+    case "banner":
+      return <DevBanner />;
   }
 }
 

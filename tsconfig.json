@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@bot/*": [
+        "./mini-services/telegram-bot/src/*"
       ]
     },
     "types": [

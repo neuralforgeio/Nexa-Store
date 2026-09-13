@@ -60,6 +60,44 @@ export async function getMe(): Promise<{ id: number; username: string; first_nam
   return call("getMe", {});
 }
 
+export type BotCommand = { command: string; description: string };
+
+/**
+ * Daftarkan menu perintah — saat pengguna mengetik "/" di chat, Telegram
+ * menampilkan seluruh pilihan lengkap dengan deskripsinya (autocomplete).
+ */
+export async function setMyCommands(commands: BotCommand[]): Promise<boolean> {
+  return call("setMyCommands", { commands });
+}
+
+export type WebhookInfo = {
+  url?: string;
+  has_custom_certificate?: boolean;
+  pending_update_count?: number;
+  last_error_date?: number;
+  last_error_message?: string;
+  max_connections?: number;
+};
+
+export async function getWebhookInfo(): Promise<WebhookInfo> {
+  return call("getWebhookInfo", {});
+}
+
+/** Set webhook — bot berpindah ke runtime serverless (Vercel). */
+export async function setWebhook(url: string, secret: string): Promise<boolean> {
+  return call("setWebhook", {
+    url,
+    secret_token: secret,
+    allowed_updates: ["message", "callback_query"],
+    drop_pending_updates: false,
+  });
+}
+
+/** Hapus webhook — bot kembali ke polling panel. */
+export async function deleteWebhook(): Promise<boolean> {
+  return call("deleteWebhook", { drop_pending_updates: false });
+}
+
 export async function getUpdates(offset: number, timeoutSec = 25): Promise<TelegramUpdate[]> {
   return call("getUpdates", {
     offset,

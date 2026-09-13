@@ -92,6 +92,12 @@ export function AdminDashboard({ role, onNavigate }: { role: Role; onNavigate: (
           <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/games")}>
             Kelola game
           </Button>
+          <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/promo")}>
+            Event promo
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/banner")}>
+            Banner pengumuman
+          </Button>
           <Button variant="outline" size="sm" onClick={() => onNavigate("/admin/settings")}>
             Pengaturan store
           </Button>

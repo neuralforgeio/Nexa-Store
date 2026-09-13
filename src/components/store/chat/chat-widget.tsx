@@ -45,6 +45,7 @@ export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [name, setName] = useState("");
+  const [nameEdit, setNameEdit] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -54,17 +55,32 @@ export function ChatWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const openRef = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const focusNameRef = useRef(false);
 
   useEffect(() => {
     tokenRef.current = loadToken();
     try {
       const stored = window.localStorage.getItem(NAME_KEY);
-      if (stored) setName(stored);
+      if (stored) {
+        setName(stored);
+        // Ada nama tersimpan → tampilkan sebagai chip identitas (bukan input).
+        setNameEdit(false);
+      }
       seenAtRef.current = window.localStorage.getItem(SEEN_KEY) ?? "";
     } catch {
       // ignore
     }
   }, []);
+
+  // Fokus ke input nama hanya saat pengguna eksplisit minta "Ubah" —
+  // jangan menyulut papan ketik mobile begitu panel dibuka.
+  useEffect(() => {
+    if (nameEdit && focusNameRef.current) {
+      focusNameRef.current = false;
+      nameInputRef.current?.focus();
+    }
+  }, [nameEdit]);
 
   useEffect(() => {
     openRef.current = open;
@@ -283,16 +299,50 @@ export function ChatWidget() {
 
         {/* Composer */}
         <div className="flex-none border-t border-border/70 bg-background/95 px-3 py-3">
-          {!name.trim() ? (
+          {nameEdit || !name.trim() ? (
             <Input
+              ref={nameInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => {
+                const trimmed = name.trim();
+                if (!trimmed) return; // kosong → input tetap terbuka
+                setNameEdit(false);
+                try {
+                  window.localStorage.setItem(NAME_KEY, trimmed);
+                } catch {
+                  // ignore
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
               placeholder="Nama kamu (opsional)"
               aria-label="Nama kamu (opsional)"
               className="mb-2 h-8 text-xs"
               maxLength={40}
             />
-          ) : null}
+          ) : (
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1">
+              <p className="min-w-0 truncate text-xs text-muted-foreground">
+                Sebagai{" "}
+                <span className="font-semibold text-foreground">{name.trim()}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  focusNameRef.current = true;
+                  setNameEdit(true);
+                }}
+                className="shrink-0 rounded-sm text-[11px] font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                Ubah
+              </button>
+            </div>
+          )}
           <form
             className="flex items-end gap-2"
             onSubmit={(e) => {
@@ -319,7 +369,7 @@ export function ChatWidget() {
         </div>
       </motion.div>
     ),
-    [reduced, wsLive, messages, name, draft, sending]
+    [reduced, wsLive, messages, name, nameEdit, draft, sending]
   );
 
   return (

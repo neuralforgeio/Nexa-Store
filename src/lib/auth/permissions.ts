@@ -47,6 +47,8 @@ const ADMIN_CAPABILITIES = new Set<Capability>([
   "checkoutTemplate.manage",
   "storefront.preview",
   "gitSync.viewLimited",
+  "promos.manage",
+  "banners.manage",
 ]);
 
 const DEVELOPER_CAPABILITIES = new Set<Capability>([

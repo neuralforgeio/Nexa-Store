@@ -11,6 +11,24 @@ Mode `BOT_HEADLESS=1` menjalankan bot tanpa server HTTP (polling Telegram,
 scheduler, dan watcher tetap aktif) — berguna saat proses harus lolos dari
 pembersihan sesi panel (listener TCP dibersihkan otomatis antar sesi).
 
+## Dua runtime, satu bot (v1.4.0)
+
+| | 🏠 Panel (default) | 🚀 Vercel (webhook) |
+| --- | --- | --- |
+| Cara hidup | long polling, layanan Bun | `POST /api/telegram/webhook` di serverless produksi |
+| Ketahanan | hidup selama panel menyala; auto-revive via `src/instrumentation.ts` | aktif 24/7, tahan restart panel |
+| Fitur | **lengkap**: tugas terjadwal, notifikasi chat instan, digest harian | interaktif penuh (semua menu & aksi) |
+
+Berpindah: `/runtime` di chat → **“Pindah ke Vercel”** / **“Kembali ke panel”**.
+Poller panel otomatis standby saat webhook aktif dan mengambil alih ≤60 dtk
+begitu webhook dilepas — tidak pernah ada konflik 409.
+
+Aktivasi runtime Vercel (sekali): set di Vercel env —
+`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (sama dengan .env bot),
+`NEXA_API_BASE` (URL produksi), `NEXA_DEV_EMAIL`, `NEXA_DEV_PASSWORD` —
+lalu redeploy dan jalankan `/runtime`. Pairing pemilik tersimpan permanen
+di data store (`data/store/bot-state.json`, commit `ops:*` tanpa rebuild).
+
 ## Kemampuan
 
 | Menu | Aksi |
@@ -31,7 +49,17 @@ pembersihan sesi panel (listener TCP dibersihkan otomatis antar sesi).
 Otomatis di latar belakang: notifikasi obrolan baru (polling produksi 25 dtk),
 eksekutor tugas terjadwal (cek 30 dtk), dan digest analitik harian 21:00 WIB.
 
-Perintah cepat: `/menu`, `/status`, `/cancel`, `/help`.
+## Menu perintah `/`
+
+Ketik `/` di chat dan Telegram menampilkan seluruh perintah berdeskripsi
+(terdaftar otomatis via `setMyCommands`):
+
+`/menu` · `/status` · `/lockdown` · `/maintenance` · `/promo` · `/banner` ·
+`/chat` · `/tasks` · `/analytics` · `/admin` · `/catalog` · `/deploy` ·
+`/settings` · `/runtime` · `/cancel` · `/help`
+
+Setiap perintah membuka menu yang sama dengan tombolnya — tidak ada fitur
+yang hanya bisa dijangkau lewat satu jalur.
 
 ## Cara pakai (pertama kali)
 
@@ -89,8 +117,9 @@ Telegram ⇄ long polling ⇄ bot (Bun, :3005 health)
 
 ## Catatan deployment
 
-Bot berjalan di panel (Bun service) — bukan di Vercel. Selama service hidup,
-bot terus memantau Telegram. Endpoint health: `GET :3005/health`.
+Bot berjalan di panel (Bun service) sebagai runtime default, dan **bisa
+pindah ke Vercel** lewat `/runtime` (webhook, aktif 24/7 — lihat bagian
+“Dua runtime” di atas). Endpoint health: `GET :3005/health`.
 Bila bot dipindahkan ke mesin lain: salin folder ini, isi `.env`, jalankan
 `bun run start`, lalu kirim ulang pairing (hapus `.state.json` bila ingin
 klaim ulang pemilik).

@@ -5,6 +5,7 @@ import { githubConfigFromEnv, type GitHubConfig } from "@/lib/catalog/repo/githu
 import {
   EMPTY_ANALYTICS,
   EMPTY_BANNERS,
+  EMPTY_BOT_STATE,
   EMPTY_CHAT,
   EMPTY_PROMOS,
   EMPTY_SCHEDULES,
@@ -15,6 +16,7 @@ import {
   parseSchedules,
   analyticsFileSchema,
   bannersFileSchema,
+  botStateFileSchema,
   chatFileSchema,
   promosFileSchema,
   schedulesFileSchema,
@@ -34,7 +36,7 @@ import type { BannersFile, ChatFile, PromosFile, SchedulesFile } from "./schema"
  * ignoreCommand skips rebuilds (data is read at runtime, no rebuild needed).
  */
 
-export type FeatureKey = "promos" | "banners" | "schedules" | "chat" | "analytics";
+export type FeatureKey = "promos" | "banners" | "schedules" | "chat" | "analytics" | "bot-state";
 
 const FILES: Record<FeatureKey, string> = {
   promos: "data/store/promos.json",
@@ -42,6 +44,7 @@ const FILES: Record<FeatureKey, string> = {
   schedules: "data/store/schedules.json",
   chat: "data/store/chat.json",
   analytics: "data/store/analytics.json",
+  "bot-state": "data/store/bot-state.json",
 };
 
 const API = "https://api.github.com";
@@ -186,7 +189,9 @@ function validate(key: FeatureKey, raw: string): void {
           ? schedulesFileSchema.safeParse(data)
           : key === "chat"
             ? chatFileSchema.safeParse(data)
-            : analyticsFileSchema.safeParse(data);
+            : key === "bot-state"
+              ? botStateFileSchema.safeParse(data)
+              : analyticsFileSchema.safeParse(data);
   if (!check.success) {
     const issue = check.error?.issues?.[0];
     throw new FeatureStoreError(
@@ -240,6 +245,8 @@ function defaultFor(key: FeatureKey): unknown {
       return EMPTY_CHAT;
     case "analytics":
       return EMPTY_ANALYTICS;
+    case "bot-state":
+      return EMPTY_BOT_STATE;
   }
 }
 

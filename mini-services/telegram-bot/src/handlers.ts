@@ -2,13 +2,14 @@
  * Router update Telegram → alur percakapan → eksekusi aksi.
  * Hanya owner (user id yang sudah pairing) yang diproses.
  */
-import { config, routeIdFromCode } from "./config";
+import { config, webhookUrl, routeIdFromCode } from "./config";
 import * as tg from "./telegram";
 import * as ui from "./ui";
 import * as nexa from "./nexa";
 import type { GameRecord, ProductRecord } from "./nexa";
 import * as vercel from "./vercel";
 import * as git from "./gitops";
+import { COMMAND_TO_ROOT } from "./commands";
 import {
   clearFlow,
   getSession,
@@ -121,12 +122,116 @@ async function sendMenu(chatId: number): Promise<void> {
 }
 
 async function withSyncNote(): Promise<string | null> {
+  // Runtime webhook Vercel tidak punya repo lokal — sinkronisasi tidak relevan.
+  if (process.env.VERCEL) return null;
   const res = await git.syncSandbox();
   return res.ok ? `tersinkron (${res.detail})` : `gagal sinkron — ${res.detail}`;
 }
 
 function backHome(): tg.InlineKeyboard {
   return [[{ text: "⬅️ Menu", callback_data: "menu" }]];
+}
+
+/**
+ * Dispatch menu akar untuk perintah teks (/lockdown, /promo, …).
+ * Isi sama dengan tombol — dikirim sebagai pesan baru (tak ada tombol untuk diedit).
+ */
+async function dispatchRoot(chatId: number, s: Session, data: string): Promise<void> {
+  const send = (text: string, keyboard?: tg.InlineKeyboard): Promise<void> =>
+    tg.sendMessage(chatId, text, keyboard).then(() => undefined);
+  switch (data) {
+    case "lk":
+    case "mt": {
+      const gate = data === "lk" ? "lockdown" : "maintenance";
+      clearFlow(s);
+      const access = await nexa.getAccess();
+      const g = gate === "lockdown" ? access.lockdown : access.maintenance;
+      await send(ui.gateMenuText(gate, g), ui.gateMenuKeyboard(gate, g.active));
+      return;
+    }
+    case "adm": {
+      clearFlow(s);
+      const access = await nexa.getAccess();
+      await send(ui.adminMenuText(access), ui.adminMenuKeyboard(access.adminBlocked));
+      return;
+    }
+    case "cat": {
+      clearFlow(s);
+      const catalog = await nexa.getCatalog();
+      await send(ui.catalogMenuText(catalog), ui.catalogMenuKeyboard());
+      return;
+    }
+    case "set": {
+      clearFlow(s);
+      const { settings } = await nexa.getSettings();
+      await send(ui.settingsMenuText(settings), ui.settingsMenuKeyboard());
+      return;
+    }
+    case "dep": {
+      clearFlow(s);
+      const latest = await vercel.latestProductionDeployment().catch(() => null);
+      await send(ui.deploymentMenuText(latest), ui.deploymentMenuKeyboard());
+      return;
+    }
+    case "cht": {
+      clearFlow(s);
+      const conversations = await nexa.getChatConversations().catch(() => []);
+      const local = await nexa.getChatConversations(config.localBase).catch(() => []);
+      const all = [...local.map((c) => ({ ...c, id: c.id })), ...conversations];
+      s.lists.conversations = all;
+      await send(ui.chatMenuText(all), ui.chatMenuKeyboard(all.length));
+      return;
+    }
+    case "prm": {
+      clearFlow(s);
+      const [promos, catalog] = await Promise.all([
+        nexa.getPromos().catch(() => []),
+        nexa.getCatalog().catch(() => null),
+      ]);
+      const gameNames = new Map((catalog?.games ?? []).map((g) => [g.id, g.name]));
+      s.lists.promos = promos;
+      await send(ui.promoMenuText(promos, gameNames), ui.promoMenuKeyboard(promos.length));
+      return;
+    }
+    case "bnr": {
+      clearFlow(s);
+      const banners = await nexa.getBanners().catch(() => []);
+      s.lists.banners = banners;
+      await send(ui.bannerMenuText(banners), ui.bannerMenuKeyboard(banners.length));
+      return;
+    }
+    case "stx": {
+      clearFlow(s);
+      const summary = await nexa.getAnalyticsSummary().catch(() => null);
+      if (!summary) {
+        await send("📊 Analitik tidak dapat dibaca. Coba beberapa saat lagi.", backHome());
+        return;
+      }
+      await send(ui.analyticsText(summary), ui.analyticsKeyboard());
+      return;
+    }
+    case "tsk": {
+      clearFlow(s);
+      const tasks = await nexa.getSchedules().catch(() => []);
+      s.lists.tasks = tasks;
+      const pending = tasks.filter((t) => t.status === "pending");
+      await send(ui.taskMenuText(tasks), ui.taskMenuKeyboard(pending.length, tasks.length));
+      return;
+    }
+    case "rt": {
+      clearFlow(s);
+      const info = await tg.getWebhookInfo().catch(() => null);
+      await send(
+        ui.runtimeMenuText({
+          webhookUrl: info?.url ?? null,
+          pendingUpdates: info?.pending_update_count ?? null,
+          lastError: info?.last_error_message ?? null,
+        }),
+        ui.runtimeMenuKeyboard(Boolean(info?.url))
+      );
+      return;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -682,6 +787,99 @@ async function onCallback(q: NonNullable<tg.TelegramUpdate["callback_query"]>): 
         return;
       }
 
+      // ----- v1.4.0: runtime panel ⇄ vercel -----
+      case data === "rt": {
+        clearFlow(s);
+        await ok("Memuat…");
+        const info = await tg.getWebhookInfo().catch(() => null);
+        await edit(
+          ui.runtimeMenuText({
+            webhookUrl: info?.url ?? null,
+            pendingUpdates: info?.pending_update_count ?? null,
+            lastError: info?.last_error_message ?? null,
+          }),
+          ui.runtimeMenuKeyboard(Boolean(info?.url))
+        );
+        return;
+      }
+      case data === "rt:tovercel": {
+        clearFlow(s);
+        await ok("Memeriksa Vercel…");
+        // Webhook Telegram wajib URL publik HTTPS — mode target sandbox tidak bisa.
+        if (!/^https:\/\//i.test(config.apiBase)) {
+          await send(
+            [
+              "🚧 <b>TIDAK BISA PINDAH DARI MODE SANDBOX</b>",
+              "",
+              `Bot sedang mengendalikan pratinjau lokal: <code>${tg.esc(config.apiBase)}</code>`,
+              "Webhook Telegram wajib menunjuk URL publik HTTPS.",
+              "",
+              "Ubah <code>NEXA_API_BASE</code> di <code>mini-services/telegram-bot/.env</code> ke alamat produksi, isi kredensial developer produksi, lalu restart layanan bot.",
+            ].join("\n"),
+            backHome()
+          );
+          return;
+        }
+        if (!config.webhookSecret) {
+          await send(
+            "🚧 <code>TELEGRAM_WEBHOOK_SECRET</code> belum diisi di .env bot panel — kode rahasia ini wajib sama di kedua sisi.",
+            backHome()
+          );
+          return;
+        }
+        // Probe kesiapan endpoint webhook di produksi (dilindungi kode rahasia).
+        let reason = "";
+        try {
+          const res = await fetch(webhookUrl(), {
+            headers: { "x-telegram-bot-api-secret-token": config.webhookSecret },
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (res.ok) {
+            const json = (await res.json()) as { ok: boolean; data?: { configured?: boolean } };
+            if (json.ok && json.data?.configured) {
+              await tg.setWebhook(webhookUrl(), config.webhookSecret);
+              const info = await tg.getWebhookInfo().catch(() => null);
+              await edit(
+                [
+                  "🚀 <b>BOT SEKARANG BERJALAN DI VERCEL</b>",
+                  "",
+                  `Webhook: <code>${tg.esc(info?.url || webhookUrl())}</code>`,
+                  "",
+                  "Polling layanan panel otomatis standby — tidak akan ada konflik 409.",
+                  "Runtime ini tahan restart panel: aktif 24/7 dari serverless produksi.",
+                  "",
+                  "Catatan: bila ini pairing pertama di runtime Vercel, kirim /start lalu kode pairing — pairing tersimpan permanen di data store produksi.",
+                ].join("\n"),
+                backHome()
+              );
+              return;
+            }
+            reason = "Endpoint webhook merespons tetapi env belum lengkap di Vercel.";
+          } else {
+            reason = `Endpoint webhook menjawab HTTP ${res.status}.`;
+          }
+        } catch (e) {
+          reason = `Tidak dapat menjangkau ${webhookUrl()} — ${(e as Error).message}`;
+        }
+        await send(ui.runtimeSetupText(reason), backHome());
+        return;
+      }
+      case data === "rt:topanel": {
+        clearFlow(s);
+        await ok("Melepas webhook…");
+        await tg.deleteWebhook();
+        await edit(
+          [
+            "🏠 <b>KEMBALI KE PANEL</b>",
+            "",
+            "Webhook dilepas — polling layanan panel mengambil alih otomatis dalam ≤60 detik.",
+            "Tugas terjadwal, notifikasi chat instan, dan digest harian aktif kembali.",
+          ].join("\n"),
+          backHome()
+        );
+        return;
+      }
+
       // ----- konfirmasi -----
       case data === "confirm:yes": {
         const pending = s.pending;
@@ -800,12 +998,20 @@ async function onMessage(msg: NonNullable<tg.TelegramUpdate["message"]>): Promis
     return;
   }
 
+  // Alias perintah → menu akar yang sama dengan tombol (v1.4.0).
+  const root = COMMAND_TO_ROOT[command];
+  if (root) {
+    clearFlow(s);
+    await dispatchRoot(chatId, s, root);
+    return;
+  }
+
   if (s.stage === "input" && s.input) {
     await onInputText(chatId, s, s.input, text);
     return;
   }
 
-  await tg.sendMessage(chatId, "Ketuk /menu untuk membuka menu kendali.");
+  await tg.sendMessage(chatId, "Ketuk /menu untuk membuka menu kendali — atau ketik / untuk melihat semua perintah.");
 }
 
 async function onPhoto(chatId: number, s: Session, msg: NonNullable<tg.TelegramUpdate["message"]>): Promise<void> {

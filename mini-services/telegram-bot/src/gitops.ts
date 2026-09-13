@@ -28,7 +28,8 @@ export async function listCommits(limit = 10): Promise<CommitInfo[]> {
     `https://api.github.com/repos/${config.githubRepo}/commits?per_page=${limit}`,
     {
       headers: {
-        authorization: `Bearer ${config.githubToken}`,
+        // Tanpa token (repo publik / akses anonim) — header auth dilewati.
+        ...(config.githubToken ? { authorization: `Bearer ${config.githubToken}` } : {}),
         accept: "application/vnd.github+json",
         "user-agent": "nexastore-telegram-bot",
       },
@@ -58,7 +59,7 @@ export async function fetchAppVersion(): Promise<string> {
     `https://api.github.com/repos/${config.githubRepo}/contents/package.json?ref=${config.githubBranch}`,
     {
       headers: {
-        authorization: `Bearer ${config.githubToken}`,
+        ...(config.githubToken ? { authorization: `Bearer ${config.githubToken}` } : {}),
         accept: "application/vnd.github+json",
         "user-agent": "nexastore-telegram-bot",
       },
@@ -79,6 +80,8 @@ export type SyncResult = { ok: boolean; detail: string };
  * Non-fatal: kegagalan hanya jadi catatan, tidak menggagalkan aksi bot.
  */
 export async function syncSandbox(): Promise<SyncResult> {
+  // Tanpa token tidak ada yang bisa disinkronkan (repo privat).
+  if (!config.githubToken) return { ok: false, detail: "GITHUB_TOKEN belum diisi" };
   try {
     const url = authedRemoteUrl();
     await exec("git", ["fetch", url, config.githubBranch], { cwd: config.repoDir, timeout: 60_000 });

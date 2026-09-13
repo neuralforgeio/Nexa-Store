@@ -2,10 +2,16 @@
  * Nexa Store Telegram Bot — entry point.
  * Long polling getUpdates (urut, satu per satu) + health server di :3005
  * + jembatan WebSocket chat + scheduler tugas terjadwal + watcher obrolan.
+ *
+ * v1.4.0: menu perintah "/" didaftarkan otomatis; bila webhook Vercel aktif,
+ * poller masuk mode standby (cek tiap 60 dtk) dan otomatis mengambil alih
+ * kembali begitu webhook dilepas — dua runtime, satu bot, tanpa konflik 409.
  */
 import { createServer } from "node:http";
-import { config, assertConfigured } from "./config";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { config, assertConfigured, webhookUrl } from "./config";
 import * as tg from "./telegram";
+import { BOT_COMMANDS } from "./commands";
 import { handleUpdate } from "./handlers";
 import { isPaired } from "./state";
 import { attachChatBridge, bridgeStats } from "./chat-bridge";
@@ -95,11 +101,40 @@ function startHttpServer(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Long polling
+// Long polling + standby webhook
 // ---------------------------------------------------------------------------
+
+/**
+ * Mode standby: webhook aktif di Vercel → poller berhenti mengambil update,
+ * tapi tetap hidup dan memeriksa tiap 60 detik. Begitu webhook dilepas
+ * (perintah "kembali ke panel"), polling dilanjutkan otomatis.
+ */
+async function standby(url: string): Promise<void> {
+  let current = url;
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 60_000));
+    if (stale()) return;
+    const info = await tg.getWebhookInfo().catch(() => null);
+    if (!info) continue;
+    if (!info.url) {
+      log("webhook dilepas — polling dilanjutkan");
+      return;
+    }
+    if (info.url !== current) {
+      log(`webhook berpindah (${info.url}) — tetap standby`);
+      current = info.url;
+    }
+  }
+}
 
 async function pollLoop(): Promise<void> {
   let offset = 0;
+  // Bila webhook sedang aktif, jangan menyentuh getUpdates — langsung standby.
+  const initial = await tg.getWebhookInfo().catch(() => null);
+  if (initial?.url) {
+    log(`webhook aktif (${initial.url}) — poller standby`);
+    await standby(initial.url);
+  }
   log("polling dimulai…");
   for (;;) {
     if (stale()) {
@@ -118,8 +153,17 @@ async function pollLoop(): Promise<void> {
       }
     } catch (e) {
       if (stale()) return;
-      pollErrors += 1;
       const msg = (e as Error).message;
+      // Webhook aktif = runtime Vercel yang bekerja → bukan error, pindah standby.
+      if (/409|Conflict|webhook/i.test(msg)) {
+        const info = await tg.getWebhookInfo().catch(() => null);
+        if (info?.url) {
+          log(`webhook aktif (${info.url}) — poller standby`);
+          await standby(info.url);
+          continue;
+        }
+      }
+      pollErrors += 1;
       const wait = /409|Conflict/i.test(msg) ? 10_000 : Math.min(30_000, 3000 * pollErrors);
       log(`poll error (${pollErrors}x): ${msg} — jeda ${wait / 1000}s`);
       await new Promise((r) => setTimeout(r, wait));
@@ -135,6 +179,22 @@ async function main(): Promise<void> {
   log(`bot aktif: @${me.username} (id ${me.id})`);
   log(`target API: ${config.apiBase}`);
   log(`pairing: ${isPaired() ? "sudah terhubung" : "menunggu kode pairing"}`);
+  log(`webhook target: ${webhookUrl()}`);
+  // Menu perintah — mengetik "/" memunculkan seluruh pilihan berdeskripsi.
+  const registered = await tg.setMyCommands(BOT_COMMANDS).then(
+    () => true,
+    (e) => {
+      log(`setMyCommands gagal: ${(e as Error).message}`);
+      return false;
+    }
+  );
+  if (registered) log(`menu perintah terdaftar (${BOT_COMMANDS.length} perintah)`);
+  // PID file — launcher aplikasi memakai ini untuk menghindari dobel proses.
+  try {
+    writeFileSync(new URL("../.bot.pid", import.meta.url).pathname, `${process.pid}\n`, "utf8");
+  } catch {
+    // non-fatal
+  }
   startHttpServer();
   startScheduler();
   startChatWatcher();
@@ -144,6 +204,11 @@ async function main(): Promise<void> {
 if (import.meta.main) {
   main().catch((e) => {
     log("FATAL:", (e as Error).message);
+    try {
+      unlinkSync(new URL("../.bot.pid", import.meta.url).pathname);
+    } catch {
+      // abaikan
+    }
     process.exit(1);
   });
 }

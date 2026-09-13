@@ -9,7 +9,26 @@ import type { ConversationRecord, PromoRecord, BannerRecord, ScheduleRecord } fr
 import type { CommitInfo } from "./gitops";
 import type { DeploymentInfo } from "./vercel";
 
-const STATE_PATH = new URL("../.state.json", import.meta.url).pathname;
+/**
+ * Lokasi berkas state — tiga lapis:
+ * 1. BOT_STATE_FILE (override eksplisit, mis. dipakai route webhook Vercel);
+ * 2. runtime serverless Vercel → /tmp (satu-satunya filesystem yang bisa ditulis);
+ * 3. mode layanan panel → di samping kode (seperti semula).
+ * Di Vercel, pairing jangka panjang dijamin route webhook lewat fitur
+ * "bot-state" pada data store aplikasi — /tmp hanya penyangga instance hangat.
+ */
+function resolveStatePath(): string {
+  const override = process.env.BOT_STATE_FILE?.trim();
+  if (override) return override;
+  if (process.env.VERCEL) return "/tmp/nexa-bot-state.json";
+  try {
+    return new URL("../.state.json", import.meta.url).pathname;
+  } catch {
+    return "/tmp/nexa-bot-state.json";
+  }
+}
+
+const STATE_PATH = resolveStatePath();
 
 export type BotState = {
   ownerUserId?: number;
@@ -77,6 +96,17 @@ export function pairOwner(userId: number, chatId: number): void {
     ownerUserId: userId,
     ownerChatId: chatId,
     pairedAt: new Date().toISOString(),
+  };
+  writeState(botState);
+}
+
+/** Hidrasi pemilik dari luar (route webhook memuat pairing tersimpan). */
+export function hydrateOwner(userId: number, chatId: number, pairedAt?: string): void {
+  botState = {
+    ...botState,
+    ownerUserId: userId,
+    ownerChatId: chatId,
+    ...(pairedAt ? { pairedAt } : {}),
   };
   writeState(botState);
 }
