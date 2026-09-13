@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleUpdate } from "@bot/handlers";
-import { isPaired, ownerId, ownerChatId, hydrateOwner } from "@bot/state";
-import { BOT_COMMANDS } from "@bot/commands";
-import { setMyCommands, type TelegramUpdate } from "@bot/telegram";
+// Relative imports (bukan alias @bot/*): Turbopack build produksi di Vercel
+// tidak me-resolve alias tsconfig yang menunjuk keluar src/ — jalur relatif
+// selalu aman di dev maupun build.
+import { handleUpdate } from "../../../../../mini-services/telegram-bot/src/handlers";
+import {
+  isPaired,
+  ownerId,
+  ownerChatId,
+  hydrateOwner,
+} from "../../../../../mini-services/telegram-bot/src/state";
+import { BOT_COMMANDS } from "../../../../../mini-services/telegram-bot/src/commands";
+import {
+  setMyCommands,
+  type TelegramUpdate,
+} from "../../../../../mini-services/telegram-bot/src/telegram";
 import { readFeature, updateFeature } from "@/lib/site-features/store";
 
 export const dynamic = "force-dynamic";
