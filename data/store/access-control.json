@@ -1,11 +1,10 @@
 {
   "adminBlocked": false,
   "lockdown": {
-    "active": true,
+    "active": false,
     "scope": "all",
     "routes": [],
-    "note": "TEST LOCKDOWN PERMINTAAN RYU",
-    "updatedAt": "2026-09-13T13:17:30.439Z",
+    "updatedAt": "2026-09-13T13:19:54.863Z",
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
