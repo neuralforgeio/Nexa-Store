@@ -8,9 +8,11 @@
         "text": "Tes produksi: Tugas Terjadwal v1.3.0 berhasil dieksekusi otomatis oleh bot."
       },
       "runAt": "2026-09-13T15:35:50.289003Z",
-      "status": "pending",
+      "status": "done",
       "createdAt": "2026-09-13T15:34:20.779Z",
-      "createdBy": "dearlyfebrianoi@gmail.com"
+      "createdBy": "dearlyfebrianoi@gmail.com",
+      "lastResult": "Pengingat terkirim.",
+      "completedAt": "2026-09-13T15:35:54.227Z"
     }
   ]
 }
