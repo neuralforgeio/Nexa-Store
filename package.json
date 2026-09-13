@@ -1,6 +1,6 @@
 {
   "name": "nexastore",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "description": "Nexa Store \u2014 top up game via WhatsApp. Storefront multi-item cart, admin & developer panels, live chat, promo engine, analitik, tugas terjadwal, bot kendali Telegram.",
   "scripts": {

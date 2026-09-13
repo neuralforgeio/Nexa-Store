@@ -18,6 +18,9 @@ import { readFeature, updateFeature } from "@/lib/site-features/store";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// Scan /debugging membaca ratusan file via GitHub API — beri anggaran waktu
+// serverless yang cukup (default hanya 10 dtk).
+export const maxDuration = 60;
 
 /**
  * Telegram webhook runtime (v1.4.0) — bot bisa berjalan DI VERCEL.

@@ -47,6 +47,7 @@ di data store (`data/store/bot-state.json`, commit `ops:*` tanpa rebuild).
 | 📊 Status | Gate, katalog, analitik singkat, tugas menunggu, versi app, build terakhir |
 | 📦 Lacak Pesanan | `/lacak_order <ID>` → kartu pesanan (item, total, riwayat, keterangan) + tombol status pending/proses/sukses/batal → kirim keterangan → pengunjung membacanya di /track (v1.6.0). Notifikasi pesanan baru tampil otomatis dengan tombol status |
 | 🚩 Laporan | Laporan bug/saran pengguna dari /reports masuk ke chat pemilik lengkap waktu WIB, nama, tipe, dan lampiran media (v1.6.0) |
+| 🔍 Debugging | `/debugging` — pemindai statis nyata atas kode situs: 13 aturan (rahasia tertanam, eval/new Function, XSS innerHTML, injeksi shell, log kredensial, ignoreBuildErrors, TODO) + pemeriksaan struktural route API mutasi tanpa guard. Sumber: disk lokal (panel) / GitHub API (Vercel). Laporan per-severity dengan file:baris + saran (v1.7.0) |
 
 Otomatis di latar belakang: notifikasi obrolan baru (polling produksi 25 dtk),
 eksekutor tugas terjadwal (cek 30 dtk), dan digest analitik harian 21:00 WIB.
@@ -57,10 +58,10 @@ Ketik `/` di chat dan Telegram menampilkan seluruh perintah berdeskripsi
 (terdaftar otomatis via `setMyCommands`):
 
 `/menu` · `/status` · `/lockdown` · `/maintenance` · `/promo` · `/banner` ·
-`/chat` · `/lacak_order` · `/tasks` · `/analytics` · `/admin` · `/catalog` ·
-`/deploy` · `/settings` · `/runtime` · `/cancel` · `/help`
+`/chat` · `/lacak_order` · `/debugging` · `/tasks` · `/analytics` · `/admin` ·
+`/catalog` · `/deploy` · `/settings` · `/runtime` · `/cancel` · `/help`
 
-(17 perintah)
+(18 perintah)
 
 Setiap perintah membuka menu yang sama dengan tombolnya — tidak ada fitur
 yang hanya bisa dijangkau lewat satu jalur.

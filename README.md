@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.6.0-amber)
+![Version](https://img.shields.io/badge/version-1.7.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -267,6 +267,18 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.7.0 — Bot /debugging: pemindai bug & keamanan statis (2026-09-14)
+- **🔍 `/debugging` di Telegram** — bot memindai kode situs ini sendiri dan
+  melaporkan temuan ke pemilik: 13 aturan regex per-baris (token bot/PAT/
+  Vercel tertanam, `eval`/`new Function`, XSS `innerHTML`, injeksi shell
+  `exec` terinterpolasi, `execSync`, log kredensial, `ignoreBuildErrors`,
+  URL http, TODO/FIXME) + pemeriksaan struktural (route API mutasi tanpa
+  guard `requireCapability`, dengan allowlist route yang dijaga mekanisme
+  lain). Sumber kode adaptif: disk lokal di panel, GitHub Trees+Contents API
+  di Vercel (anggaran 25 dtk, 10 worker paralel). Laporan jujur — di uji
+  sandbox ia menemukan 2 temuan nyata tanpa false positive. Route webhook
+  kini `maxDuration = 60` agar pemindaian serverless selesai.
 
 ### v1.6.0 — Lacak pesanan, laporan, push notification, logo baru (2026-09-14)
 - **📦 Lacak pesanan end-to-end** — checkout instant & keranjang kini

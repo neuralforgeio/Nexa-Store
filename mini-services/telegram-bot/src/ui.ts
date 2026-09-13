@@ -8,6 +8,7 @@ import type { AccessState, CatalogRead, GateState, GameRecord, ProductRecord, St
 import type { CommitInfo } from "./gitops";
 import type { DeploymentInfo } from "./vercel";
 import type { Session } from "./state";
+import type { ScanResult, Finding, Severity } from "./debugger";
 
 export type InlineButton = { text: string; callback_data?: string; url?: string };
 export type InlineKeyboard = InlineButton[][];
@@ -1240,4 +1241,87 @@ export function digestText(d: {
     "",
     "Sampai besok — jaga kesehatan. 🌙",
   ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// v1.7.0 — /debugging: laporan pemindaian keamanan & bug statis.
+// ---------------------------------------------------------------------------
+
+
+const SEV_LABEL: Record<Severity, string> = {
+  critical: "🔴 Kritis",
+  high: "🟠 Tinggi",
+  medium: "🟡 Sedang",
+  low: "🔵 Rendah",
+  info: "⚪️ Info",
+};
+
+const SEV_LIMIT = 12; // maksimal temuan per severity yang ditampilkan detail
+
+export function debugIntroText(): string {
+  return [
+    "🔍 <b>MEMINDAI KODE…</b>",
+    "",
+    "Mengumpulkan source (produksi via GitHub API / panel via disk lokal),",
+    "lalu menjalankan aturan keamanan statis. Mohon tunggu 5–30 detik…",
+  ].join("\n");
+}
+
+export function debugSummaryText(r: ScanResult): string {
+  const by = { critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<Severity, number>;
+  for (const f of r.findings) by[f.severity]++;
+  const dur = r.durationMs < 1000 ? `${r.durationMs} ms` : `${(r.durationMs / 1000).toFixed(1)} dtk`;
+  return [
+    "🔍 <b>HASIL PEMINDAIAN DEBUGGING</b>",
+    "",
+    `File dipindai: <b>${r.filesScanned}</b> · baris: <b>${r.linesScanned.toLocaleString("id-ID")}</b>`,
+    `Sumber: ${r.mode === "github" ? "GitHub API (produksi)" : "disk lokal (panel)"} · durasi ${dur}${r.truncated ? " · <i>dipotong (anggaran waktu)</i>" : ""}`,
+    "",
+    `${SEV_LABEL.critical}: <b>${by.critical}</b>`,
+    `${SEV_LABEL.high}: <b>${by.high}</b>`,
+    `${SEV_LABEL.medium}: <b>${by.medium}</b>`,
+    `${SEV_LABEL.low}: <b>${by.low}</b>`,
+    `${SEV_LABEL.info}: <b>${by.info}</b>`,
+    "",
+    by.critical > 0
+      ? "⚠️ Ada temuan KRITIS — periksa detail di bawah dan rotasi kredensial bila perlu."
+      : "Tidak ada temuan kritis. Detail temuan menyusul di pesan berikutnya.",
+  ].join("\n");
+}
+
+export function debugFindingsText(findings: Finding[]): string {
+  const groups = new Map<Severity, Finding[]>();
+  for (const f of findings) {
+    const arr = groups.get(f.severity) ?? [];
+    arr.push(f);
+    groups.set(f.severity, arr);
+  }
+  const order: Severity[] = ["critical", "high", "medium", "low", "info"];
+  const parts: string[] = ["📋 <b>DETAIL TEMUAN</b>"];
+  for (const sev of order) {
+    const arr = groups.get(sev);
+    if (!arr || arr.length === 0) continue;
+    parts.push("", `<b>${SEV_LABEL[sev]} — ${arr.length} temuan</b>`, "");
+    for (const f of arr.slice(0, SEV_LIMIT)) {
+      parts.push(
+        `${SEV_LABEL[sev].split(" ")[0]} <b>${f.title}</b>`,
+        `   📁 <code>${f.file}:${f.line}</code>`,
+        `   ┃ <i>${f.snippet}</i>`,
+        `   ➜ ${f.suggestion}`,
+        ""
+      );
+    }
+    if (arr.length > SEV_LIMIT) {
+      parts.push(`   … dan ${arr.length - SEV_LIMIT} temuan lainnya (${sev}).`, "");
+    }
+  }
+  if (parts.length === 1) parts.push("Tidak ada detail — pemindaian bersih. ✅");
+  return parts.join("\n");
+}
+
+export function debugKeyboard(): InlineKeyboard {
+  return [
+    [{ text: "🔁 Pindai ulang", callback_data: "dbg" }],
+    [{ text: "⬅️ Menu", callback_data: "menu" }],
+  ];
 }

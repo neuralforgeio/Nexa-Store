@@ -9,6 +9,7 @@ import * as nexa from "./nexa";
 import type { GameRecord, ProductRecord } from "./nexa";
 import * as vercel from "./vercel";
 import * as git from "./gitops";
+import { runSecurityScan } from "./debugger";
 import { COMMAND_TO_ROOT } from "./commands";
 import {
   clearFlow,
@@ -187,6 +188,20 @@ async function dispatchRoot(chatId: number, s: Session, data: string): Promise<v
       s.stage = "input";
       s.input = "order-id";
       await send(ui.orderIdPromptText());
+      return;
+    }
+    case "dbg": {
+      clearFlow(s);
+      await send(ui.debugIntroText());
+      try {
+        const result = await runSecurityScan();
+        await send(ui.debugSummaryText(result), ui.debugKeyboard());
+        if (result.findings.length > 0) {
+          await send(ui.debugFindingsText(result.findings).slice(0, 3900), ui.debugKeyboard());
+        }
+      } catch (e) {
+        await send(`\u26a0\ufe0f Pemindaian gagal: <code>${tg.esc((e as Error).message.slice(0, 120))}</code>`, ui.debugKeyboard());
+      }
       return;
     }
     case "prm": {
