@@ -34,9 +34,15 @@
           "from": "user",
           "text": "400k kak, target saya, saya mau beli yang sampai harga total nya 500k",
           "at": "2026-09-13T19:47:35.611Z"
+        },
+        {
+          "id": "m_mu087g9ikh1a",
+          "from": "owner",
+          "text": "Tidak apa apa kak",
+          "at": "2026-09-13T19:47:44.790Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T19:47:35.611Z",
+      "lastMessageAt": "2026-09-13T19:47:44.790Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": "2026-09-13T19:47:08.466Z"
     },
