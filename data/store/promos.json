@@ -1,3 +1,15 @@
 {
-  "promos": []
+  "promos": [
+    {
+      "id": "promo_201a301af4",
+      "title": "Promo Rilis v1.3.0",
+      "scope": "global",
+      "percentOff": 10,
+      "startsAt": null,
+      "endsAt": null,
+      "active": true,
+      "createdAt": "2026-09-13T15:33:30.210Z",
+      "createdBy": "dearlyfebrianoi@gmail.com"
+    }
+  ]
 }
