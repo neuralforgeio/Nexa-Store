@@ -1,3 +1,16 @@
 {
-  "tasks": []
+  "tasks": [
+    {
+      "id": "task_ced22942b2",
+      "label": "Uji scheduler v1.3.0",
+      "type": "reminder",
+      "payload": {
+        "text": "Tes produksi: Tugas Terjadwal v1.3.0 berhasil dieksekusi otomatis oleh bot."
+      },
+      "runAt": "2026-09-13T15:35:50.289003Z",
+      "status": "pending",
+      "createdAt": "2026-09-13T15:34:20.779Z",
+      "createdBy": "dearlyfebrianoi@gmail.com"
+    }
+  ]
 }
