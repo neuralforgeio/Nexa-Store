@@ -10,8 +10,12 @@
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
-    "active": false,
-    "scope": "all",
-    "routes": []
+    "active": true,
+    "scope": "routes",
+    "routes": [
+      "/help"
+    ],
+    "updatedAt": "2026-09-13T11:10:57.769Z",
+    "updatedBy": "dearlyfebrianoi@gmail.com"
   }
 }
