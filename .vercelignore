@@ -11,7 +11,6 @@ Caddyfile
 db
 prisma
 examples
-mini-services
 skills
 tests
 docs
@@ -22,3 +21,10 @@ scripts
 *.log
 .git
 agent-browser
+
+# mini-services: hanya source bot yang dikecualikan dari ignore karena
+# route /api/telegram/webhook meng-compile-nya langsung di serverless.
+mini-services/*
+!mini-services/telegram-bot/
+mini-services/telegram-bot/*
+!mini-services/telegram-bot/src/
