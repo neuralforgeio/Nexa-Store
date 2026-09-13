@@ -1,0 +1,17 @@
+{
+  "reports": [
+    {
+      "id": "rep_795112d6a3",
+      "type": "bug",
+      "name": "Uji Sistem",
+      "text": "Ini laporan uji otomatis dari sandbox — tombol checkout di mobile terpotong 2px.",
+      "media": {
+        "kind": "image",
+        "mime": "image/png",
+        "size": 1065,
+        "fileName": "uji-laporan.png"
+      },
+      "createdAt": "2026-09-13T20:53:03.267Z"
+    }
+  ]
+}
