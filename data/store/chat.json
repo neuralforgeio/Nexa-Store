@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_ab10fffbba4ca95fbb6775df",
+      "name": "Uji Sistem",
+      "createdAt": "2026-09-13T15:34:19.560Z",
+      "messages": [
+        {
+          "id": "m_mtzz5ju06a8x",
+          "from": "user",
+          "text": "Halo! Ini pesan uji dari chat live produksi — v1.3.0.",
+          "at": "2026-09-13T15:34:19.560Z"
+        }
+      ],
+      "lastMessageAt": "2026-09-13T15:34:19.560Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
