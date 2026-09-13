@@ -10,9 +10,15 @@
           "from": "user",
           "text": "hai",
           "at": "2026-09-13T17:19:05.727Z"
+        },
+        {
+          "id": "m_mu02wmcwxxel",
+          "from": "owner",
+          "text": "halo",
+          "at": "2026-09-13T17:19:21.392Z"
         }
       ],
-      "lastMessageAt": "2026-09-13T17:19:05.727Z",
+      "lastMessageAt": "2026-09-13T17:19:21.392Z",
       "unreadByOwner": 0,
       "ownerLastReadAt": "2026-09-13T17:19:16.803Z"
     },
