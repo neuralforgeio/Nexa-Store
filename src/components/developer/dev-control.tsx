@@ -34,6 +34,7 @@ import {
   AlertTriangle,
   Ban,
   CheckCircle2,
+  Eye,
   Info,
   Power,
   ShieldAlert,
@@ -360,12 +361,25 @@ function GateSection({
       </div>
 
       {active ? (
-        <p className="mt-4 flex items-start gap-2 border-t border-border/60 pt-3 text-xs text-muted-foreground">
-          <AlertTriangle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          {isLockdown
-            ? "Selama aktif, kamu tetap bisa mengakses semua halaman sebagai Developer — gunakan tombol Nonaktifkan untuk membuka situs."
-            : "Selama aktif, Admin tetap bisa mengakses situs untuk menyelesaikan pekerjaan pemeliharaan."}
-        </p>
+        <div className="mt-4 border-t border-border/60 pt-3">
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <AlertTriangle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <span>
+              Gate ini <strong className="font-semibold text-foreground">aktif dan sedang ditegakkan</strong> untuk
+              pengunjung biasa. Kamu tidak diarahkan ke halaman gate karena sesi Developer selalu
+              lolos — pakai tombol {isLockdown ? "Nonaktifkan" : "Akhiri"} untuk membuka situs.
+            </span>
+          </p>
+          <a
+            href={isLockdown ? "/lockdown" : "/maintenance"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-2/60 px-3 py-1.5 text-xs font-semibold text-foreground/85 transition-colors hover:bg-surface-2"
+          >
+            <Eye aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
+            Lihat tampilan halaman {isLockdown ? "lockdown" : "maintenance"}
+          </a>
+        </div>
       ) : null}
     </section>
   );

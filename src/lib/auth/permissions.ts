@@ -77,21 +77,12 @@ export function assertCapability(
     return { ok: false, status: 401, message: "Masuk terlebih dahulu." };
   }
   if (!can(role, capability)) {
-    const developerOnly: Capability[] = [
-      "data.inspect",
-      "data.importExport",
-      "diagnostics.repository",
-      "diagnostics.deployment",
-      "rollback.inspect",
-      "featureFlags.manage",
-      "validation.run",
-    ];
+    // Deliberately generic: API responses must not reveal which higher
+    // roles or capabilities exist beyond the caller's own.
     return {
       ok: false,
       status: 403,
-      message: developerOnly.includes(capability)
-        ? "Akses ini hanya tersedia untuk Developer."
-        : "Anda tidak memiliki izin untuk aksi ini.",
+      message: "Anda tidak memiliki izin untuk aksi ini.",
     };
   }
   return { ok: true };

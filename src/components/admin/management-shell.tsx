@@ -119,15 +119,17 @@ export function ManagementShell({
   const current = (s: Section) => active.group === s.group && active.key === s.key;
 
   const renderNav = (onPick: (path: string) => void, compact = false) => (
-    <nav aria-label="Navigasi panel" className="flex flex-col gap-1">
-      <p
-        className={cn(
-          "px-2 pb-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70",
-          compact ? "text-center" : "pl-2"
-        )}
-      >
-        Panel
-      </p>
+    <nav aria-label="Navigasi panel" className="flex min-w-0 flex-col gap-1">
+      {/* Group label: text when expanded, a divider when collapsed (never
+          overflows the 72px rail — that was the source of the horizontal
+          scroll on the sidebar). */}
+      {compact ? (
+        <span aria-hidden="true" className="mx-auto mt-1 mb-1.5 block h-px w-6 bg-sidebar-border" />
+      ) : (
+        <p className="px-2 pb-1 pl-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+          Panel
+        </p>
+      )}
       {ADMIN_NAV.map((item) => (
         <NavItem
           key={item.key}
@@ -142,14 +144,13 @@ export function ManagementShell({
 
       {isDeveloper ? (
         <>
-          <p
-            className={cn(
-              "mt-4 px-2 pb-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70",
-              compact ? "text-center" : "pl-2"
-            )}
-          >
-            Developer
-          </p>
+          {compact ? (
+            <span aria-hidden="true" className="mx-auto mt-4 mb-1.5 block h-px w-6 bg-sidebar-border" />
+          ) : (
+            <p className="mt-4 px-2 pb-1 pl-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              Developer
+            </p>
+          )}
           {DEVELOPER_NAV.map((item) => (
             <NavItem
               key={item.key}
@@ -162,11 +163,7 @@ export function ManagementShell({
             />
           ))}
         </>
-      ) : (
-        <p className="mt-4 px-2 text-[11px] leading-relaxed text-muted-foreground/70">
-          Alat Developer tidak tersedia untuk peran Admin.
-        </p>
-      )}
+      ) : null}
     </nav>
   );
 
@@ -241,7 +238,7 @@ export function ManagementShell({
           </button>
         </div>
 
-        <div className="scroll-slim flex-1 overflow-y-auto p-2.5">{renderNav(() => undefined, collapsed)}</div>
+        <div className="scroll-slim flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-2.5">{renderNav(() => undefined, collapsed)}</div>
 
         <div className="p-2.5">{sidebarFooter(collapsed)}</div>
       </aside>
@@ -296,7 +293,7 @@ export function ManagementShell({
               </span>
             </span>
           </div>
-          <div className="scroll-slim flex-1 overflow-y-auto p-3">
+          <div className="scroll-slim flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-3">
             {renderNav(() => setNavOpen(false))}
           </div>
           <div className="p-3">{sidebarFooter()}</div>

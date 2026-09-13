@@ -10,7 +10,7 @@ A production-ready digital game top-up storefront with a multi-item cart,
 per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, and a file-based catalog that can persist through GitHub.
 
-![Version](https://img.shields.io/badge/version-1.1.0-amber)
+![Version](https://img.shields.io/badge/version-1.1.1-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -207,6 +207,26 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.1.1 — Fixes & stealth hardening (2026-09-13)
+- **Fixed**: game icons missing in the admin dashboard's *Game dengan produk
+  terbanyak* list and in every row of the *Produk* table — the uploaded
+  icons now render (letter monogram stays as fallback only).
+- **Fixed**: login page is now pinned to the viewport — the page itself never
+  scrolls at any height (content adapts via clamp; only the form column may
+  scroll internally when a mobile keyboard shrinks the screen).
+- **Fixed**: the security note on the login brand panel now matches the type
+  scale and alignment of the feature list above it (deliberate footer strip).
+- **Fixed**: dashboard sidebar no longer scrolls horizontally when collapsed —
+  group labels become slim dividers in the icon rail.
+- **Security**: staff surfaces no longer reveal the existence of developer
+  mode to Admins — the sidebar hint is gone, `/dev/*` renders the same 404
+  as any unknown address for Admins, API 403s use one generic message, and
+  gate pages no longer offer a "Masuk sebagai staf" link.
+- **Improved**: *Kontrol Situs* explains why the Developer never sees the
+  gate screens (session bypass) and adds a one-click preview of the
+  lockdown / maintenance page as visitors see it.
+- Version semantics: bug-fix + hardening release → patch bump (`1.1.0` → `1.1.1`).
 
 ### v1.1.0 — Site control & polish (2026-09-13)
 - **Added**: Developer *Kontrol Situs* — total or route-scoped **lockdown**

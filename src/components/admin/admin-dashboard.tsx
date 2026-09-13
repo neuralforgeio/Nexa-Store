@@ -116,7 +116,7 @@ export function AdminDashboard({ role, onNavigate }: { role: Role; onNavigate: (
               const count = data.products.filter((p) => p.gameId === g.id && p.enabled).length;
               return (
                 <li key={g.id} className="flex items-center gap-3 py-2.5">
-                  <GameMark name={g.name} size="sm" />
+                  <GameMark name={g.name} image={g.image} size="sm" />
                   <span className="text-sm">{g.name}</span>
                   {!g.enabled ? <span className="text-xs text-muted-foreground">(nonaktif)</span> : null}
                   <span className="ml-auto font-mono text-xs text-muted-foreground">{count} produk aktif</span>

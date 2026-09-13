@@ -170,18 +170,7 @@ function AppFrame() {
     if (route.view === "help") return <HelpView />;
 
     if (route.view === "not-found") {
-      return (
-        <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-4 px-4 py-24 text-center sm:px-6">
-          <p className="font-display text-6xl font-bold tracking-tight text-primary/25">404</p>
-          <h1 className="font-display text-xl font-semibold">Halaman tidak ditemukan</h1>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Alamat yang kamu buka tidak ada atau sudah dipindahkan.
-          </p>
-          <Button asChild>
-            <RouteLink href="/">Kembali ke beranda</RouteLink>
-          </Button>
-        </main>
-      );
+      return <NotFoundView />;
     }
 
     const role = session.data?.role;
@@ -208,13 +197,12 @@ function AppFrame() {
       );
     }
 
-    if (route.view === "developer" && (role === "ADMIN" || role === "DEVELOPER")) {
+    if (route.view === "developer") {
       if (role !== "DEVELOPER") {
-        return (
-          <ManagementShell role={role} active={{ group: "developer", key: route.section }} onNavigate={navigate}>
-            <ForbiddenForAdmin />
-          </ManagementShell>
-        );
+        // Stealth: staff surfaces beyond an Admin's own panel look exactly
+        // like any other unknown address — no hint that another mode exists
+        // (source-of-truth: the server still enforces every capability).
+        return <NotFoundView />;
       }
       return (
         <ManagementShell role={role} active={{ group: "developer", key: route.section }} onNavigate={navigate}>
@@ -322,12 +310,17 @@ function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSecti
   }
 }
 
-function ForbiddenForAdmin() {
+function NotFoundView() {
   return (
-    <ErrorState
-      title="Akses ini hanya tersedia untuk Developer."
-      description="Peran Admin tidak memiliki alat teknis ini. Batas ini juga ditegakkan di sisi server."
-      className="min-h-[50vh]"
-    />
+    <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-4 px-4 py-24 text-center sm:px-6">
+      <p className="font-display text-6xl font-bold tracking-tight text-primary/25">404</p>
+      <h1 className="font-display text-xl font-semibold">Halaman tidak ditemukan</h1>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        Alamat yang kamu buka tidak ada atau sudah dipindahkan.
+      </p>
+      <Button asChild>
+        <RouteLink href="/">Kembali ke beranda</RouteLink>
+      </Button>
+    </main>
   );
 }

@@ -174,7 +174,7 @@ export function AdminProducts() {
                 return (
                   <TableRow key={p.id} className={cn(!p.enabled && "opacity-55")}>
                     <TableCell>
-                      <GameMark name={game?.name ?? "?"} size="sm" />
+                      <GameMark name={game?.name ?? "?"} image={game?.image} size="sm" />
                     </TableCell>
                     <TableCell>
                       <p className="font-medium">

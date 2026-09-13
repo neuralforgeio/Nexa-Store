@@ -34,6 +34,15 @@ type ShowcaseItem = {
   priceIdr: number;
 };
 
+/**
+ * Login layout is pinned to the viewport: the page itself never scrolls
+ * (h-dvh + overflow-hidden). Only the form column may scroll internally on
+ * very short screens (e.g. with a mobile keyboard up) — the page stays put.
+ * Brand-panel sections adapt their height via clamp() so nothing clips on
+ * laptop viewports (~660px usable height).
+ */
+
+
 const FALLBACK_SHOWCASE: ShowcaseItem[] = [
   { key: "f-1", name: "Valorant", denomination: "2050 Points", priceIdr: 220000 },
   { key: "f-2", name: "PUBG Mobile", denomination: "660 UC", priceIdr: 161000 },
@@ -78,7 +87,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["session"] });
       toast.success("Berhasil masuk", {
-        description: `Mode ${data.role === "DEVELOPER" ? "Developer" : "Admin"}.`,
+        description: "Dashboard siap digunakan.",
       });
       onAuthenticated(data.role);
     },
@@ -102,7 +111,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
   const [floatMain, floatA, floatB] = [showcase[0] ?? FALLBACK_SHOWCASE[0], showcase[1] ?? FALLBACK_SHOWCASE[1], showcase[2] ?? FALLBACK_SHOWCASE[2]];
 
   return (
-    <main id="main" className="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
+    <main id="main" className="grid h-dvh grid-cols-1 overflow-hidden lg:grid-cols-2">
       {/* Blocked-Admin modal (skull + block, with the Developer's reason). */}
       <BlockedAdminDialog
         open={blocked !== null}
@@ -115,7 +124,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
       {/* Brand panel — the store rendered as tilted, dark-lit artwork. */}
       <section
         aria-hidden="true"
-        className="bg-atmosphere relative hidden flex-col justify-between overflow-hidden border-r border-border/70 p-10 lg:flex"
+        className="bg-atmosphere relative hidden flex-col overflow-hidden border-r border-border/70 p-8 xl:p-10 lg:flex"
       >
         {/* Dark-lighting layers */}
         <div className="bg-grid absolute inset-0 opacity-70 [mask-image:radial-gradient(75%_75%_at_30%_25%,black,transparent)]" />
@@ -126,24 +135,24 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
           N
         </span>
 
-        <div className="relative flex items-center gap-2.5">
+        <div className="relative flex shrink-0 items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-primary/80 font-display text-base font-bold text-primary-foreground shadow-[var(--glow-primary)]">
             N
           </span>
           <span className="font-display text-base font-semibold uppercase tracking-tight">Nexa Store</span>
         </div>
 
-        <div className="relative">
+        <div className="relative flex min-h-0 flex-1 flex-col justify-center py-5">
           {/* Headline */}
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary shadow-card">
-              <LockKeyhole className="h-7 w-7" />
+            <div className="mb-5 flex h-13 w-13 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary shadow-card">
+              <LockKeyhole className="h-6 w-6" />
             </div>
-            <p className="font-display text-balance text-3xl font-bold leading-tight tracking-tight">
+            <p className="font-display text-balance text-2xl font-bold leading-tight tracking-tight xl:text-3xl">
               Panel kelola katalog dan pengaturan store.
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -152,8 +161,9 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
             </p>
           </motion.div>
 
-          {/* Tilting store showcase */}
-          <div className="relative mt-10 h-64">
+          {/* Tilting store showcase — height adapts to the viewport so the
+              panel never overflows (login page is pinned, no page scroll). */}
+          <div className="relative mt-8 h-[clamp(10.5rem,25vh,16rem)]">
             {/* Mini storefront window — tilted, dark-lit */}
             <motion.div
               initial={reducedMotion ? false : { opacity: 0, y: 24, rotate: -9 }}
@@ -261,8 +271,9 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
             </motion.div>
           </div>
 
-          {/* Feature bullets */}
-          <ul className="mt-9 space-y-3">
+          {/* Feature bullets — hidden on short viewports so the pinned
+              panel keeps breathing room. */}
+          <ul className="mt-8 hidden space-y-3 [@media(min-height:46rem)]:block">
             {[
               "Perubahan katalog tersimpan sebagai riwayat",
               "Harga dan nominal diedit langsung dari panel",
@@ -282,14 +293,19 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
           </ul>
         </div>
 
-        <p className="relative flex items-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
-          Sesi terlindungi cookie bertanda tangan server.
-        </p>
+        {/* Security note — same type scale and icon alignment as the feature
+            bullets above, framed as a deliberate footer strip. */}
+        <div className="relative shrink-0">
+          <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-2/40 px-3 py-2">
+            <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+            <p className="text-sm text-foreground/75">Sesi terlindungi cookie bertanda tangan server.</p>
+          </div>
+        </div>
       </section>
 
-      {/* Form panel */}
-      <section className="relative flex items-center justify-center p-6 sm:p-10">
+      {/* Form panel — the only column that may scroll (internally, e.g. with
+          a mobile keyboard up). The page itself never moves. */}
+      <section className="relative flex items-center justify-center overflow-y-auto overscroll-contain p-6 sm:p-10">
         <div className="absolute right-5 top-5">
           <ThemeToggle />
         </div>
@@ -309,7 +325,7 @@ export function LoginView({ onAuthenticated }: { onAuthenticated: (role: Role) =
 
           <h1 className="font-display text-2xl font-bold tracking-tight">Masuk ke dashboard</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Halaman ini untuk Admin dan Developer store.
+            Halaman khusus pengelola Nexa Store.
           </p>
 
           <form

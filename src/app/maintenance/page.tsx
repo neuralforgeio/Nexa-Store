@@ -109,12 +109,6 @@ export default async function MaintenancePage() {
 
         <div className="mt-8 flex flex-col items-center gap-3">
           <GateRetryButton gate="maintenance" className="flex flex-col items-center" />
-          <a
-            href="/login"
-            className="text-xs text-[oklch(0.65_0.012_75)] underline-offset-4 transition-colors hover:text-[oklch(0.85_0.01_75)] hover:underline"
-          >
-            Masuk sebagai staf
-          </a>
         </div>
 
         {viewerRole === "DEVELOPER" ? (
@@ -136,7 +130,7 @@ export default async function MaintenancePage() {
         ) : null}
 
         <p className="mt-10 text-[11px] text-[oklch(0.55_0.012_75)]">
-          Nexa Store · pemeliharaan dijalankan oleh Developer
+          Nexa Store · pemeliharaan dijalankan oleh tim teknis
         </p>
       </div>
     </main>

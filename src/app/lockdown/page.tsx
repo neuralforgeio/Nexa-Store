@@ -103,8 +103,8 @@ export default async function LockdownPage() {
         </h1>
         <p className="mt-4 max-w-sm text-sm leading-relaxed text-[oklch(0.75_0.02_25)]">
           Situs ini sedang berada dalam mode lockdown yang ditetapkan oleh
-          Developer. Seluruh akses pembeli sementara ditutup sampai batas waktu
-          yang tidak ditentukan.
+          pengelola teknis situs. Seluruh akses pembeli sementara ditutup
+          sampai batas waktu yang tidak ditentukan.
         </p>
 
         {/* The Developer's reason */}
@@ -115,18 +115,12 @@ export default async function LockdownPage() {
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[oklch(0.88_0.02_25)]">
             {lockdown.note?.trim()
               ? `“${lockdown.note.trim()}”`
-              : "Developer tidak mencantumkan alasan. Situs akan dibuka kembali setelah keputusan diambil."}
+              : "Pengelola tidak mencantumkan alasan. Situs akan dibuka kembali setelah keputusan diambil."}
           </p>
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-3">
           <GateRetryButton gate="lockdown" className="flex flex-col items-center" />
-          <a
-            href="/login"
-            className="text-xs text-[oklch(0.65_0.03_25)] underline-offset-4 transition-colors hover:text-[oklch(0.85_0.02_25)] hover:underline"
-          >
-            Masuk sebagai staf
-          </a>
         </div>
 
         {viewerRole === "DEVELOPER" ? (
@@ -148,7 +142,7 @@ export default async function LockdownPage() {
         ) : null}
 
         <p className="mt-10 text-[11px] text-[oklch(0.55_0.03_25)]">
-          Nexa Store · lockdown ditetapkan oleh Developer
+          Nexa Store · akses ditutup sementara oleh pengelola
         </p>
       </div>
     </main>
