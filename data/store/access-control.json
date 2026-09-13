@@ -1,5 +1,18 @@
 {
   "adminBlocked": false,
-  "lockdown": { "active": false, "scope": "all", "routes": [] },
-  "maintenance": { "active": false, "scope": "all", "routes": [] }
+  "lockdown": {
+    "active": true,
+    "scope": "routes",
+    "routes": [
+      "/help"
+    ],
+    "note": "Uji coba lockdown produksi — akan langsung dinonaktifkan.",
+    "updatedAt": "2026-09-13T10:57:09.898Z",
+    "updatedBy": "dearlyfebrianoi@gmail.com"
+  },
+  "maintenance": {
+    "active": false,
+    "scope": "all",
+    "routes": []
+  }
 }
