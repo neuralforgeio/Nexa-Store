@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "git log -1 --pretty=%B | grep -qE '^(store|chat|analytics|ops):' && exit 0 || exit 1"
+}
