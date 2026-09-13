@@ -1,17 +1,17 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 3,
+      "views": 5,
       "uniques": 2,
       "byPath": {
-        "/login": 1,
+        "/login": 3,
         "/": 2
       },
       "byReferrer": {
-        "langsung": 3
+        "langsung": 5
       },
       "byDevice": {
-        "desktop": 3
+        "desktop": 5
       },
       "events": {
         "chat_open": 1
@@ -25,6 +25,8 @@
   "recent": [
     1789319955843,
     1789328066670,
-    1789328066670
+    1789328066670,
+    1789328072175,
+    1789328072175
   ]
 }
