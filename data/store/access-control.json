@@ -1,11 +1,10 @@
 {
   "adminBlocked": false,
   "lockdown": {
-    "active": true,
+    "active": false,
     "scope": "all",
     "routes": [],
-    "note": "Uji bot Telegram — lockdown sementara, akan segera diangkat",
-    "updatedAt": "2026-09-13T12:25:38.878Z",
+    "updatedAt": "2026-09-13T12:25:47.998Z",
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
