@@ -1,25 +1,25 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 23,
+      "views": 24,
       "uniques": 8,
       "byPath": {
         "/login": 4,
-        "/": 17,
+        "/": 18,
         "/admin/chat": 1,
         "/help": 1
       },
       "byReferrer": {
-        "langsung": 21,
+        "langsung": 22,
         "localhost": 1,
         "preview-chat-e975b689-25fb-45b7-be17-ac84c61b7173.space-z.ai": 1
       },
       "byDevice": {
         "desktop": 12,
-        "mobile": 11
+        "mobile": 12
       },
       "events": {
-        "chat_open": 4
+        "chat_open": 5
       }
     }
   },
@@ -56,6 +56,7 @@
     1789329851225,
     1789330098037,
     1789330098037,
-    1789330143446
+    1789330143446,
+    1789330302573
   ]
 }
