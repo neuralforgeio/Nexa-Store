@@ -1,6 +1,20 @@
 {
   "reports": [
     {
+      "id": "rep_17b7d4eb5e",
+      "type": "bug",
+      "name": "E2E Test",
+      "text": "Laporan uji end-to-end v1.8.0 — lampiran gambar harus tersimpan, tampil di konsol, dan terkirim ke Telegram dengan foto.",
+      "media": {
+        "kind": "image",
+        "mime": "image/png",
+        "size": 29329,
+        "fileName": "logo.png",
+        "storedAt": "2026-09-14T03:33:59.821Z"
+      },
+      "createdAt": "2026-09-14T03:33:58.803Z"
+    },
+    {
       "id": "rep_b31ad3ca77",
       "type": "bug",
       "name": "P",
