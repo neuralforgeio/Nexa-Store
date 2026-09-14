@@ -1,12 +1,12 @@
 {
   "days": {
     "2026-09-14": {
-      "views": 54,
-      "uniques": 11,
+      "views": 55,
+      "uniques": 12,
       "byPath": {
         "/login": 7,
         "/": 27,
-        "/admin/chat": 2,
+        "/admin/chat": 3,
         "/help": 1,
         "/reports": 4,
         "/track": 7,
@@ -17,17 +17,17 @@
         "/games/mobile-legends": 1
       },
       "byReferrer": {
-        "langsung": 46,
+        "langsung": 47,
         "localhost": 1,
         "preview-chat-e975b689-25fb-45b7-be17-ac84c61b7173.space-z.ai": 3,
         "nexastoregame.vercel.app": 4
       },
       "byDevice": {
         "desktop": 27,
-        "mobile": 27
+        "mobile": 28
       },
       "events": {
-        "chat_open": 7,
+        "chat_open": 8,
         "order_track": 2
       }
     }
@@ -43,7 +43,8 @@
     "c521e552f519ee560e78d648": "2026-09-14",
     "3b29781cd243ebaff310ee25": "2026-09-14",
     "d548fe6d02428c984993d1b5": "2026-09-14",
-    "ec0963e60382d0410ac6a9e2": "2026-09-14"
+    "ec0963e60382d0410ac6a9e2": "2026-09-14",
+    "8625fd7155ba80d4294ed006": "2026-09-14"
   },
   "recent": [
     1789319955843,
@@ -99,6 +100,7 @@
     1789343761018,
     1789355047665,
     1789355115600,
-    1789355115600
+    1789355115600,
+    1789355148029
   ]
 }
