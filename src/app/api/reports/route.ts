@@ -1,18 +1,31 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { clientIp, jsonError, jsonOk } from "@/lib/api/http";
 import { updateFeature, newId } from "@/lib/site-features/store";
+import { writeReportMedia, deleteReportMedia } from "@/lib/site-features/media";
 import { sendOwnerReportNotification } from "@/lib/telegram-notify";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// Simpan media (upload GitHub di produksi) + notifikasi perlu ruang waktu.
+export const maxDuration = 60;
 
 /**
- * Laporan pengguna (v1.6.0) — /reports.
+ * Laporan pengguna (v1.6.0, media persist v1.8.0) — /reports.
  * POST multipart: type (bug|feature|other), name (opsional), text, dan
  * lampiran media opsional (gambar ≤ 2.5 MB, video ≤ 4 MB — batas body
- * serverless Vercel 4.5 MB). Metadata tersimpan di data store; media
- * diteruskan langsung ke Telegram pemilik.
+ * serverless Vercel 4.5 MB).
+ *
+ * v1.8.0:
+ *  - Byte media kini TERSIMPAN PERMANEN (data/media/reports/<id>.<ext> —
+ *    sandbox: filesystem, produksi: GitHub Contents API) sehingga bisa
+ *    dilihat + diklik (preview modal) di konsol laporan.
+ *  - Notifikasi Telegram dijadwalkan lewat after() — terjamin dieksekusi
+ *    SETELAH respons terkirim (di Vercel, `void promise` biasa bisa
+ *    ter-freeze sebelum upload selesai — itulah kenapa media selama ini
+ *    sering tidak sampai ke Telegram).
+ *  - Laporan lama yang tergeser oleh batas 200 → media-nya dihapus
+ *    (best-effort) supaya repo tidak menumpuk file orphan.
  */
 
 const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
@@ -29,7 +42,13 @@ type ReportRecord = {
   type: "bug" | "feature" | "other";
   name: string | null;
   text: string;
-  media: { kind: "image" | "video"; mime: string; size: number; fileName: string } | null;
+  media: {
+    kind: "image" | "video";
+    mime: string;
+    size: number;
+    fileName: string;
+    storedAt?: string;
+  } | null;
   createdAt: string;
 };
 
@@ -108,24 +127,65 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
+  // Simpan byte media SEBELUM record — record hanya mereferensikan media yang
+  // benar-benar tersimpan (konsisten untuk konsol). Bila penyimpanan gagal,
+  // laporan tetap masuk tanpa media (byte tetap diteruskan ke Telegram via
+  // after()) — kegagalan satu jalur tidak membatalkan jalur lain.
+  let mediaStored = false;
+  if (media && mediaMeta) {
+    try {
+      const bytes = Buffer.from(await media.blob.arrayBuffer());
+      await writeReportMedia(record.id, media.fileName, mediaMeta.mime, bytes);
+      mediaStored = true;
+      record.media = { ...mediaMeta, storedAt: new Date().toISOString() };
+    } catch (e) {
+      console.error("[reports] penyimpanan media gagal:", (e as Error).message);
+      record.media = { ...mediaMeta }; // tanpa storedAt → UI menampilkan fallback
+    }
+  }
+
+  // ID laporan lama yang tergeser oleh batas 200 (media-nya dibersihkan nanti).
+  let evicted: ReportRecord[] = [];
   try {
     await updateFeature("reports", "reports: new report", (currentRaw) => {
       const reports = Array.isArray((currentRaw as { reports?: unknown[] })?.reports)
         ? (currentRaw as { reports: ReportRecord[] }).reports
         : [];
       // Terbaru di depan; simpan maksimal 200.
+      evicted = reports.slice(199);
       return { reports: [record, ...reports].slice(0, 200) };
     });
   } catch {
+    // Media baru yang barusan tersimpan tapi record gagal → bersihkan agar
+    // tidak menjadi file orphan.
+    if (mediaStored && record.media) {
+      after(async () => {
+        await deleteReportMedia(record.id, record.media!.fileName, record.media!.mime);
+      });
+    }
     return jsonError(502, "report.save-failed", "Laporan gagal tersimpan. Coba lagi.");
   }
 
-  // Kirim ke Telegram (best-effort — jangan blokir respons bila gagal).
-  void sendOwnerReportNotification(
-    { id: record.id, type: record.type, name: record.name, text: record.text, createdAt: record.createdAt },
-    formatWib(record.createdAt),
-    media
-  );
+  // Notifikasi + pembersihan media lama — TERJAMIN via after(): dieksekusi
+  // setelah respons terkirim, tidak ter-freeze oleh runtime serverless.
+  after(async () => {
+    void sendOwnerReportNotification(
+      {
+        id: record.id,
+        type: record.type,
+        name: record.name,
+        text: record.text,
+        createdAt: record.createdAt,
+      },
+      formatWib(record.createdAt),
+      media
+    );
+    for (const old of evicted) {
+      if (old.media) {
+        await deleteReportMedia(old.id, old.media.fileName, old.media.mime);
+      }
+    }
+  });
 
   return jsonOk({ id: record.id, sent: true });
 }

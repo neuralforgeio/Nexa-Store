@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { clientIp, jsonError, jsonOk } from "@/lib/api/http";
 import { updateFeature } from "@/lib/site-features/store";
@@ -113,17 +113,21 @@ export async function POST(req: NextRequest) {
     return jsonError(502, "order.save-failed", "Pesanan gagal tersimpan. Coba lagi.");
   }
 
-  void sendOwnerOrderNotification(
-    {
-      id: record.id,
-      source: record.source,
-      summary: record.summary,
-      customerName: record.customerName,
-      items: record.items,
-      total: record.total,
-      createdAt: record.createdAt,
-    },
-    formatWib(record.createdAt)
+  // v1.8.0: after() menjamin notifikasi dieksekusi setelah respons —
+  // `void` biasa bisa ter-freeze runtime serverless sebelum terkirim.
+  after(() =>
+    sendOwnerOrderNotification(
+      {
+        id: record.id,
+        source: record.source,
+        summary: record.summary,
+        customerName: record.customerName,
+        items: record.items,
+        total: record.total,
+        createdAt: record.createdAt,
+      },
+      formatWib(record.createdAt)
+    )
   );
 
   return jsonOk({ id: record.id, status: record.status });

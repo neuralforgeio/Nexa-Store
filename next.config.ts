@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    // v1.8.0: type error TIDAK diabaikan lagi (temuan /debugging) — build
+    // gagal saat ada error tipe, agar bug tidak lolos ke produksi.
+    ignoreBuildErrors: false,
   },
   reactStrictMode: false,
   // The catalog is read from data/*.json at request time (fs), which static

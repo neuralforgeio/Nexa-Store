@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.7.0-amber)
+![Version](https://img.shields.io/badge/version-1.8.0-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -267,6 +267,35 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.8.0 — Media laporan permanen + circuit breaker (2026-09-14)
+- **📎 Media laporan tersimpan permanen** — lampiran gambar/video /reports
+  kini disimpan di `data/media/reports/` (dual-mode: sandbox FS / GitHub
+  Contents API di produksi) dan bisa **dilihat langsung di konsol Laporan**:
+  thumbnail di kartu + klik → modal preview penuh (gambar/video player) +
+  tombol unduh. Laporan lama pra-v1.8.0 tampil keterangan media arsip.
+- **📨 Perbaikan: media tidak sampai ke Telegram** — notifikasi laporan
+  (foto/video), chat, dan pesanan kini dijadwalkan lewat `after()` Next.js:
+  dieksekusi terjamin SETELAH respons terkirim. (Akar masalah: `void
+  promise` bisa ter-freeze runtime serverless Vercel sebelum upload
+  selesai.) + fallback `sendDocument` bila `sendPhoto` ditolak.
+- **🧯 Circuit breaker** — isolasi kegagalan agar bug tidak merambat:
+  - *API*: breaker `github-api` & `telegram-api` (4 kegagalan beruntun →
+    sirkuit terbuka 45–60 dtk → fail-fast tanpa menunggu timeout; half-open
+    probe → pulih otomatis). `readFeature` tidak pernah melempar error ke
+    halaman (default aman) — GitHub down tidak menjatuhkan storefront.
+  - *UI*: `SectionBoundary` mengisolasi setiap bagian halaman (header,
+    konten per view, footer, chat widget, tiap konsol panel) — satu bagian
+    error menampilkan fallback + tombol coba lagi, sisanya tetap hidup.
+  - *Observabilitas*: error UI yang tertangkap boundary dilaporkan otomatis
+    ke Telegram pemilik (`/api/section-error`, rate-limit + throttle 5 dtk).
+  - *Jaring terakhir*: `error.tsx` + `global-error.tsx` route-level.
+- **🔒 Temuan /debugging diperbaiki** — `ignoreBuildErrors` dinonaktifkan
+  (tipe harus bersih sebelum rilis) dan `dangerouslySetInnerHTML` di chart
+  diganti injeksi `textContent` via ref (tidak ada jalur injeksi HTML).
+- **🧹 Higienis data** — hapus laporan (satu/semua) kini juga menghapus file
+  medianya; laporan yang tergeser batas 200 → media orphan ikut dibersihkan;
+  commit media (`media:*`) di-skip vercel.json agar tidak memicu rebuild.
 
 ### v1.7.0 — Bot /debugging: pemindai bug & keamanan statis (2026-09-14)
 - **🔍 `/debugging` di Telegram** — bot memindai kode situs ini sendiri dan

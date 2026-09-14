@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { githubConfigFromEnv, type GitHubConfig } from "@/lib/catalog/repo/github";
+import { circuitBreaker, CircuitOpenError } from "@/lib/circuit-breaker";
 import {
   EMPTY_ANALYTICS,
   EMPTY_BANNERS,
@@ -69,6 +70,13 @@ const API = "https://api.github.com";
 const TIMEOUT_MS = 12000;
 const READ_CACHE_TTL_MS = 3000;
 
+/**
+ * Circuit breaker GitHub (v1.8.0): kegagalan beruntun memutus sirkuit —
+ * request berikutnya fail-fast tanpa menunggu timeout 12 dtk, sehingga
+ * masalah di GitHub tidak menjalar memperlambat seluruh website.
+ */
+const githubBreaker = circuitBreaker("github-api", { cooldownMs: 60_000 });
+
 export type FeaturesBundle = {
   promos: PromosFile;
   banners: BannersFile;
@@ -101,18 +109,21 @@ export function featuresMode(): "local" | "github" {
 
 async function ghFetch(cfg: GitHubConfig, path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(`${API}${path}`, {
-      ...init,
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${cfg.token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "nexa-store-features",
-        ...(init?.headers ?? {}),
-      },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-  } catch {
+    return await githubBreaker.run(() =>
+      fetch(`${API}${path}`, {
+        ...init,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${cfg.token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          "User-Agent": "nexa-store-features",
+          ...(init?.headers ?? {}),
+        },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+    );
+  } catch (e) {
+    if (e instanceof CircuitOpenError) throw e;
     throw new FeatureStoreError("Koneksi ke GitHub gagal. Coba lagi sebentar lagi.");
   }
 }
@@ -280,9 +291,18 @@ function defaultFor(key: FeatureKey): unknown {
   }
 }
 
-/** Parsed read of one feature file (missing/broken → safe default). */
+/** Parsed read of one feature file (missing/broken/GitHub down → safe default). */
 export async function readFeature(key: FeatureKey): Promise<unknown> {
-  const file = await readRaw(key);
+  // v1.8.0: pembacaan TIDAK PERNAH melempar error ke pemanggil — saat GitHub
+  // down / circuit breaker terbuka, kembalikan default aman agar storefront
+  // tetap hidup (kegagalan diisolasi, tidak merambat ke halaman). Penulisan
+  // tetap melempar error agar request mutasi gagal secara eksplisit.
+  let file: Awaited<ReturnType<typeof readRaw>>;
+  try {
+    file = await readRaw(key);
+  } catch {
+    return defaultFor(key);
+  }
   try {
     return file.raw ? JSON.parse(file.raw) : defaultFor(key);
   } catch {

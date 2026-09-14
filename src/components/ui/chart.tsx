@@ -78,12 +78,14 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  // v1.8.0: CSS tema chart disuntik via ref + textContent — assignment
+  // textContent TIDAK diparse sebagai HTML, jadi tidak ada jalur injeksi
+  // (menggantikan dangerouslySetInnerHTML; temuan /debugging).
+  const injectStyles = (el: HTMLStyleElement | null) => {
+    if (!el) return
+    const css = Object.entries(THEMES)
+      .map(
+        ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -92,14 +94,16 @@ ${colorConfig
       itemConfig.color
     return color ? `  --color-${key}: ${color};` : null
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
-      }}
-    />
-  )
+      )
+      .join("\n")
+    if (el.textContent !== css) el.textContent = css
+  }
+
+  return <style ref={injectStyles} />
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

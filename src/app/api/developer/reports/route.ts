@@ -1,24 +1,33 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk, requireCapability } from "@/lib/api/http";
 import { readFeature, updateFeature } from "@/lib/site-features/store";
+import { deleteReportMedia } from "@/lib/site-features/media";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Konsol laporan pengguna (v1.6.0) — panel admin/developer.
- * GET                → daftar laporan (terbaru dulu).
- * POST {action:"delete", id}    → hapus satu laporan.
- * POST {action:"clearAll"}      → hapus semua laporan.
+ * Konsol laporan pengguna (v1.6.0, media cleanup v1.8.0) — panel admin/dev.
+ * GET                             → daftar laporan (terbaru dulu).
+ * POST {action:"delete", id}      → hapus satu laporan (+ file medianya).
+ * POST {action:"clearAll"}        → hapus semua laporan (+ semua file media).
  */
+
+type ReportMedia = {
+  kind: "image" | "video";
+  mime: string;
+  size: number;
+  fileName: string;
+  storedAt?: string;
+};
 
 type ReportRecord = {
   id: string;
   type: "bug" | "feature" | "other";
   name: string | null;
   text: string;
-  media: { kind: "image" | "video"; mime: string; size: number; fileName: string } | null;
+  media: ReportMedia | null;
   createdAt: string;
 };
 
@@ -51,18 +60,34 @@ export async function POST(req: NextRequest) {
   }
 
   const targetId = parsed.data.action === "delete" ? parsed.data.id : null;
+  // Media dari laporan yang dihapus → file-nya dibersihkan SETELAH respons
+  // (best-effort via after(); kegagalan cleanup tidak menggagalkan hapus).
+  let removed: Array<{ id: string; media: ReportMedia }> = [];
   try {
     await updateFeature("reports", "reports: manage", (currentRaw) => {
       const reports = Array.isArray((currentRaw as { reports?: unknown[] })?.reports)
         ? (currentRaw as { reports: ReportRecord[] }).reports
         : [];
       if (targetId) {
+        const target = reports.find((r) => r.id === targetId);
+        if (target?.media) removed.push({ id: target.id, media: target.media });
         return { reports: reports.filter((r) => r.id !== targetId) };
       }
+      removed = reports
+        .filter((r) => r.media !== null)
+        .map((r) => ({ id: r.id, media: r.media as ReportMedia }));
       return { reports: [] };
     });
   } catch {
     return jsonError(502, "reports.update-failed", "Gagal memperbarui laporan. Coba lagi.");
+  }
+
+  if (removed.length > 0) {
+    after(async () => {
+      for (const { id, media } of removed) {
+        await deleteReportMedia(id, media.fileName, media.mime);
+      }
+    });
   }
 
   return jsonOk({ ok: true });

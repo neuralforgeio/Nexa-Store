@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { RouteLink } from "@/components/shared/route-link";
 import { Reveal } from "@/components/shared/reveal";
@@ -14,9 +14,10 @@ import { track } from "@/lib/analytics/tracker";
 import { ArrowLeft, Bug, CheckCircle2, Flag, Lightbulb, Paperclip, Send, X } from "lucide-react";
 
 /**
- * Laporan pengguna (v1.6.0) — /reports.
+ * Laporan pengguna (v1.6.0, media persist v1.8.0) — /reports.
  * Bug, saran fitur, atau lainnya. Lampiran gambar/video opsional untuk
- * menunjukkan bug. Laporan + lampiran diteruskan ke Telegram pemilik store.
+ * menunjukkan bug. Laporan + lampiran tersimpan permanen DAN diteruskan
+ * ke Telegram pemilik store.
  */
 
 const TYPES = [
@@ -34,9 +35,21 @@ export function ReportsView() {
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Preview kecil untuk gambar yang dipilih (object URL dibersihkan rapi).
+  useEffect(() => {
+    if (!file || !file.type.startsWith("image/")) {
+      setFilePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   function pickFile(f: File | null) {
     if (!f) return;
@@ -214,7 +227,16 @@ export function ReportsView() {
                 />
                 {file ? (
                   <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-3">
-                    <Paperclip aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+                    {filePreview ? (
+                      /* object URL preview lokal, bukan aset Next */
+                      <img
+                        src={filePreview}
+                        alt="Preview lampiran"
+                        className="h-11 w-11 shrink-0 rounded-lg border object-cover"
+                      />
+                    ) : (
+                      <Paperclip aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+                    )}
                     <span className="min-w-0 flex-1 truncate text-sm">{file.name}</span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {(file.size / 1024 / 1024).toFixed(2)} MB

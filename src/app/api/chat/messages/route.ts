@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk, clientIp } from "@/lib/api/http";
 import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-features/store";
@@ -146,10 +146,13 @@ export async function POST(req: NextRequest) {
     // Notifikasi pemilik: bridge instan di sandbox, kirim langsung ke
     // Telegram Bot API di lingkungan tanpa layanan bot (produksi/Vercel).
     if (updated) {
+      const conversation = updated; // const — narrowing aman untuk closure after()
       if (chatBridgeEnabled()) {
-        notifyBotOfUserMessage(updated);
+        notifyBotOfUserMessage(conversation);
       } else {
-        void sendOwnerChatNotification(updated, req.nextUrl.origin);
+        // v1.8.0: after() menjamin notifikasi dieksekusi setelah respons —
+        // `void` biasa bisa ter-freeze runtime serverless sebelum terkirim.
+        after(() => sendOwnerChatNotification(conversation, req.nextUrl.origin));
       }
     }
     return jsonOk({ sent: true, message });

@@ -1,5 +1,6 @@
 import { readFeature } from "@/lib/site-features/store";
 import type { ChatConversation } from "@/lib/site-features/types";
+import { circuitBreaker } from "@/lib/circuit-breaker";
 
 /**
  * Direct Telegram notify (v1.5.0) — jalur produksi untuk pesan chat baru.
@@ -19,10 +20,16 @@ import type { ChatConversation } from "@/lib/site-features/types";
  *
  * v1.6.0: + notifikasi laporan pengguna (dengan lampiran media) dan
  *         + notifikasi pesanan baru (dengan tombol status untuk bot).
+ * v1.8.0: + circuit breaker "telegram-api" — saat Telegram bermasalah,
+ *         pengiriman di-skip cepat (best-effort) tanpa memperlambat
+ *         request pengguna; + fallback sendDocument untuk gambar yang
+ *         ditolak sendPhoto.
  */
 
 const NOTIFY_TIMEOUT_MS = 4_000;
 const PREVIEW_MAX = 180;
+
+const telegramBreaker = circuitBreaker("telegram-api", { cooldownMs: 60_000 });
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -85,23 +92,25 @@ export async function sendOwnerChatNotification(conversation: ChatConversation, 
     : undefined;
 
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        ...(keyboard ? { reply_markup: keyboard } : {}),
-      }),
-      signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
-    });
+    const res = await telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+          ...(keyboard ? { reply_markup: keyboard } : {}),
+        }),
+        signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+      })
+    );
     if (!res.ok) {
       console.error("[telegram-notify] sendMessage gagal:", res.status, (await res.text()).slice(0, 200));
     }
   } catch (e) {
-    // jaringan/timeout — coba lagi di pesan berikutnya
+    // jaringan/timeout/breaker terbuka — coba lagi di pesan berikutnya
     console.error("[telegram-notify] kirim error:", (e as Error).message);
   }
 }
@@ -157,11 +166,13 @@ export async function sendOwnerReportNotification(
 
   const attempt = async (method: string, build: () => Promise<FormData>) => {
     const fd = await build();
-    return fetch(`https://api.telegram.org/bot${token}/${method}`, {
-      method: "POST",
-      body: fd,
-      signal: AbortSignal.timeout(20_000),
-    });
+    return telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/${method}`, {
+        method: "POST",
+        body: fd,
+        signal: AbortSignal.timeout(20_000),
+      })
+    );
   };
 
   try {
@@ -171,27 +182,21 @@ export async function sendOwnerReportNotification(
       const method = isVideo ? "sendVideo" : "sendPhoto";
       const field = isVideo ? "video" : "photo";
 
-      const build = () => {
+      const build = (uploadField: string) => {
         const fd = new FormData();
         fd.append("chat_id", String(chatId));
         fd.append("caption", caption);
         fd.append("parse_mode", "HTML");
-        fd.append(field, new Blob([buf], { type: media.blob.type }), media.fileName);
+        fd.append(uploadField, new Blob([buf], { type: media.blob.type }), media.fileName);
         return Promise.resolve(fd);
       };
 
-      let res = await attempt(method, build);
-      // Video terlalu besar / format ditolak → kirim sebagai dokumen.
-      if (!res.ok && isVideo) {
-        const buildDoc = () => {
-          const fd = new FormData();
-          fd.append("chat_id", String(chatId));
-          fd.append("caption", caption);
-          fd.append("parse_mode", "HTML");
-          fd.append("document", new Blob([buf], { type: media.blob.type }), media.fileName);
-          return Promise.resolve(fd);
-        };
-        res = await attempt("sendDocument", buildDoc);
+      let res = await attempt(method, () => build(field));
+      // Media ditolak (video terlalu besar / format gambar tidak didukung)
+      // → kirim sebagai dokumen agar laporan tetap sampai lengkap.
+      if (!res.ok) {
+        console.warn(`[telegram-notify] ${method} gagal (${res.status}) — fallback sendDocument.`);
+        res = await attempt("sendDocument", () => build("document"));
       }
       if (!res.ok) {
         console.error(`[telegram-notify] ${method} gagal:`, res.status, (await res.text()).slice(0, 200));
@@ -200,22 +205,87 @@ export async function sendOwnerReportNotification(
     }
 
     // Tanpa media — teks saja.
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: reportNotifyText(report, timeWib),
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-      signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
-    });
+    const res = await telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: reportNotifyText(report, timeWib),
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+        signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+      })
+    );
     if (!res.ok) {
       console.error("[telegram-notify] report sendMessage gagal:", res.status);
     }
   } catch (e) {
     console.error("[telegram-notify] laporan kirim error:", (e as Error).message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error UI otomatis (v1.8.0) — SectionBoundary melaporkan bagian halaman
+// yang gagal render; diisolasi di perbatasannya, dilaporkan ke pemilik.
+// ---------------------------------------------------------------------------
+
+export type ErrorNotifyPayload = {
+  section: string;
+  message: string;
+  stack?: string;
+  path?: string;
+  userAgent?: string | null;
+  at: string;
+};
+
+export async function sendOwnerErrorNotification(e: ErrorNotifyPayload): Promise<void> {
+  const token = botToken();
+  if (!token) return;
+  const chatId = await resolveOwnerChatId();
+  if (!chatId) return;
+
+  const stackLines = (e.stack ?? "")
+    .split("\n")
+    .slice(0, 6)
+    .map((l) => `  ${esc(l.trim().slice(0, 110))}`)
+    .join("\n");
+  const text = [
+    "🧯 <b>ERROR UI TERTANGKAP CIRCUIT BREAKER</b>",
+    "",
+    `Bagian: <b>${esc(e.section)}</b>`,
+    `Halaman: <code>${esc(e.path ?? "—")}</code>`,
+    `Waktu: <b>${esc(new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(e.at)))}</b> (WIB)`,
+    "",
+    `Pesan: <code>${esc(e.message.slice(0, 280))}</code>`,
+    stackLines ? `\n<pre>${stackLines}</pre>` : "",
+    "",
+    "Bagian halaman lain tetap berjalan — pengunjung masih bisa memakai situs.",
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 3800);
+
+  try {
+    const res = await telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+        signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+      })
+    );
+    if (!res.ok) {
+      console.error("[telegram-notify] section-error sendMessage gagal:", res.status);
+    }
+  } catch (err) {
+    console.error("[telegram-notify] section-error kirim error:", (err as Error).message);
   }
 }
 
@@ -266,26 +336,28 @@ export async function sendOwnerOrderNotification(o: OrderNotifyPayload, timeWib:
   if (!chatId) return;
 
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: orderNotifyText(o, timeWib),
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        reply_markup: {
-          inline_keyboard: [
-            ORDER_STATUS_BUTTONS.map((b) => ({
-              text: b.label,
-              callback_data: `ord:${o.id}:${b.status}`,
-            })),
-            [{ text: "🔍 Detail / ubah status", callback_data: `ord:${o.id}` }],
-          ],
-        },
-      }),
-      signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
-    });
+    const res = await telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: orderNotifyText(o, timeWib),
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+          reply_markup: {
+            inline_keyboard: [
+              ORDER_STATUS_BUTTONS.map((b) => ({
+                text: b.label,
+                callback_data: `ord:${o.id}:${b.status}`,
+              })),
+              [{ text: "🔍 Detail / ubah status", callback_data: `ord:${o.id}` }],
+            ],
+          },
+        }),
+        signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+      })
+    );
     if (!res.ok) {
       console.error("[telegram-notify] order sendMessage gagal:", res.status);
     }

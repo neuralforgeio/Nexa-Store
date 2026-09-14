@@ -430,7 +430,13 @@ export type ReportRecordView = {
   type: "bug" | "feature" | "other";
   name: string | null;
   text: string;
-  media: { kind: "image" | "video"; mime: string; size: number; fileName: string } | null;
+  media: {
+    kind: "image" | "video";
+    mime: string;
+    size: number;
+    fileName: string;
+    storedAt?: string;
+  } | null;
   createdAt: string;
 };
 

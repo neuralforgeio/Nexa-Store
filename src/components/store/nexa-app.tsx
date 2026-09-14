@@ -43,6 +43,7 @@ import { DevReports } from "@/components/developer/dev-reports";
 import { DevAnalytics } from "@/components/developer/dev-analytics";
 import { DevSchedule } from "@/components/developer/dev-schedule";
 import { Button } from "@/components/ui/button";
+import { SectionBoundary } from "@/components/shared/section-boundary";
 
 export function NexaApp() {
   const [queryClient] = useState(
@@ -276,16 +277,26 @@ function AppFrame() {
   return (
     <CartProvider>
       <div className="flex min-h-dvh flex-col">
-        <SiteHeader />
-        <SiteFeaturesBar />
+        {/* v1.8.0: circuit breaker UI — bug di satu bagian tidak menjatuhkan
+            halaman lain (header / konten / footer / widget terisolasi). */}
+        <SectionBoundary name="store:header">
+          <SiteHeader />
+        </SectionBoundary>
+        <SectionBoundary name="store:features-bar">
+          <SiteFeaturesBar />
+        </SectionBoundary>
         <AnimatePresence mode="wait">
           <motion.div key={viewKey} {...viewTransition} transition={{ duration: 0.16, ease: "easeOut" }} className="contents">
-            {content}
+            <SectionBoundary name={`view:${viewKey}`}>{content}</SectionBoundary>
           </motion.div>
         </AnimatePresence>
-        <SiteFooter />
+        <SectionBoundary name="store:footer">
+          <SiteFooter />
+        </SectionBoundary>
       </div>
-      <ChatWidget />
+      <SectionBoundary name="store:chat-widget">
+        <ChatWidget />
+      </SectionBoundary>
     </CartProvider>
   );
 }
@@ -299,61 +310,151 @@ function AdminSectionView({
   role: "ADMIN" | "DEVELOPER";
   onNavigate: (path: string) => void;
 }) {
+  // Setiap konsol diisolasi SectionBoundary — panel & sidebar tetap hidup
+  // walau satu konsul error (v1.8.0).
   switch (section) {
     case "dashboard":
-      return <AdminDashboard role={role} onNavigate={onNavigate} />;
+      return (
+        <SectionBoundary name="admin:dashboard">
+          <AdminDashboard role={role} onNavigate={onNavigate} />
+        </SectionBoundary>
+      );
     case "games":
-      return <AdminGames />;
+      return (
+        <SectionBoundary name="admin:games">
+          <AdminGames />
+        </SectionBoundary>
+      );
     case "categories":
-      return <AdminCategories />;
+      return (
+        <SectionBoundary name="admin:categories">
+          <AdminCategories />
+        </SectionBoundary>
+      );
     case "products":
-      return <AdminProducts />;
+      return (
+        <SectionBoundary name="admin:products">
+          <AdminProducts />
+        </SectionBoundary>
+      );
     case "settings":
-      return <AdminSettings />;
+      return (
+        <SectionBoundary name="admin:settings">
+          <AdminSettings />
+        </SectionBoundary>
+      );
     case "checkout":
-      return <AdminCheckout />;
+      return (
+        <SectionBoundary name="admin:checkout">
+          <AdminCheckout />
+        </SectionBoundary>
+      );
     // Promo & banner kini bagian panel Admin — konsol yang sama dengan
     // Developer, izin dikontrol server-side lewat capability promos/banners.manage.
     case "promo":
-      return <DevPromo />;
+      return (
+        <SectionBoundary name="admin:promo">
+          <DevPromo />
+        </SectionBoundary>
+      );
     case "banner":
-      return <DevBanner />;
+      return (
+        <SectionBoundary name="admin:banner">
+          <DevBanner />
+        </SectionBoundary>
+      );
     // Obrolan (v1.5.0) — Admin juga boleh membalas pengunjung, bukan hanya
     // Developer; izin dikontrol capability chat.manage.
     case "chat":
-      return <DevChat />;
+      return (
+        <SectionBoundary name="admin:chat">
+          <DevChat />
+        </SectionBoundary>
+      );
     // Laporan pengguna (v1.6.0) — bug/saran/lainnya dari /reports.
     case "reports":
-      return <DevReports />;
+      return (
+        <SectionBoundary name="admin:reports">
+          <DevReports />
+        </SectionBoundary>
+      );
   }
 }
 
 function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSection; onNavigate: (path: string) => void }) {
   switch (section) {
     case "dashboard":
-      return <DevDashboard role="DEVELOPER" onNavigate={onNavigate} />;
+      return (
+        <SectionBoundary name="dev:dashboard">
+          <DevDashboard role="DEVELOPER" onNavigate={onNavigate} />
+        </SectionBoundary>
+      );
     case "access":
-      return <DevAccess />;
+      return (
+        <SectionBoundary name="dev:access">
+          <DevAccess />
+        </SectionBoundary>
+      );
     case "control":
-      return <DevControl />;
+      return (
+        <SectionBoundary name="dev:control">
+          <DevControl />
+        </SectionBoundary>
+      );
     case "promo":
-      return <DevPromo />;
+      return (
+        <SectionBoundary name="dev:promo">
+          <DevPromo />
+        </SectionBoundary>
+      );
     case "banner":
-      return <DevBanner />;
+      return (
+        <SectionBoundary name="dev:banner">
+          <DevBanner />
+        </SectionBoundary>
+      );
     case "chat":
-      return <DevChat />;
+      return (
+        <SectionBoundary name="dev:chat">
+          <DevChat />
+        </SectionBoundary>
+      );
     case "analytics":
-      return <DevAnalytics />;
+      return (
+        <SectionBoundary name="dev:analytics">
+          <DevAnalytics />
+        </SectionBoundary>
+      );
     case "schedule":
-      return <DevSchedule />;
+      return (
+        <SectionBoundary name="dev:schedule">
+          <DevSchedule />
+        </SectionBoundary>
+      );
     case "git":
-      return <DevGit />;
+      return (
+        <SectionBoundary name="dev:git">
+          <DevGit />
+        </SectionBoundary>
+      );
     case "data":
-      return <DevData />;
+      return (
+        <SectionBoundary name="dev:data">
+          <DevData />
+        </SectionBoundary>
+      );
     case "diagnostics":
-      return <DevDiagnostics />;
+      return (
+        <SectionBoundary name="dev:diagnostics">
+          <DevDiagnostics />
+        </SectionBoundary>
+      );
     case "deployment":
-      return <DevDeployment />;
+      return (
+        <SectionBoundary name="dev:deployment">
+          <DevDeployment />
+        </SectionBoundary>
+      );
   }
 }
 

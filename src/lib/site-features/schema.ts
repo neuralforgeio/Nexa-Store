@@ -126,8 +126,11 @@ export type OrdersFile = z.infer<typeof ordersFileSchema>;
 export type PushSubsFile = z.infer<typeof pushSubsFileSchema>;
 
 /**
- * Laporan pengguna (v1.6.0) — bug / saran fitur / lainnya. Metadata saja;
- * lampiran media (gambar/video) diteruskan langsung ke Telegram pemilik.
+ * Laporan pengguna (v1.6.0) — bug / saran fitur / lainnya.
+ * v1.8.0: byte media kini tersimpan permanen di data/media/reports/
+ * (dual-mode: sandbox FS / GitHub produksi) — `storedAt` menandai laporan
+ * yang medianya pasti ada; rekaman lama tanpa field ini dibuat sebelum
+ * media disimpan (bytes hanya diteruskan ke Telegram saat itu).
  */
 export const reportRecordSchema = z.object({
   id: z.string().min(1),
@@ -140,6 +143,7 @@ export const reportRecordSchema = z.object({
       mime: z.string().min(3).max(60),
       size: z.number().int().min(1),
       fileName: z.string().min(1).max(120),
+      storedAt: z.string().datetime().optional(),
     })
     .nullable(),
   createdAt: z.string().datetime(),
