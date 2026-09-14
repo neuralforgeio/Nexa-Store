@@ -1,3 +1,17 @@
 {
-  "banners": []
+  "banners": [
+    {
+      "id": "bnn_0d599aa5f8",
+      "severity": "info",
+      "title": "🖥️ Open Joki Coding",
+      "message": "💻 BUTUH BANTUAN CODING?🚀\n DEAR ENGINEER wujudkan projectmu!🛠️ \nLayanan: Web/Desktop App, API, E-Commerce, Dashboard, Hosting.⚡ Tech\n stack fleksibel.💰 Har\nga sesuai fitur & kompleksitas.💳 DP \n50% → Dikerjakan → Revisi → Pelunasan. \nAman!",
+      "ctaLabel": "Lihat Joki",
+      "ctaHref": "https://dearlyfebriano.vercel.app",
+      "startsAt": null,
+      "endsAt": "2026-09-14T13:13:44.193Z",
+      "enabled": true,
+      "createdAt": "2026-09-14T03:13:52.730Z",
+      "createdBy": "dearlyfebrianoi@gmail.com"
+    }
+  ]
 }
