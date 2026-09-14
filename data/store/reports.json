@@ -1,6 +1,20 @@
 {
   "reports": [
     {
+      "id": "rep_1d932693f0",
+      "type": "feature",
+      "name": "E2E Produksi",
+      "text": "Laporan uji produksi v1.8.0 — media harus tersimpan di GitHub dan foto terkirim ke Telegram pemilik.",
+      "media": {
+        "kind": "image",
+        "mime": "image/png",
+        "size": 29329,
+        "fileName": "logo.png",
+        "storedAt": "2026-09-14T03:44:24.650Z"
+      },
+      "createdAt": "2026-09-14T03:44:23.930Z"
+    },
+    {
       "id": "rep_b31ad3ca77",
       "type": "bug",
       "name": "P",
