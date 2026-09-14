@@ -22,9 +22,15 @@
           "from": "user",
           "text": "Testing",
           "at": "2026-09-14T03:04:09.485Z"
+        },
+        {
+          "id": "m_mu0ntl1crkzs",
+          "from": "owner",
+          "text": "hola",
+          "at": "2026-09-14T03:04:51.648Z"
         }
       ],
-      "lastMessageAt": "2026-09-14T03:04:09.485Z",
+      "lastMessageAt": "2026-09-14T03:04:51.648Z",
       "unreadByOwner": 0,
       "ownerLastReadAt": "2026-09-14T03:04:28.371Z"
     },
