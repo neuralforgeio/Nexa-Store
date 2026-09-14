@@ -11,7 +11,7 @@ per-game account forms, admin & developer panels, total/route lockdown &
 maintenance modes, a file-based catalog that persists through GitHub, and a
 private **Telegram bot** for full remote control from the developer's pocket.
 
-![Version](https://img.shields.io/badge/version-1.8.0-amber)
+![Version](https://img.shields.io/badge/version-1.8.1-amber)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
@@ -267,6 +267,12 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.8.1 — Bersih dari temuan /debugging (2026-09-14)
+- **✅ 0 temuan** di pemindai `/debugging` (sebelumnya 2 medium): komentar
+  chart tidak lagi memicu aturan XSS (self-match), `/api/section-error`
+  masuk allowlist rute publik-by-design (zod + rate-limit ketat, tanpa
+  tulis data store).
 
 ### v1.8.0 — Media laporan permanen + circuit breaker (2026-09-14)
 - **📎 Media laporan tersimpan permanen** — lampiran gambar/video /reports

@@ -174,6 +174,7 @@ const PUBLIC_API_PREFIXES = [
   "src/app/api/orders/route.ts",
   "src/app/api/orders/track/route.ts",
   "src/app/api/reports/route.ts",
+  "src/app/api/section-error/route.ts", // publik by-design: zod + rate-limit ketat, tanpa tulis data store
   "src/app/api/telegram/webhook/route.ts", // secret header sendiri
   "src/app/api/bot-service/route.ts", // dijaga env BOT_SERVICE_LAUNCH (404 di produksi)
 ];

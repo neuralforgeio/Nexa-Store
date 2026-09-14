@@ -1,6 +1,6 @@
 {
   "name": "nexastore-telegram-bot",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "private": true,
   "description": "Nexa Store \u2014 bot kendali Developer via Telegram: lockdown, maintenance, promo, banner, obrolan live, analitik, tugas terjadwal, deployment, katalog.",
   "scripts": {

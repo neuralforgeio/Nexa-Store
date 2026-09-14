@@ -80,7 +80,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   // v1.8.0: CSS tema chart disuntik via ref + textContent — assignment
   // textContent TIDAK diparse sebagai HTML, jadi tidak ada jalur injeksi
-  // (menggantikan dangerouslySetInnerHTML; temuan /debugging).
+  // (menggantikan pola injeksi innerHTML React; temuan /debugging).
   const injectStyles = (el: HTMLStyleElement | null) => {
     if (!el) return
     const css = Object.entries(THEMES)
