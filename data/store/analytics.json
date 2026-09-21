@@ -48,18 +48,19 @@
       "events": {}
     },
     "2026-09-21": {
-      "views": 6,
+      "views": 9,
       "uniques": 4,
       "byPath": {
         "/": 3,
-        "/track": 3
+        "/track": 5,
+        "/admin/chat": 1
       },
       "byReferrer": {
-        "langsung": 6
+        "langsung": 9
       },
       "byDevice": {
-        "desktop": 3,
-        "mobile": 3
+        "desktop": 5,
+        "mobile": 4
       },
       "events": {
         "chat_open": 1
@@ -151,6 +152,9 @@
     1789969805066,
     1789969805066,
     1789977046251,
-    1789977046251
+    1789977046251,
+    1789977077191,
+    1789977077191,
+    1789977077191
   ]
 }
