@@ -25,6 +25,8 @@ import {
   ArrowRight,
   BadgeCheck,
   Banknote,
+  Check,
+  CheckCheck,
   Gamepad2,
   MessageCircle,
   SearchX,
@@ -158,6 +160,8 @@ export function HomeView() {
 
   const { store } = data;
   const maintenance = store.maintenanceMode;
+  // One real product carries the whole how-it-works story (Fig. 01 → 03).
+  const demo = derived.featured[0] ?? null;
 
   return (
     <main id="main">
@@ -355,6 +359,9 @@ export function HomeView() {
               </Button>
             }
           />
+          <p className="mt-2 font-mono text-[11px] tracking-wide text-muted-foreground">
+            Satu nominal pilihan per game — harga yang tampil adalah harga yang dibayar.
+          </p>
           {derived.featured.length === 0 ? (
             <EmptyState className="mt-5" title="Belum ada produk" description="Produk yang tersedia akan muncul di sini." />
           ) : (
@@ -384,10 +391,10 @@ export function HomeView() {
           )}
         </section>
 
-        {/* How ordering works */}
+        {/* How ordering works — an order rail with live specimens, not card boxes. */}
         <section id="cara-pesan" aria-labelledby="how-heading" className="section-line scroll-mt-24 py-10 sm:py-12">
           <SectionHeader id="how-heading" kicker="Cara pesan" title="Tiga langkah, selesai." />
-          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+          <ol className="mt-8 grid gap-10 md:mt-10 md:grid-cols-3 md:gap-8 lg:gap-10">
             {HOW_STEPS.map((item, i) => (
               <motion.li
                 key={item.title}
@@ -395,43 +402,110 @@ export function HomeView() {
                 whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.3, delay: i * 0.08, ease: "easeOut" }}
-                className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-card"
+                className="relative pl-7 md:pl-0"
               >
+                {/* Mobile rail — a vertical hairline threading the nodes. */}
+                {i < HOW_STEPS.length - 1 ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-[-2.5rem] left-[5px] top-3 w-px bg-border md:hidden"
+                  />
+                ) : null}
                 <span
                   aria-hidden="true"
-                  className="font-display text-5xl font-bold leading-none text-primary/15"
-                >
-                  {String(i + 1).padStart(2, "0")}
+                  className="absolute left-0 top-[8px] h-[11px] w-[11px] rounded-full border-2 border-primary bg-background md:hidden"
+                />
+                {/* Desktop rail — each column's hairline draws itself in sequence. */}
+                <span aria-hidden="true" className="relative mb-6 hidden h-px w-full bg-border md:block">
+                  {reducedMotion ? (
+                    <span className="absolute inset-0 bg-primary/70" />
+                  ) : (
+                    <motion.span
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      viewport={{ once: true, margin: "-60px" }}
+                      transition={{ duration: 0.55, delay: 0.1 + i * 0.28, ease: [0.65, 0, 0.35, 1] }}
+                      className="absolute inset-0 origin-left bg-primary/70"
+                    />
+                  )}
+                  <span className="absolute -top-[5px] left-0 h-[11px] w-[11px] rounded-full border-2 border-primary bg-background" />
                 </span>
-                <h3 className="mt-3 font-display text-base font-semibold">{item.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                <div className="flex items-baseline gap-2.5">
+                  <span aria-hidden="true" className="font-mono text-[11px] font-semibold tabular text-primary">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="font-display text-base font-semibold">{item.title}</h3>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                <StepArtifact index={i} demo={demo} />
               </motion.li>
             ))}
           </ol>
         </section>
 
-        {/* Trust */}
-        <section aria-labelledby="why-heading" className="section-line py-10 sm:py-12">
-          <Reveal>
-            <SectionHeader id="why-heading" kicker="Kenapa Nexa" title="Pesan tanpa drama." />
-          </Reveal>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {WHY_ITEMS.map(({ Icon, title, body }, i) => (
-              <Reveal key={title} delay={i * 0.06} y={20}>
-                <div className="h-full rounded-xl border bg-card p-5 shadow-card">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary">
-                    <Icon aria-hidden="true" className="h-4 w-4" />
-                  </span>
-                  <h3 className="mt-3.5 font-display text-sm font-semibold">{title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{body}</p>
+        {/* Trust — a guarantee manifest: sticky intro on the left, ledger on the right. */}
+        <section aria-labelledby="why-heading" className="section-line py-10 sm:py-12 lg:py-14">
+          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-16">
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <Reveal>
+                <SectionHeader id="why-heading" kicker="Kenapa Nexa" title="Pesan tanpa drama." />
+                <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  Empat kepastian yang dipegang di setiap pesanan — bukan sekadar tulisan
+                  di halaman depan. Kalau ada yang tidak sesuai, kirim laporan; admin
+                  membacanya satu per satu.
+                </p>
+                <div className="mt-5">
+                  <Button variant="ghost" size="sm" className="-ml-2.5 gap-1.5 text-primary" asChild>
+                    <RouteLink href="/reports">
+                      Kirim laporan
+                      <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+                    </RouteLink>
+                  </Button>
                 </div>
               </Reveal>
-            ))}
+            </div>
+            <div>
+              <ul>
+                {WHY_ITEMS.map(({ Icon, title, body }, i) => (
+                  <motion.li
+                    key={title}
+                    initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+                    whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-32px" }}
+                    transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
+                    className="group grid grid-cols-[2rem_1fr] gap-x-4 border-b border-border py-5 transition-colors hover:bg-accent/40 sm:-mx-4 sm:grid-cols-[2.5rem_minmax(0,13rem)_1fr] sm:gap-x-6 sm:px-4 sm:py-6"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="font-mono text-xs tabular text-muted-foreground/80 transition-colors group-hover:text-primary"
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="flex items-start gap-2.5">
+                      <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <h3 className="font-display text-sm font-semibold leading-snug">{title}</h3>
+                    </div>
+                    <p className="col-start-2 row-start-2 mt-2 text-sm leading-relaxed text-muted-foreground sm:col-start-3 sm:row-start-1 sm:mt-0">
+                      {body}
+                    </p>
+                  </motion.li>
+                ))}
+              </ul>
+              <Reveal delay={0.1}>
+                <div className="flex items-baseline gap-3 pt-5 sm:-mx-4 sm:px-4">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Total biaya tersembunyi
+                  </span>
+                  <span aria-hidden="true" className="mb-1 flex-1 border-b border-dotted border-border" />
+                  <PriceTag value={0} size="sm" className="font-semibold text-primary" />
+                </div>
+              </Reveal>
+            </div>
           </div>
         </section>
 
         {/* FAQ */}
-        <section aria-labelledby="faq-heading" className="section-line py-10 sm:py-12">
+        <section id="faq" aria-labelledby="faq-heading" className="section-line scroll-mt-24 py-10 sm:py-12">
           <Reveal>
             <SectionHeader id="faq-heading" kicker="FAQ" title="Pertanyaan yang sering muncul." />
           </Reveal>
@@ -511,6 +585,105 @@ export function HomeView() {
 
       <span className="hidden" data-view="home" aria-hidden="true" />
     </main>
+  );
+}
+
+/**
+ * Dashed "spec sheet" specimen — a miniature of the real UI rather than an
+ * abstract icon. Purely illustrative, hidden from assistive tech.
+ */
+function Specimen({
+  figure,
+  caption,
+  children,
+}: {
+  figure: string;
+  caption: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div aria-hidden="true" className="mt-5 rounded-lg border border-dashed border-border bg-muted/25 p-3.5">
+      <div className="flex items-center gap-2.5">
+        <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Fig. {figure} · {caption}
+        </span>
+        <span className="h-px flex-1 bg-border/80" />
+      </div>
+      <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The artifact under each how-it-works step. All three figures tell one
+ * continuous story about the same product: it is picked, its account data is
+ * filled in, and the order is sent as one WhatsApp chat.
+ */
+function StepArtifact({ index, demo }: { index: number; demo: OrderTarget }) {
+  if (index === 0) {
+    return (
+      <Specimen figure="01" caption="Kartu produk">
+        <div className="flex items-center gap-3">
+          {demo ? (
+            <GameMark name={demo.game.name} image={demo.game.image} className="h-8 w-8 rounded-md text-[10px]" />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-[13px] font-semibold leading-tight">
+              {demo ? `${demo.product.denomination} ${demo.product.name}` : "Nominal pilihan"}
+            </p>
+            <p className="mt-1 truncate text-[11px] text-muted-foreground">
+              {demo ? demo.game.name : "Nama game"}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            {demo ? (
+              <PriceTag value={demo.product.priceIdr} size="sm" className="text-xs" />
+            ) : (
+              <span className="font-mono text-xs tabular text-foreground">Rp —</span>
+            )}
+            <p className="mt-1 flex items-center justify-end gap-1 text-[10px] font-medium text-primary">
+              <Check className="h-3 w-3" />
+              tersedia
+            </p>
+          </div>
+        </div>
+      </Specimen>
+    );
+  }
+
+  if (index === 1) {
+    return (
+      <Specimen figure="02" caption="Form isian">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          User ID
+        </p>
+        <div className="mt-1.5 flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2">
+          <span className="font-mono text-[12.5px] tabular text-foreground">12345678</span>
+          <span className="caret h-3.5 w-[2px] rounded-full bg-primary" />
+          <span className="ml-auto font-mono text-[10px] tabular text-muted-foreground">Server 2142</span>
+        </div>
+      </Specimen>
+    );
+  }
+
+  return (
+    <Specimen figure="03" caption="Chat WhatsApp">
+      <div className="flex justify-end">
+        <div className="max-w-[88%] rounded-2xl rounded-tr-md border border-wa/25 bg-wa/10 px-3.5 py-2.5">
+          <p className="font-mono text-[11.5px] leading-relaxed text-foreground">
+            {demo ? `1× ${demo.product.denomination} ${demo.product.name}` : "1× Nominal pilihan"}
+            <br />
+            User ID 12345678
+          </p>
+          <p className="mt-1.5 flex items-center justify-end gap-1.5">
+            {demo ? (
+              <PriceTag value={demo.product.priceIdr} size="sm" className="text-[11px] font-medium text-wa" />
+            ) : null}
+            <CheckCheck className="h-3.5 w-3.5 text-wa" />
+          </p>
+        </div>
+      </div>
+    </Specimen>
   );
 }
 

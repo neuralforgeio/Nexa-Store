@@ -223,6 +223,26 @@
     display: none;
   }
 
+  /* Hard-blink text caret for the order-flow specimen (Fig. 02). */
+  @keyframes caret-blink {
+    0%,
+    45% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+  .caret {
+    animation: caret-blink 1.1s steps(1, end) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .caret {
+      animation: none;
+    }
+  }
+
   /* Very low-opacity grid texture — supports depth, stays quiet. */
   .bg-grid {
     background-image:
