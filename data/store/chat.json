@@ -1,20 +1,3 @@
 {
-  "conversations": [
-    {
-      "id": "c_1f98790e536982c10f1b4bc1",
-      "name": "Dearly",
-      "createdAt": "2026-09-21T07:50:56.158Z",
-      "messages": [
-        {
-          "id": "m_muay4fxayevc",
-          "from": "user",
-          "text": "Admin Kontol",
-          "at": "2026-09-21T07:50:56.158Z"
-        }
-      ],
-      "lastMessageAt": "2026-09-21T07:50:56.158Z",
-      "unreadByOwner": 0,
-      "ownerLastReadAt": "2026-09-21T07:51:30.240Z"
-    }
-  ]
+  "conversations": []
 }
