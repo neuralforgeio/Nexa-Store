@@ -243,6 +243,26 @@
     }
   }
 
+  /* Amber scanline sweeping across the track terminal while scanning. */
+  @keyframes scan-sweep {
+    0% {
+      transform: translateX(-140%);
+    }
+    100% {
+      transform: translateX(560%);
+    }
+  }
+  .scanline {
+    animation: scan-sweep 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scanline {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
   /* Very low-opacity grid texture — supports depth, stays quiet. */
   .bg-grid {
     background-image:
