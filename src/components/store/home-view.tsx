@@ -4,12 +4,6 @@ import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { RouteLink } from "@/components/shared/route-link";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { ProductCard } from "./product-card";
 import { GameCard } from "./game-card";
 import { EdgeFadeScroller } from "@/components/shared/edge-fade-scroller";
@@ -18,6 +12,7 @@ import { Reveal } from "@/components/shared/reveal";
 import { GameMark } from "@/components/shared/game-mark";
 import { PriceTag } from "@/components/shared/price-tag";
 import { LoadingState, EmptyState, ErrorState } from "@/components/shared/state-views";
+import { FaqLedger } from "./faq-ledger";
 import { useCatalog, type PublicCatalog } from "@/lib/queries";
 import type { Product } from "@/lib/catalog/types";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
@@ -336,7 +331,7 @@ export function HomeView() {
               className="-mx-4 mt-5 px-4 sm:mx-0 sm:px-0"
             >
               {derived.games.map((game, i) => (
-                <div role="listitem" key={game.id}>
+                <div role="listitem" key={game.id} className="h-full">
                   <GameCard game={game} variant="tile" index={i} />
                 </div>
               ))}
@@ -504,24 +499,36 @@ export function HomeView() {
           </div>
         </section>
 
-        {/* FAQ */}
+        {/* FAQ — a numbered ledger; a direct line to a human sits in the header,
+            not in a boxed card afterthought. */}
         <section id="faq" aria-labelledby="faq-heading" className="section-line scroll-mt-24 py-10 sm:py-12">
           <Reveal>
-            <SectionHeader id="faq-heading" kicker="FAQ" title="Pertanyaan yang sering muncul." />
+            <SectionHeader
+              id="faq-heading"
+              kicker="FAQ"
+              title="Pertanyaan yang sering muncul."
+              action={
+                store ? (
+                  <a
+                    href={buildWhatsAppUrl(store.whatsappNumber, "Halo, saya mau tanya soal top up game.")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group mb-0.5 inline-flex items-center gap-2 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 text-wa" />
+                    <span className="hidden sm:inline">belum ketemu jawabannya?</span>
+                    <span className="sm:hidden">tanya admin</span>
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 text-primary transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </a>
+                ) : undefined
+              }
+            />
           </Reveal>
           <Reveal delay={0.08}>
-            <Accordion type="single" collapsible className="mt-6 w-full">
-              {FAQ_ITEMS.map((item, i) => (
-                <AccordionItem key={item.q} value={`faq-${i}`}>
-                  <AccordionTrigger className="text-left font-display text-sm font-semibold hover:no-underline">
-                    {item.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                    {item.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <FaqLedger items={FAQ_ITEMS} className="mt-6" />
           </Reveal>
         </section>
 

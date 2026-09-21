@@ -48,6 +48,27 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 10px);
+  --animate-accordion-down: accordion-down 0.28s cubic-bezier(0.65, 0, 0.35, 1);
+  --animate-accordion-up: accordion-up 0.24s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Radix accordion height animation — driven by the measured content height. */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 :root {

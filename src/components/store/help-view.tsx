@@ -3,14 +3,9 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { RouteLink } from "@/components/shared/route-link";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useCatalog } from "@/lib/queries";
 import { Reveal } from "@/components/shared/reveal";
+import { FaqLedger } from "./faq-ledger";
 import { displayPhone } from "@/lib/format/phone";
 import { formatIdr } from "@/lib/format/idr";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
@@ -93,18 +88,7 @@ export function HelpView() {
       </motion.div>
 
       <Reveal delay={0.08} className="mt-8">
-        <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, i) => (
-            <AccordionItem key={faq.q} value={`help-${i}`}>
-              <AccordionTrigger className="text-left font-display text-sm font-semibold hover:no-underline">
-                {faq.q}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                {faq.a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <FaqLedger items={faqs} className="w-full" defaultKey="faq-0" />
       </Reveal>
 
       <Reveal delay={0.14} className="mt-10">
