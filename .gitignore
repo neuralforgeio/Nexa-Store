@@ -65,3 +65,7 @@ tests/*.sh
 
 # vestigial template config (Tailwind v4 is CSS-first)
 /tailwind.config.ts
+
+# dev server pid
+dev.pid
+*.pid
