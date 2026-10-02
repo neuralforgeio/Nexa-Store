@@ -1,10 +1,11 @@
 {
   "adminBlocked": false,
   "lockdown": {
-    "active": false,
+    "active": true,
     "scope": "all",
     "routes": [],
-    "updatedAt": "2026-09-13T13:19:54.863Z",
+    "note": "Website tidak digunakan beralih ke (https://nexastoreid.netlify.app)",
+    "updatedAt": "2026-10-02T06:58:46.110Z",
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
