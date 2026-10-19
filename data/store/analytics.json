@@ -117,18 +117,19 @@
       }
     },
     "2026-10-20": {
-      "views": 4,
+      "views": 6,
       "uniques": 2,
       "byPath": {
         "/": 2,
         "/games/free-fire": 1,
-        "/games": 1
+        "/games": 2,
+        "/games/roblox": 1
       },
       "byReferrer": {
-        "langsung": 4
+        "langsung": 6
       },
       "byDevice": {
-        "mobile": 4
+        "mobile": 6
       },
       "events": {}
     }
@@ -339,6 +340,8 @@
     1792452569291,
     1792452569291,
     1792452611407,
-    1792452611407
+    1792452611407,
+    1792452642154,
+    1792452642154
   ]
 }
