@@ -1,6 +1,31 @@
 {
   "orders": [
     {
+      "id": "NEXA-261019-3FVB",
+      "source": "instant",
+      "summary": "Genshin Impact — 300 + 30 Genesis Crystals",
+      "customerName": "Memek",
+      "items": [
+        {
+          "gameName": "Genshin Impact",
+          "productName": "300 + 30 Genesis Crystals",
+          "price": 82000
+        }
+      ],
+      "total": 82000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-10-19T07:39:36.196Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-10-19T07:39:36.196Z",
+          "reason": null
+        }
+      ]
+    },
+    {
       "id": "NEXA-261019-X2B7",
       "source": "instant",
       "summary": "Mobile Legends — 200 Diamonds",
