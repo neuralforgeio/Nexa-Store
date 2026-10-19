@@ -82,10 +82,10 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 68,
+      "views": 70,
       "uniques": 5,
       "byPath": {
-        "/": 16,
+        "/": 18,
         "/games/free-fire": 8,
         "/admin/products": 3,
         "/games": 18,
@@ -99,12 +99,12 @@
         "/games/genshin-impact": 1
       },
       "byReferrer": {
-        "langsung": 59,
+        "langsung": 61,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
-        "desktop": 62,
+        "desktop": 64,
         "mobile": 6
       },
       "events": {
@@ -280,6 +280,8 @@
     1792397554480,
     1792397554481,
     1792399340188,
-    1792399340188
+    1792399340188,
+    1792399775780,
+    1792399775780
   ]
 }
