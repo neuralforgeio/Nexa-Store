@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_d2f9fa9d99bb30b2b67fc6b0",
+      "name": "Verifikasi v1.14.0",
+      "createdAt": "2026-10-19T08:11:40.857Z",
+      "messages": [
+        {
+          "id": "m_mvez6z09xjv6",
+          "from": "user",
+          "text": "harga ff 350",
+          "at": "2026-10-19T08:11:40.857Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-19T08:11:40.857Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
