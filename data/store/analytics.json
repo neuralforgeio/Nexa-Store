@@ -103,7 +103,7 @@
         "mobile": 1
       },
       "events": {
-        "chat_open": 2
+        "chat_open": 4
       }
     }
   },
