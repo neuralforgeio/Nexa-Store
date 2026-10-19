@@ -284,6 +284,63 @@
     }
   }
 
+  /* Marquee (v1.16.0) — teks toast pengumuman yang kepanjangan menggulir
+     ke KIRI supaya seluruhnya terbaca. Kelas .run dipasang lewat JS hanya
+     saat teks benar-benar meluber (ResizeObserver); tanpa itu teks cukup
+     dipotong ellipsis biasa. Jeda saat di-hover agar bisa dibaca pelan. */
+  @keyframes marquee-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .marquee {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+  }
+  .marquee-main {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .marquee-item {
+    flex: none;
+    padding-right: 3rem;
+  }
+  .marquee-copy {
+    display: none;
+  }
+  .marquee.run .marquee-main {
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .marquee.run .marquee-copy {
+    display: block;
+  }
+  .marquee.run .marquee-track {
+    animation: marquee-scroll var(--marquee-duration, 18s) linear infinite;
+  }
+  .marquee.run:hover .marquee-track {
+    animation-play-state: paused;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee.run .marquee-track {
+      animation: none;
+    }
+    .marquee.run .marquee-copy {
+      display: none;
+    }
+    .marquee.run .marquee-main {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
   /* Very low-opacity grid texture — supports depth, stays quiet. */
   .bg-grid {
     background-image:

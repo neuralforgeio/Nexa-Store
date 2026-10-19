@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { OrderBarcode } from "@/components/store/barcode/order-barcode";
+import { downloadOrderBarcodePng } from "@/lib/barcode";
 import { useCatalog, useSiteFeatures } from "@/lib/queries";
 import { RouteLink } from "@/components/shared/route-link";
 import { GameMark } from "@/components/shared/game-mark";
@@ -39,6 +41,7 @@ import {
   Check,
   CheckCheck,
   Copy,
+  Download,
   History,
   MessageCircle,
   ShoppingBag,
@@ -623,6 +626,34 @@ function CartSuccessView({
   orders: LocalOrderRecord[];
 }) {
   const latest = snapshotRef ? orders.find((o) => o.reference === snapshotRef) : null;
+
+  async function downloadBarcode() {
+    if (!latest) return;
+    try {
+      await downloadOrderBarcodePng(latest.reference);
+      toast.success("Barcode tersimpan", {
+        description:
+          "Pindai dengan Google Lens atau kamera mana pun untuk membuka resi ini.",
+      });
+    } catch {
+      toast.error("Gagal membuat barcode", {
+        description: "Coba lagi — atau cukup simpan kodenya di atas.",
+      });
+    }
+  }
+
+  async function copyCode() {
+    if (!latest) return;
+    try {
+      await navigator.clipboard.writeText(latest.reference);
+      toast.success("Kode pesanan tersalin", {
+        description: "Tempel di Lacak Pesanan kapan pun untuk cek status.",
+      });
+    } catch {
+      toast.error("Gagal menyalin", { description: "Salin manual kodenya ya." });
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 py-6 text-center">
       <motion.span
@@ -646,6 +677,27 @@ function CartSuccessView({
             <p className="font-mono text-sm font-semibold tracking-wide">{latest.reference}</p>
             <PriceTag value={latest.total} size="md" className="shrink-0" />
           </div>
+
+          {/* v1.16.0: barcode resi otomatis — unduh atau simpan kodenya. */}
+          <div className="mt-3">
+            <OrderBarcode orderId={latest.reference} barHeight={80} />
+            <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => void copyCode()}
+              >
+                <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+                Salin kode
+              </Button>
+              <Button size="sm" className="flex-1 gap-2" onClick={() => void downloadBarcode()}>
+                <Download aria-hidden="true" className="h-3.5 w-3.5" />
+                Unduh barcode
+              </Button>
+            </div>
+          </div>
+
           <ul className="mt-2.5 space-y-1.5 border-t border-border/60 pt-2.5 text-xs">
             {latest.items.map((it, i) => (
               <li key={i} className="flex items-center justify-between gap-3">

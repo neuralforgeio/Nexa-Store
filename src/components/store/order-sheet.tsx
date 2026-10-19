@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { OrderBarcode } from "@/components/store/barcode/order-barcode";
+import { downloadOrderBarcodePng } from "@/lib/barcode";
 import {
   Drawer,
   DrawerContent,
@@ -42,10 +44,10 @@ import { useSiteFeatures } from "@/lib/queries";
 import { effectivePriceForGame } from "@/lib/promo/pricing";
 import { track } from "@/lib/analytics/tracker";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, Copy, MessageCircle, TimerReset } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCheck, Copy, Download, MessageCircle, TimerReset } from "lucide-react";
 
 type OrderGame = PublicCatalog["games"][number];
-type Step = "form" | "review";
+type Step = "form" | "review" | "success";
 
 function buildSchema(game: OrderGame) {
   const shape: Record<string, z.ZodTypeAny> = {
@@ -162,6 +164,8 @@ function OrderSheetBody({
   onDone: () => void;
 }) {
   const [step, setStep] = useState<Step>("form");
+  const [successId, setSuccessId] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string>("");
   const isMobile = useIsMobile();
   const schema = useMemo(() => buildSchema(game), [game]);
   const domainGame = useMemo(() => asDomainGame(game), [game]);
@@ -234,6 +238,41 @@ function OrderSheetBody({
     }
   };
 
+  /** Buka WhatsApp — dipanggil dari klik tombol (gestur asli, anti-popup-block). */
+  function openWhatsApp(finalMessage: string, orderId?: string) {
+    try {
+      const url = buildWhatsAppUrl(store.whatsappNumber, finalMessage);
+      // open() with the "noopener" feature always returns null by spec, so
+      // the popup-blocked check would misfire. Open plain, then detach the
+      // opener manually for the same security property.
+      const win = window.open(url, "_blank");
+      if (!win) {
+        // Popup blocked → surface the copy fallback explicitly (PRD §12.4).
+        toast.info("Peramban memblokir WhatsApp", {
+          description: "Pesan sudah disalin. Tempel manual di chat store.",
+          duration: 8000,
+        });
+        void copyMessage(finalMessage);
+        return;
+      }
+      try {
+        win.opener = null;
+      } catch {
+        // Cross-origin windows may reject the assignment. Safe to ignore.
+      }
+      toast.success("WhatsApp dibuka", {
+        description: orderId
+          ? `ID Order kamu ${orderId} — simpan untuk melacak status.`
+          : "Kirim pesan yang sudah disiapkan untuk menyelesaikan pesanan.",
+      });
+    } catch {
+      toast.error("Nomor WhatsApp store tidak valid", {
+        description: "Hubungi admin. Konfigurasi nomor perlu diperbaiki.",
+      });
+      void copyMessage(finalMessage);
+    }
+  }
+
   const submitToWhatsApp = handleSubmit(async (data) => {
     track("wa_handoff");
     // Pesanan terlacak (v1.6.0): buat rekaman server dulu → ID Order ikut
@@ -264,42 +303,34 @@ function OrderSheetBody({
       // offline / server sibuk — WA tetap terkirim tanpa ID Order
     }
 
-    const finalMessage = orderId
-      ? `${message}\nID Order: ${orderId}`
-      : message;
+    // v1.16.0: pesanan berhasil dibuat → tampilkan langkah sukses dulu.
+    // Barcode resi otomatis tersedia untuk diunduh/disimpan kodenya;
+    // WhatsApp dibuka dari tombol (gestur langsung, tak terblokir popup).
+    if (orderId) {
+      setSuccessId(orderId);
+      setSuccessMessage(`${message}\nID Order: ${orderId}`);
+      setStep("success");
+      return;
+    }
 
+    openWhatsApp(message);
+    onDone();
+  });
+
+  async function downloadBarcode() {
+    if (!successId) return;
     try {
-      const url = buildWhatsAppUrl(store.whatsappNumber, finalMessage);
-      // NOTE: open() with the "noopener" feature always returns null by spec,
-      // so the popup-blocked check would misfire. Open plain, then detach
-      // the opener manually for the same security property.
-      const win = window.open(url, "_blank");
-      if (!win) {
-        // Popup blocked → surface the copy fallback explicitly (PRD §12.4).
-        toast.info("Peramban memblokir WhatsApp", {
-          description: "Pesan sudah disalin. Tempel manual di chat store.",
-          duration: 8000,
-        });
-        void copyMessage(finalMessage);
-        return;
-      }
-      try {
-        win.opener = null;
-      } catch {
-        // Cross-origin windows may reject the assignment. Safe to ignore.
-      }
-      toast.success("WhatsApp dibuka", {
-        description: orderId
-          ? `ID Order kamu ${orderId} — simpan untuk melacak status.`
-          : "Kirim pesan yang sudah disiapkan untuk menyelesaikan pesanan.",
+      await downloadOrderBarcodePng(successId);
+      toast.success("Barcode tersimpan", {
+        description:
+          "Pindai dengan Google Lens atau kamera mana pun untuk membuka resi ini.",
       });
-      onDone();
     } catch {
-      toast.error("Nomor WhatsApp store tidak valid", {
-        description: "Hubungi admin. Konfigurasi nomor perlu diperbaiki.",
+      toast.error("Gagal membuat barcode", {
+        description: "Coba lagi — atau cukup simpan kodenya di atas.",
       });
     }
-  });
+  }
 
   async function copyMessage(text: string) {
     try {
@@ -324,8 +355,9 @@ function OrderSheetBody({
 
       <form onSubmit={submitToWhatsApp} noValidate className="flex min-h-0 flex-1 flex-col">
         <div className="scroll-slim min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* Product summary — always visible. */}
-          <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+          {/* Product summary — selalu tampil kecuali di langkah sukses. */}
+          {step !== "success" ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-4 py-3">
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {game.name}
@@ -353,7 +385,8 @@ function OrderSheetBody({
               size="lg"
               className={promo.percentOff > 0 ? "shrink-0 text-primary" : "shrink-0"}
             />
-          </div>
+            </div>
+          ) : null}
 
           <AnimatePresence mode="wait">
             {step === "form" ? (
@@ -416,7 +449,7 @@ function OrderSheetBody({
                   />
                 </div>
               </motion.div>
-            ) : (
+            ) : step === "review" ? (
               <motion.div
                 key="review"
                 {...slide}
@@ -466,6 +499,21 @@ function OrderSheetBody({
                   Pesanan dikirim ke <span className="font-mono text-foreground">{displayPhone(store.whatsappNumber)}</span>
                 </p>
               </motion.div>
+            ) : (
+              <motion.div
+                key="success"
+                {...slide}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="mt-4"
+              >
+                <OrderSuccessBlock
+                  orderId={successId}
+                  onDownload={() => void downloadBarcode()}
+                  onCopyCode={() =>
+                    successId ? void copyMessage(successId) : undefined
+                  }
+                />
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -475,9 +523,70 @@ function OrderSheetBody({
           onBack={() => setStep("form")}
           onNext={goToReview}
           onCopy={() => (message ? copyMessage(message) : undefined)}
+          onWhatsApp={() => {
+            openWhatsApp(successMessage, successId ?? undefined);
+            onDone();
+          }}
+          onDone={onDone}
           hasMessage={Boolean(message)}
         />
       </form>
+    </div>
+  );
+}
+
+/* ── langkah sukses: barcode resi otomatis dibuat (v1.16.0) ────────── */
+
+function OrderSuccessBlock({
+  orderId,
+  onDownload,
+  onCopyCode,
+}: {
+  orderId: string | null;
+  onDownload: () => void;
+  onCopyCode: () => void;
+}) {
+  if (!orderId) return null;
+  return (
+    <div className="flex flex-col items-center gap-4 py-2 text-center">
+      <motion.span
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+        className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+      >
+        <CheckCheck aria-hidden="true" className="h-7 w-7" />
+      </motion.span>
+      <div>
+        <h3 className="font-display text-lg font-semibold">Pesanan dibuat!</h3>
+        <p className="mx-auto mt-1.5 max-w-[38ch] text-sm leading-relaxed text-muted-foreground">
+          Barcode resi kamu sudah dibuat otomatis — unduh atau simpan
+          kodenya, lalu lanjut ke WhatsApp untuk konfirmasi.
+        </p>
+      </div>
+      <div className="w-full max-w-sm">
+        <OrderBarcode orderId={orderId} barHeight={84} />
+        <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={onCopyCode}
+          >
+            <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+            Salin kode
+          </Button>
+          <Button type="button" size="sm" className="flex-1 gap-2" onClick={onDownload}>
+            <Download aria-hidden="true" className="h-3.5 w-3.5" />
+            Unduh barcode
+          </Button>
+        </div>
+      </div>
+      <p className="max-w-[42ch] text-[11px] leading-relaxed text-muted-foreground/80">
+        Pindai barcode-nya dengan Google Lens atau kamera mana pun — resi
+        pesanan ini langsung terbuka di Nexa Store.
+      </p>
     </div>
   );
 }
@@ -493,11 +602,18 @@ function HeaderBlock({
   step: Step;
   isMobile: boolean;
 }) {
-  const title = step === "form" ? "Lengkapi data pesanan" : "Periksa pesanan";
+  const title =
+    step === "form"
+      ? "Lengkapi data pesanan"
+      : step === "review"
+        ? "Periksa pesanan"
+        : "Pesanan dibuat";
   const description =
     step === "form"
       ? `Data akun dipakai untuk mengirim ${product.denomination} ${product.name} ke akun ${game.name} kamu.`
-      : "Pastikan data sudah benar sebelum lanjut ke WhatsApp.";
+      : step === "review"
+        ? "Pastikan data sudah benar sebelum lanjut ke WhatsApp."
+        : "Barcode resi siap diunduh — lalu lanjutkan ke WhatsApp untuk konfirmasi.";
 
   const titleNode = (
     <>
@@ -528,14 +644,45 @@ function FooterBlock({
   onBack,
   onNext,
   onCopy,
+  onWhatsApp,
+  onDone,
   hasMessage,
 }: {
   step: Step;
   onBack: () => void;
   onNext: () => void;
   onCopy: () => void;
+  onWhatsApp: () => void;
+  onDone: () => void;
   hasMessage: boolean;
 }) {
+  if (step === "success") {
+    return (
+      <div className="flex-none border-t border-border/70 bg-background/80 p-4 backdrop-blur sm:px-6">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className="text-muted-foreground sm:w-auto"
+            onClick={onDone}
+          >
+            Tutup
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            onClick={onWhatsApp}
+            className="flex-1 gap-2 bg-wa font-semibold text-wa-foreground shadow-card hover:bg-wa/90"
+          >
+            <MessageCircle aria-hidden="true" className="h-4 w-4" />
+            Lanjut ke WhatsApp
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (step === "form") {
     return (
       <div className="flex-none border-t border-border/70 bg-background/80 p-4 backdrop-blur sm:px-6">

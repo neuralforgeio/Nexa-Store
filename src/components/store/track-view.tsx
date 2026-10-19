@@ -5,7 +5,20 @@ import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { RouteLink } from "@/components/shared/route-link";
 import { Reveal } from "@/components/shared/reveal";
+import { OrderBarcode } from "@/components/store/barcode/order-barcode";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ORDER_ID_PATTERN as ID_PATTERN,
+  downloadOrderBarcodePng,
+  normalizeOrderId,
+} from "@/lib/barcode";
 import { formatIdr } from "@/lib/format/idr";
 import { track } from "@/lib/analytics/tracker";
 import { useCatalog } from "@/lib/queries";
@@ -14,6 +27,8 @@ import {
   Check,
   CheckCheck,
   Copy,
+  Download,
+  Expand,
   Link2,
   Loader2,
   MessageCircle,
@@ -46,8 +61,6 @@ type TrackedOrder = {
   createdAt: string;
   history: Array<{ status: OrderStatus; at: string; reason: string | null }>;
 };
-
-const ID_PATTERN = /^NEXA-\d{6}-[A-HJKMNP-TV-Z23-9]{4}$/;
 
 const STATUS_META: Record<
   OrderStatus,
@@ -92,15 +105,8 @@ const STATUS_SUBLINE: Record<OrderStatus, string> = {
 
 /* ── util ──────────────────────────────────────────────────────────── */
 
-/** Normalisasi isian: uppercase, buang aneh, sambungkan strip otomatis. */
-function normalizeId(raw: string): string {
-  const up = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (up.length <= 4) return up;
-  if (up.length <= 10) return `${up.slice(0, 4)}-${up.slice(4)}`;
-  return `${up.slice(0, 4)}-${up.slice(4, 10)}-${up.slice(10, 14)}`;
-}
-
-/** Bar lebar 1–3 unit, deterministik dari karakter ID — bukan hiasan acak. */
+// normalizeId & ID_PATTERN kini tinggal di @/lib/barcode (dipakai bersama
+// pemindai barcode dan alur pesanan).
 function barcodeBars(id: string): number[] {
   const bars: number[] = [];
   for (let i = 0; i < 44; i++) {
@@ -164,26 +170,6 @@ async function copyText(text: string, message: string) {
   }
 }
 
-/* ── barcode ───────────────────────────────────────────────────────── */
-
-function Barcode({ id, className }: { id: string; className?: string }) {
-  const bars = useMemo(() => barcodeBars(id), [id]);
-  return (
-    <div
-      aria-hidden="true"
-      className={`flex h-9 items-stretch gap-[2.5px] ${className ?? ""}`}
-    >
-      {bars.map((v, i) => (
-        <span
-          key={i}
-          className={`bg-foreground/85 ${i === 0 || i === bars.length - 1 ? "" : "my-[16%]"}`}
-          style={{ width: v * 2 }}
-        />
-      ))}
-    </div>
-  );
-}
-
 /* ── jahitan perforasi (garis sobek khas tiket) ────────────────────── */
 
 function Seam({ compact = false }: { compact?: boolean }) {
@@ -234,6 +220,20 @@ function WaybillTicket({
   const meta = STATUS_META[order.status];
   const timeline = useMemo(() => [...order.history].reverse(), [order.history]);
   const updatedAt = order.statusUpdatedAt ?? order.createdAt;
+  const [zoomOpen, setZoomOpen] = useState(false);
+
+  async function downloadBarcode() {
+    try {
+      await downloadOrderBarcodePng(order.id);
+      toast.success("Barcode tersimpan", {
+        description: "Buka gambarnya di Google Lens / pemindai mana pun untuk membuka resi ini.",
+      });
+    } catch {
+      toast.error("Gagal membuat barcode", {
+        description: "Coba lagi — atau salin ID Order di bawah ini.",
+      });
+    }
+  }
 
   return (
     <motion.article
@@ -255,10 +255,24 @@ function WaybillTicket({
         </span>
       </div>
 
-      {/* barcode + ID */}
+      {/* barcode + ID — Code 128 asli yang bisa dipindai (payload: tautan
+          resi ini). Ketuk untuk memperbesar & memindai dari layar. */}
       <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-6">
-        <div className="min-w-0">
-          <Barcode id={order.id} />
+        <div className="min-w-0 flex-1 sm:max-w-md">
+          <button
+            type="button"
+            onClick={() => setZoomOpen(true)}
+            aria-label="Perbesar barcode dan pindai resi"
+            className="group relative block w-full max-w-md cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <OrderBarcode orderId={order.id} className="transition-shadow duration-200 group-hover:shadow-[inset_0_0_0_1px_rgba(9,9,11,0.16),0_8px_24px_-12px_rgba(9,9,11,0.35)]" />
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-zinc-950/0 opacity-0 transition-all duration-200 group-hover:bg-zinc-950/5 group-hover:opacity-100">
+              <span className="flex items-center gap-1.5 rounded-full bg-zinc-950/80 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-50">
+                <Expand aria-hidden="true" className="h-3 w-3" />
+                Perbesar
+              </span>
+            </span>
+          </button>
           <p className="mt-3 break-all font-mono text-lg font-semibold tracking-[0.14em]">
             {order.id}
           </p>
@@ -267,7 +281,15 @@ function WaybillTicket({
             {order.source === "cart" ? "Dari keranjang" : "Pesan instan"}
           </p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={() => void downloadBarcode()}
+          >
+            <Download aria-hidden="true" className="h-3.5 w-3.5" />
+            Unduh
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -293,6 +315,43 @@ function WaybillTicket({
           </Button>
         </div>
       </div>
+
+      {/* dialog perbesar barcode — ukuran besar untuk dipindai perangkat lain */}
+      <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+        <DialogContent
+          aria-describedby="barcode-zoom-description"
+          className="gap-0 p-0 sm:max-w-2xl"
+        >
+          <DialogHeader className="px-5 pt-5 text-left sm:px-6">
+            <DialogTitle className="flex items-center gap-2 font-display">
+              Barcode Pesanan
+            </DialogTitle>
+            <DialogDescription id="barcode-zoom-description">
+              Pindai dengan Google Lens, kamera, atau pemindai barcode mana pun
+              — tautan di dalamnya otomatis membuka resi pesanan ini di Nexa
+              Store.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-5 pt-3 sm:px-6">
+            <OrderBarcode orderId={order.id} barHeight={110} />
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 sm:flex-1"
+                onClick={() => void copyText(order.id, "ID Order tersalin.")}
+              >
+                <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+                Salin kode
+              </Button>
+              <Button size="sm" className="gap-2 sm:flex-1" onClick={() => void downloadBarcode()}>
+                <Download aria-hidden="true" className="h-3.5 w-3.5" />
+                Unduh barcode
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Seam />
 
@@ -534,7 +593,7 @@ export function TrackView() {
 
   const search = useCallback(
     async (target?: string) => {
-      const id = normalizeId((target ?? query).trim());
+      const id = normalizeOrderId((target ?? query).trim());
       setQuery(id);
       if (!ID_PATTERN.test(id)) {
         setOrder(null);
@@ -586,7 +645,7 @@ export function TrackView() {
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id");
     if (!id) return;
-    const normalized = normalizeId(id);
+    const normalized = normalizeOrderId(id);
     setQuery(normalized);
     if (ID_PATTERN.test(normalized)) void search(normalized);
     // Hanya untuk kunjungan pertama; jalan ulang malah menimpa ketikan user.
@@ -682,7 +741,7 @@ export function TrackView() {
               ref={inputRef}
               value={query}
               onChange={(e) => {
-                setQuery(normalizeId(e.target.value));
+                setQuery(normalizeOrderId(e.target.value));
                 if (error) {
                   setError(null);
                   setErrorKind(null);

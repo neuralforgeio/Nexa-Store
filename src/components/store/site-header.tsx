@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { RouteLink } from "@/components/shared/route-link";
 import { ThemeToggle, ThemeToggleCompact } from "@/components/shared/theme-toggle";
+import { BarcodeScannerDialog } from "@/components/store/barcode/barcode-scanner";
 import { useCartUI } from "@/components/store/cart/cart-ui-context";
 import { useCartStore } from "@/lib/cart/store";
 import { useCatalog } from "@/lib/queries";
@@ -12,7 +13,7 @@ import { useAppRoute, type Route } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Flag, Gamepad2, LifeBuoy, Menu, PackageSearch, ShoppingCart, X } from "lucide-react";
+import { ChevronRight, Flag, Gamepad2, LifeBuoy, Menu, PackageSearch, ScanBarcode, ShoppingCart, X } from "lucide-react";
 
 /**
  * Storefront navigation with the cart entry point. The cart stays visible on
@@ -51,6 +52,7 @@ function activeNavHref(view: Route["view"]): (typeof NAV_LINKS)[number]["href"] 
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const [route] = useAppRoute();
   const activeHref = activeNavHref(route.view);
@@ -166,6 +168,17 @@ export function SiteHeader() {
               );
             })}
           </ul>
+
+          {/* Pindai barcode pesanan — selalu tampil, termasuk ponsel. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setScanOpen(true)}
+            aria-label="Pindai barcode pesanan"
+            className="relative ml-1 h-9 w-9 rounded-full"
+          >
+            <ScanBarcode aria-hidden="true" className="h-4.5 w-4.5" />
+          </Button>
 
           {/* Cart — always visible, including mobile. data-cart-button is
               targeted by the fly-to-cart animation. */}
@@ -329,6 +342,29 @@ export function SiteHeader() {
                           );
                         })}
                       </ul>
+
+                      <div className="mt-3 border-t border-border/60 pt-3">
+                        <p className="px-3.5 pb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+                          Alat
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false);
+                            setScanOpen(true);
+                          }}
+                          className="group flex w-full items-center gap-3 rounded-xl border-l-2 border-transparent px-3.5 py-3 text-left text-sm font-medium text-foreground/85 transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                            <ScanBarcode aria-hidden="true" className="h-4 w-4" />
+                          </span>
+                          <span className="flex-1 truncate">Pindai Barcode</span>
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-foreground/70"
+                          />
+                        </button>
+                      </div>
                     </nav>
 
                     <div className="shrink-0 border-t border-border/80 px-5 py-4">
@@ -346,6 +382,10 @@ export function SiteHeader() {
             document.body
           )
         : null}
+
+      {/* Pemindai barcode pesanan — dialog bersama untuk tombol bilah atas
+          dan entri drawer. */}
+      <BarcodeScannerDialog open={scanOpen} onOpenChange={setScanOpen} />
     </header>
   );
 }
