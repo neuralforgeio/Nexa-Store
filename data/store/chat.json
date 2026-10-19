@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_1f98790e536982c10f1b4bc1",
+      "name": "Dearly",
+      "createdAt": "2026-10-19T09:03:05.013Z",
+      "messages": [
+        {
+          "id": "m_mvf112r9y62f",
+          "from": "user",
+          "text": "siapa sih pencipta mu",
+          "at": "2026-10-19T09:03:05.013Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-19T09:03:05.013Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
