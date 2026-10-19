@@ -10,6 +10,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import {
   Bell,
   BellOff,
+  Bot,
   Check,
   MessageCircle,
   Send,
@@ -35,7 +36,7 @@ const SEEN_KEY = "nexa.chat.seen";
 const PUSH_KEY = "nexa.chat.push";
 const WS_QUERY = "/?XTransformPort=3005";
 
-type ChatMessageDto = { id: string; from: "user" | "owner"; text: string; at: string };
+type ChatMessageDto = { id: string; from: "user" | "owner" | "bot"; text: string; at: string };
 
 function loadToken(): string {
   try {
@@ -64,6 +65,7 @@ export function ChatWidget() {
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [aiMode, setAiMode] = useState(true);
   const tokenRef = useRef<string>("");
   const seenAtRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -234,8 +236,14 @@ export function ChatWidget() {
     const poll = async () => {
       try {
         const res = await fetch(`/api/chat/messages?token=${tokenRef.current}`);
-        const json = (await res.json()) as { ok: boolean; data?: { messages: ChatMessageDto[] } };
-        if (!cancelled && json.ok && json.data) mergeMessages(json.data.messages);
+        const json = (await res.json()) as {
+          ok: boolean;
+          data?: { messages: ChatMessageDto[]; aiAutoReply?: boolean };
+        };
+        if (!cancelled && json.ok && json.data) {
+          mergeMessages(json.data.messages);
+          if (typeof json.data.aiAutoReply === "boolean") setAiMode(json.data.aiAutoReply);
+        }
       } catch {
         // network hiccup — next tick retries
       }
@@ -326,11 +334,22 @@ export function ChatWidget() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ token: tokenRef.current, text, ...(trimmedName ? { name: trimmedName } : {}) }),
       });
-      const json = (await res.json()) as { ok: boolean; data?: { message: ChatMessageDto }; error?: { message: string } };
+      const json = (await res.json()) as {
+        ok: boolean;
+        data?: { message: ChatMessageDto; botMessage?: ChatMessageDto | null; aiAutoReply?: boolean };
+        error?: { message: string };
+      };
       if (!json.ok || !json.data?.message) {
         throw new Error(json.error?.message ?? "Pesan gagal terkirim.");
       }
       mergeMessages([json.data.message]);
+      if (json.data.botMessage) {
+        // Tunda sekejap agar terlihat "mengetik" — balasan instan mentah
+        // membuat percakapan terasa aneh.
+        await new Promise((r) => setTimeout(r, 450));
+        mergeMessages([json.data.botMessage]);
+      }
+      if (typeof json.data.aiAutoReply === "boolean") setAiMode(json.data.aiAutoReply);
       setDraft("");
     } catch (e) {
       toast.error("Pesan tidak terkirim", { description: (e as Error).message });
@@ -357,7 +376,7 @@ export function ChatWidget() {
             <p className="truncate font-display text-sm font-semibold">Obrolan Nexa Store</p>
             <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", wsLive ? "bg-emerald-500" : "bg-amber-500")} />
-              {wsLive ? "tersambung langsung" : "dijawab oleh pemilik store"}
+              {wsLive ? "tersambung langsung" : aiMode ? "dijawab instan oleh Nexa Bot" : "dijawab oleh pemilik store"}
             </p>
           </div>
           <button
@@ -425,8 +444,9 @@ export function ChatWidget() {
                 <MessageCircle className="h-5 w-5" />
               </span>
               <p className="max-w-[260px] text-sm leading-relaxed text-muted-foreground">
-                Halo! Ada yang bisa dibantu? Tulis pesanmu di sini — pemilik
-                store akan membalas langsung dari dashboard.
+                Halo! Aku Nexa Bot — asisten AI NEXA STORE ⚡ Tanya harga game,
+                cara top up, atau lacak pesanan. Mau dijawab manusia? Admin
+                juga memantau obrolan ini.
               </p>
             </div>
           ) : (
@@ -440,9 +460,17 @@ export function ChatWidget() {
                     "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
                     m.from === "user"
                       ? "rounded-br-md bg-primary text-primary-foreground"
-                      : "rounded-bl-md border bg-muted/60"
+                      : m.from === "bot"
+                        ? "rounded-bl-md border border-primary/25 bg-primary/[0.06]"
+                        : "rounded-bl-md border bg-muted/60"
                   )}
                 >
+                  {m.from === "bot" ? (
+                    <p className="mb-1 flex items-center gap-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+                      <Bot aria-hidden="true" className="h-3 w-3" />
+                      Nexa Bot
+                    </p>
+                  ) : null}
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
                   <p
                     className={cn(
@@ -530,7 +558,7 @@ export function ChatWidget() {
         </div>
       </motion.div>
     ),
-    [reduced, wsLive, messages, name, nameEdit, draft, sending, pushOn, pushBusy, confirmClear]
+    [reduced, wsLive, messages, name, nameEdit, draft, sending, pushOn, pushBusy, confirmClear, aiMode]
   );
 
   return (

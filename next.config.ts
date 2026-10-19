@@ -33,6 +33,30 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: false,
+  // v1.14.0: @nlpjs/* (otak Nexa Bot) di-require runtime dari node_modules —
+  // bundling dinamis containerBootstrap oleh Turbopack tidak perlu; di
+  // Vercel, package eksternal otomatis ikut ke lambda.
+  serverExternalPackages: [
+    "@nlpjs/basic",
+    "@nlpjs/connector",
+    "@nlpjs/console-connector",
+    "@nlpjs/core",
+    "@nlpjs/core-loader",
+    "@nlpjs/evaluator",
+    "@nlpjs/lang-en",
+    "@nlpjs/lang-en-min",
+    "@nlpjs/language-min",
+    "@nlpjs/logger",
+    "@nlpjs/ner",
+    "@nlpjs/neural",
+    "@nlpjs/nlg",
+    "@nlpjs/nlp",
+    "@nlpjs/nlu",
+    "@nlpjs/request",
+    "@nlpjs/sentiment",
+    "@nlpjs/similarity",
+    "@nlpjs/slot",
+  ],
   // The catalog is read from data/*.json at request time (fs), which static
   // analysis cannot trace — force-include it in the serverless bundle.
   outputFileTracingIncludes: {

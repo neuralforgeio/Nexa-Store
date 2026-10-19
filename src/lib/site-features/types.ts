@@ -107,7 +107,8 @@ export type ScheduleTask = {
 
 export type ChatMessage = {
   id: string;
-  from: "user" | "owner";
+  /** v1.14.0: "bot" = balasan otomatis Nexa Bot (AI lokal). */
+  from: "user" | "owner" | "bot";
   text: string;
   at: string;
 };
@@ -131,7 +132,7 @@ export type ConversationSummary = {
   unreadByOwner: number;
   messageCount: number;
   lastText: string;
-  lastFrom: "user" | "owner" | null;
+  lastFrom: "user" | "owner" | "bot" | null;
 };
 
 // ---------------------------------------------------------------------------

@@ -412,8 +412,10 @@ export function useScheduleMutation() {
 }
 
 export type ChatConsoleData = {
-  conversations: Array<ConversationSummary & { messages: Array<{ id: string; from: "user" | "owner"; text: string; at: string }> }>;
+  conversations: Array<ConversationSummary & { messages: Array<{ id: string; from: "user" | "owner" | "bot"; text: string; at: string }> }>;
   unreadTotal: number;
+  /** v1.14.0: mode jawab obrolan — true = Nexa Bot otomatis. */
+  aiAutoReply?: boolean;
 };
 
 export function useChatConsole(enabled: boolean, refetchMs: number | false = 8_000) {
@@ -431,8 +433,9 @@ export function useChatOwnerMutation() {
     mutationFn: (input: {
       conversationId?: string;
       text?: string;
-      action: "reply" | "markRead" | "clearOne" | "clearAll";
-    }) => api.post<{ ok: boolean; clearedCount?: number }>("/api/developer/chat", input),
+      action: "reply" | "markRead" | "clearOne" | "clearAll" | "aiToggle";
+      enabled?: boolean;
+    }) => api.post<{ ok: boolean; clearedCount?: number; aiAutoReply?: boolean }>("/api/developer/chat", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["dev-chat"] });
     },

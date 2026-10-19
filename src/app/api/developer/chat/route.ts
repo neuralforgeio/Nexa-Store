@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
  * Developer chat console (v1.3.0) — the owner-side of live chat.
  *
  * GET  → conversations (newest activity first) incl. recent messages.
- * POST → { conversationId, text } owner reply, or { conversationId, action: "markRead" }.
+ * POST → { conversationId, text } owner reply, { conversationId, action: "markRead" },
+ *        { action: "clearOne" | "clearAll" },
+ *        atau { action: "aiToggle", enabled: boolean } (v1.14.0 — saklar
+ *        mode jawab: Nexa Bot otomatis vs manual oleh admin/developer).
  *
  * The Telegram bot uses the same endpoints (developer session) — replies from
  * the panel and from Telegram land in one conversation stream.
@@ -37,17 +40,19 @@ export async function GET(req: NextRequest) {
   const denied = await requireCapability(req, "chat.manage");
   if (denied) return denied;
   try {
-    const raw = await readFeature("chat");
+    const [raw, botState] = await Promise.all([readFeature("chat"), readFeature("bot-state")]);
     const file = parseChat(raw);
     const conversations = [...file.conversations].sort(
       (a, b) => Date.parse(b.lastMessageAt) - Date.parse(a.lastMessageAt)
     );
+    const state = botState as { nexaBot?: { autoReply?: boolean } } | null;
     return jsonOk({
       conversations: conversations.map((c) => ({
         ...summarize(c),
         messages: c.messages.slice(-50),
       })),
       unreadTotal: conversations.reduce((sum, c) => sum + c.unreadByOwner, 0),
+      aiAutoReply: state?.nexaBot?.autoReply !== false,
     });
   } catch {
     return jsonError(502, "chat.unavailable", "Obrolan tidak dapat dimuat.");
@@ -71,6 +76,10 @@ const replySchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("clearAll"),
   }),
+  z.object({
+    action: z.literal("aiToggle"),
+    enabled: z.boolean(),
+  }),
 ]);
 
 export async function POST(req: NextRequest) {
@@ -88,6 +97,15 @@ export async function POST(req: NextRequest) {
   const input = parsed.data;
 
   try {
+    // v1.14.0: saklar mode jawab — Nexa Bot (AI lokal) vs manual admin.
+    if (input.action === "aiToggle") {
+      const next = (await updateFeature("bot-state", "ops: toggle nexa bot auto-reply", (current) => ({
+        ...(typeof current === "object" && current !== null ? current : {}),
+        nexaBot: { autoReply: input.enabled },
+      }))) as { nexaBot?: { autoReply?: boolean } };
+      return jsonOk({ ok: true, aiAutoReply: next?.nexaBot?.autoReply !== false });
+    }
+
     let replied = false;
     let clearedCount = 0;
     await updateFeature("chat", input.action === "reply" ? "chat: owner reply" : "chat: owner cleared", (currentRaw) => {

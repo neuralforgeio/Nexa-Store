@@ -66,7 +66,8 @@ export const scheduleTaskSchema = z.object({
 
 export const chatMessageSchema = z.object({
   id: z.string().min(1),
-  from: z.enum(["user", "owner"]),
+  // v1.14.0: "bot" = balasan otomatis Nexa Bot (AI lokal).
+  from: z.enum(["user", "owner", "bot"]),
   text: z.string().min(1).max(800),
   at: z.string().datetime(),
 });
@@ -105,6 +106,8 @@ export const chatFileSchema = z.object({ conversations: z.array(chatConversation
  * State bot Telegram (v1.4.0) — dipakai runtime webhook serverless untuk
  * menyimpan pairing pemilik secara permanen (write-through GitHub di produksi).
  * TIDAK ikut bundle publik /api/site-features — hanya dibaca route webhook.
+ * v1.14.0: + nexaBot.autoReply — saklar mode jawab obrolan (AI otomatis vs
+ * manual oleh admin/developer). Absent = AKTIF (default dijawab AI).
  */
 export const botStateFileSchema = z.object({
   owner: z
@@ -114,6 +117,7 @@ export const botStateFileSchema = z.object({
       pairedAt: z.string().datetime(),
     })
     .nullable(),
+  nexaBot: z.object({ autoReply: z.boolean() }).optional(),
 });
 
 export type PromosFile = z.infer<typeof promosFileSchema>;

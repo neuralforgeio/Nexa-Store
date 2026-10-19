@@ -29,7 +29,14 @@ const gameSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug harus kebab-case"),
   name: z.string().min(1),
   description: z.string().optional(),
-  image: z.string().optional(),
+  image: z
+    .string()
+    .max(300_000)
+    // v1.14.0: icon boleh URL gambar http(s) (eksternal) atau data URI gambar (unggahan).
+    .refine((v) => /^(?:https?:\/\/|data:image\/)/i.test(v), {
+      message: "Icon harus URL gambar http(s) atau data URI gambar",
+    })
+    .optional(),
   categoryIds: z.array(z.string().min(1)),
   orderFieldSchema: z.array(orderFieldSchema),
   enabled: z.boolean(),

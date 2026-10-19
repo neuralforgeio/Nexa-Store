@@ -839,18 +839,46 @@ export function chatMenuKeyboard(count: number): InlineKeyboard {
     rows.push([{ text: `💬 Percakapan ${i + 1}`, callback_data: `cht:v:${i}` }]);
   }
   rows.push([{ text: "🔍 Cari", callback_data: "cht:s" }, { text: "🔄 Muat ulang", callback_data: "cht" }]);
-  rows.push([{ text: "🧹 Hapus semua", callback_data: "cht:clall" }, { text: "⬅️ Menu", callback_data: "menu" }]);
+  rows.push([{ text: "🤖 Mode AI", callback_data: "ai" }, { text: "🧹 Hapus semua", callback_data: "cht:clall" }]);
+  rows.push([{ text: "⬅️ Menu", callback_data: "menu" }]);
   return rows;
 }
 
+/** v1.14.0: menu saklar mode jawab obrolan — Nexa Bot vs manual. */
+export function aiMenuText(enabled: boolean): string {
+  return [
+    "🤖 <b>MODE JAWAB OBROLAN</b>",
+    "",
+    `Status: ${enabled ? "🟢 <b>NEXA BOT AKTIF</b>" : "🔴 <b>MODE MANUAL</b>"}`,
+    "",
+    enabled
+      ? "Pesan pengunjung dijawab otomatis oleh Nexa Bot — AI lokal (NLP.js) yang dilatih dari data katalog store. Kamu tetap menerima notifikasi dan tetap bisa ikut menjawab."
+      : "Nexa Bot diam total. Pesan pengunjung hanya dijawab oleh kamu (admin/developer) lewat dashboard atau bot Telegram ini.",
+    "",
+    "Saklar ini berlaku untuk seluruh widget chat storefront.",
+  ].join("\n");
+}
+
+export function aiMenuKeyboard(enabled: boolean): InlineKeyboard {
+  return [
+    enabled
+      ? [{ text: "🔴 Matikan AI — manual saja", callback_data: "ai_off" }]
+      : [{ text: "🟢 Nyalakan Nexa Bot", callback_data: "ai_on" }],
+    [{ text: "💬 Obrolan", callback_data: "cht" }, { text: "⬅️ Menu", callback_data: "menu" }],
+  ];
+}
+
 export function chatThreadText(
-  conv: { name: string | null; messages: Array<{ from: "user" | "owner"; text: string; at: string }> },
+  conv: { name: string | null; messages: Array<{ from: "user" | "owner" | "bot"; text: string; at: string }> },
   origin: "local" | "prod"
 ): string {
   const tail = conv.messages.slice(-8);
-  const lines = tail.map(
-    (m) => `${m.from === "user" ? "👤" : "🛡"} <b>${m.from === "user" ? esc(conv.name ?? "Pengunjung") : "Kamu"}:</b> ${esc(m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text)} <i>(${relTime(Date.parse(m.at))})</i>`
-  );
+  const lines = tail.map((m) => {
+    if (m.from === "bot") {
+      return `🤖 <b>Nexa Bot:</b> ${esc(m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text)} <i>(${relTime(Date.parse(m.at))})</i>`;
+    }
+    return `${m.from === "user" ? "👤" : "🛡"} <b>${m.from === "user" ? esc(conv.name ?? "Pengunjung") : "Kamu"}:</b> ${esc(m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text)} <i>(${relTime(Date.parse(m.at))})</i>`;
+  });
   return [
     `💬 <b>${esc(conv.name ?? "Tanpa nama")}</b>`,
     `Sumber: ${origin === "local" ? "pratinjau sandbox" : "produksi"}`,

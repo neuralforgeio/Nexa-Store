@@ -18,7 +18,8 @@ import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { useChatConsole, useChatOwnerMutation } from "@/lib/queries";
 import { formatWib } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
-import { CheckCheck, MessagesSquare, Search, Send, Trash2, UserRound } from "lucide-react";
+import { Bot, CheckCheck, MessagesSquare, Search, Send, Trash2, UserRound } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Konsol Obrolan (v1.6.0) — sisi pemilik live chat.
@@ -52,6 +53,22 @@ export function DevChat() {
 
   // Default selection derives from the data — no effect needed.
   const activeId = selectedId ?? filtered[0]?.id ?? conversations[0]?.id ?? null;
+  const aiAutoReply = data?.aiAutoReply ?? true;
+
+  const toggleAi = (enabled: boolean) => {
+    mutation.mutate(
+      { action: "aiToggle", enabled },
+      {
+        onSuccess: () => {
+          toast.success(
+            enabled ? "Nexa Bot aktif — obrolan dijawab AI" : "Mode manual — hanya kamu yang menjawab",
+            { description: enabled ? "Balasan otomatis dari model lokal NEXA STORE." : "Pengunjung menunggu balasan admin/developer." }
+          );
+        },
+        onError: (e) => toast.error("Gagal mengubah mode", { description: (e as Error).message }),
+      }
+    );
+  };
 
   // Auto-mark the open conversation as read.
   useEffect(() => {
@@ -135,17 +152,35 @@ export function DevChat() {
             ) : null}
           </p>
         </div>
-        {conversations.length > 0 ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-red-600 hover:text-red-700 dark:text-red-400"
-            onClick={() => setConfirmClearAll(true)}
-          >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
-            Hapus semua obrolan
-          </Button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* v1.14.0: saklar mode jawab — Nexa Bot (AI lokal) vs manual. */}
+          <div className="flex items-center gap-2.5 rounded-lg border bg-card/60 px-3 py-2">
+            <Bot aria-hidden="true" className={cn("h-4 w-4", aiAutoReply ? "text-primary" : "text-muted-foreground")} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold leading-tight">Nexa Bot</p>
+              <p className="text-[10px] leading-tight text-muted-foreground">
+                {aiAutoReply ? "AI menjawab otomatis" : "manual — kamu menjawab"}
+              </p>
+            </div>
+            <Switch
+              checked={aiAutoReply}
+              onCheckedChange={toggleAi}
+              disabled={mutation.isPending}
+              aria-label={aiAutoReply ? "Matikan jawaban otomatis Nexa Bot" : "Nyalakan jawaban otomatis Nexa Bot"}
+            />
+          </div>
+          {conversations.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-red-600 hover:text-red-700 dark:text-red-400"
+              onClick={() => setConfirmClearAll(true)}
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+              Hapus semua obrolan
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
@@ -204,7 +239,7 @@ export function DevChat() {
                       ) : null}
                     </span>
                     <span className={cn("truncate text-xs", c.unreadByOwner > 0 ? "font-medium text-foreground/80" : "text-muted-foreground")}>
-                      {c.lastFrom === "owner" ? "Kamu: " : ""}
+                      {c.lastFrom === "owner" ? "Kamu: " : c.lastFrom === "bot" ? "Nexa Bot: " : ""}
                       {c.lastText || "(kosong)"}
                     </span>
                     <span className="text-[10px] text-muted-foreground/70">
@@ -247,9 +282,17 @@ export function DevChat() {
                         "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
                         m.from === "owner"
                           ? "rounded-br-md bg-primary text-primary-foreground"
-                          : "rounded-bl-md border bg-muted/60"
+                          : m.from === "bot"
+                            ? "rounded-bl-md border border-primary/25 bg-primary/[0.06]"
+                            : "rounded-bl-md border bg-muted/60"
                       )}
                     >
+                      {m.from === "bot" ? (
+                        <p className="mb-1 flex items-center gap-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+                          <Bot aria-hidden="true" className="h-3 w-3" />
+                          Nexa Bot
+                        </p>
+                      ) : null}
                       <p className="whitespace-pre-wrap break-words">{m.text}</p>
                       <p
                         className={cn(

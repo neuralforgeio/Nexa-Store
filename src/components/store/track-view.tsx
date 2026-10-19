@@ -703,7 +703,7 @@ export function TrackView() {
             <Button
               type="submit"
               disabled={loading || !query.trim()}
-              className="mr-1.5 gap-2 self-stretch rounded-lg px-4 font-semibold"
+              className="h-auto gap-2 self-stretch rounded-none px-4 font-semibold sm:px-5"
             >
               {loading ? (
                 <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />

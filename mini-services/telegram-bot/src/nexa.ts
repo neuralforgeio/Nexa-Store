@@ -476,6 +476,26 @@ export async function chatClearAll(base?: string): Promise<Record<string, unknow
 }
 
 // ---------------------------------------------------------------------------
+// v1.14.0: mode jawab obrolan — Nexa Bot (AI lokal) vs manual admin
+// ---------------------------------------------------------------------------
+
+export async function getChatAiMode(base?: string): Promise<boolean> {
+  const data = await request("GET", "/api/developer/chat", undefined, true, base ?? config.apiBase);
+  return ((data as { aiAutoReply?: boolean }).aiAutoReply ?? true) !== false;
+}
+
+export async function chatAiToggle(enabled: boolean, base?: string): Promise<boolean> {
+  const data = await request(
+    "POST",
+    "/api/developer/chat",
+    { action: "aiToggle", enabled },
+    true,
+    base ?? config.apiBase
+  );
+  return ((data as { aiAutoReply?: boolean }).aiAutoReply ?? enabled) !== false;
+}
+
+// ---------------------------------------------------------------------------
 // Pesanan terlacak (v1.6.0)
 // ---------------------------------------------------------------------------
 

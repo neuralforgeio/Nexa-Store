@@ -183,6 +183,16 @@ async function dispatchRoot(chatId: number, s: Session, data: string): Promise<v
       await send(ui.chatMenuText(all), ui.chatMenuKeyboard(all.length));
       return;
     }
+    case "ai": {
+      clearFlow(s);
+      const enabled = await nexa.getChatAiMode().catch(() => null);
+      if (enabled === null) {
+        await send("Gagal membaca mode AI obrolan — coba lagi sebentar.");
+        return;
+      }
+      await send(ui.aiMenuText(enabled), ui.aiMenuKeyboard(enabled));
+      return;
+    }
     case "ord": {
       clearFlow(s);
       s.stage = "input";
@@ -628,6 +638,29 @@ async function onCallback(q: NonNullable<tg.TelegramUpdate["callback_query"]>): 
         s.stage = "input";
         s.input = "chat-reply";
         await send(ui.inputPromptText("chat-reply"));
+        return;
+      }
+      // ----- v1.14.0: mode jawab obrolan (Nexa Bot AI vs manual) -----
+      case data === "ai": {
+        clearFlow(s);
+        await ok("Memuat…");
+        const enabled = await nexa.getChatAiMode().catch(() => null);
+        if (enabled === null) {
+          await ok("Gagal membaca mode AI.");
+          return;
+        }
+        await edit(ui.aiMenuText(enabled), ui.aiMenuKeyboard(enabled));
+        return;
+      }
+      case data === "ai_on" || data === "ai_off": {
+        const turnOn = data === "ai_on";
+        await ok(turnOn ? "Nexa Bot dinyalakan…" : "Nexa Bot dimatikan…");
+        try {
+          const enabled = await nexa.chatAiToggle(turnOn);
+          await edit(ui.aiMenuText(enabled), ui.aiMenuKeyboard(enabled));
+        } catch (e) {
+          await ok(`Gagal: ${(e as Error).message.slice(0, 80)}`);
+        }
         return;
       }
       case data === "cht:s": {

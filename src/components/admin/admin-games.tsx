@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useManagementCatalog } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -29,47 +29,10 @@ import { GameMark } from "@/components/shared/game-mark";
 import { LoadingState, ErrorState, EmptyState } from "@/components/shared/state-views";
 import { SyncBar } from "./sync-bar";
 import { DetailSheet, StatusPill, rowClickGuard } from "./detail-sheet";
+import { IconEditorDialog } from "./icon-editor";
 import type { Game, OrderField } from "@/lib/catalog/types";
-import { Plus, Pencil, ArrowUp, ArrowDown, Trash2, ImagePlus, X } from "lucide-react";
+import { Plus, Pencil, ArrowUp, ArrowDown, Trash2, ImagePlus, Link2, X, Check, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-
-/** Max stored icon size (data URI characters, ~192KB binary). */
-const ICON_LIMIT_CHARS = 260_000;
-
-/** Resize + square-crop an uploaded image into a compact data URI. */
-async function fileToIconDataUri(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("File harus berupa gambar.");
-  }
-  const bitmapUrl = URL.createObjectURL(file);
-  try {
-    const img = document.createElement("img");
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Gambar tidak dapat dibaca."));
-      img.src = bitmapUrl;
-    });
-    const target = 256;
-    const min = Math.min(img.width, img.height);
-    const sx = (img.width - min) / 2;
-    const sy = (img.height - min) / 2;
-    const canvas = document.createElement("canvas");
-    canvas.width = target;
-    canvas.height = target;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Peramban tidak mendukung pemrosesan gambar.");
-    ctx.drawImage(img, sx, sy, min, min, 0, 0, target, target);
-    const webp = canvas.toDataURL("image/webp", 0.85);
-    if (webp.length <= ICON_LIMIT_CHARS) return webp;
-    const jpeg = canvas.toDataURL("image/jpeg", 0.8);
-    if (jpeg.length > ICON_LIMIT_CHARS) {
-      throw new Error("Gambar masih terlalu besar setelah dikompres. Pakai gambar lain.");
-    }
-    return jpeg;
-  } finally {
-    URL.revokeObjectURL(bitmapUrl);
-  }
-}
 
 type DraftState = { games: Game[] };
 
@@ -262,6 +225,46 @@ function GameEditor({
   const [initializedFor, setInitializedFor] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Icon (v1.14.0): dua jalur — URL (pratinjau instan, tanpa submit) dan
+  // unggahan (dipangkas di modal: geser, zoom, putar, balik).
+  const [urlDraft, setUrlDraft] = useState("");
+  const [probe, setProbe] = useState<{ url: string; state: "ok" | "bad" } | null>(null);
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
+  const urlDraftRef = useRef("");
+
+  // Status URL diturunkan saat render (tanpa setState sinkron di effect):
+  // kosong → idle; bukan URL → bad; URL valid → hasil probe (loading/ok/bad).
+  const trimmedUrl = urlDraft.trim();
+  const urlState: "idle" | "loading" | "ok" | "bad" = !trimmedUrl
+    ? "idle"
+    : !/^https?:\/\/\S+$/i.test(trimmedUrl)
+      ? "bad"
+      : probe && probe.url === trimmedUrl
+        ? probe.state
+        : "loading";
+
+  // Pratinjau URL langsung saat ditempel/diketik — debounce singkat, tanpa
+  // tombol submit; icon terpasang otomatis begitu gambarnya termuat.
+  useEffect(() => {
+    const url = urlDraft.trim();
+    urlDraftRef.current = url;
+    if (!url || !/^https?:\/\/\S+$/i.test(url)) return;
+    const timer = setTimeout(() => {
+      const probeImg = new Image();
+      probeImg.onload = () => {
+        if (urlDraftRef.current !== url) return;
+        setProbe({ url, state: "ok" });
+        setImage(url);
+      };
+      probeImg.onerror = () => {
+        if (urlDraftRef.current !== url) return;
+        setProbe({ url, state: "bad" });
+      };
+      probeImg.src = url;
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [urlDraft]);
+
   const key = isNew ? "new" : current?.id ?? null;
   // Reset on close so the next "baru" open starts blank, not from stale values.
   if (!key && initializedFor !== null) {
@@ -275,6 +278,8 @@ function GameEditor({
       setSlug("");
       setDescription("");
       setImage(undefined);
+      setUrlDraft("");
+      setProbe(null);
       setEnabled(true);
       setSortOrder("1");
       setCategoryIds([]);
@@ -284,6 +289,8 @@ function GameEditor({
       setSlug(current.slug);
       setDescription(current.description ?? "");
       setImage(current.image);
+      setUrlDraft(current.image && /^https?:\/\//i.test(current.image) ? current.image : "");
+      setProbe(null);
       setEnabled(current.enabled);
       setSortOrder(String(current.sortOrder));
       setCategoryIds(current.categoryIds);
@@ -325,6 +332,14 @@ function GameEditor({
     setFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
   };
 
+  const pickUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar.");
+      return;
+    }
+    setEditorSrc(URL.createObjectURL(file));
+  };
+
   return (
     <Dialog open={editing !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="scroll-slim max-h-[85vh] overflow-y-auto">
@@ -356,46 +371,83 @@ function GameEditor({
 
           <div className="space-y-1.5">
             <Label>Icon game</Label>
-            <div className="flex items-center gap-3">
-              <GameMark name={name || "New"} image={image} size="lg" className="shadow-card" />
-              <div className="flex flex-wrap gap-2">
-                <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent">
-                  <ImagePlus aria-hidden="true" className="h-3.5 w-3.5" />
-                  {image ? "Ganti icon" : "Unggah icon"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    aria-label="Unggah icon game"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = "";
-                      if (!file) return;
-                      try {
-                        const dataUri = await fileToIconDataUri(file);
-                        setImage(dataUri);
-                        toast.success("Icon siap", {
-                          description: "Jangan lupa simpan draft lalu sinkronkan.",
-                        });
-                      } catch (err) {
-                        toast.error("Icon gagal diproses", {
-                          description: (err as Error).message,
-                        });
-                      }
-                    }}
-                  />
-                </label>
+            <div className="flex flex-wrap items-start gap-4">
+              <div
+                className="relative"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) pickUpload(file);
+                }}
+              >
+                <GameMark name={name || "New"} image={image} size="lg" className="shadow-card" />
                 {image ? (
-                  <Button type="button" variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={() => setImage(undefined)}>
-                    <X aria-hidden="true" className="h-3.5 w-3.5" />
-                    Hapus icon
-                  </Button>
+                  <span className="pointer-events-none absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border bg-background px-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                    {image.startsWith("http") ? "url" : "unggahan"}
+                  </span>
                 ) : null}
               </div>
+              <div className="min-w-[220px] flex-1 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent">
+                    <ImagePlus aria-hidden="true" className="h-3.5 w-3.5" />
+                    {image ? "Ganti icon" : "Unggah icon"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      aria-label="Unggah icon game"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) pickUpload(file);
+                      }}
+                    />
+                  </label>
+                  {image ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-muted-foreground"
+                      onClick={() => {
+                        setImage(undefined);
+                        setUrlDraft("");
+                        setProbe(null);
+                      }}
+                    >
+                      <X aria-hidden="true" className="h-3.5 w-3.5" />
+                      Hapus icon
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="relative">
+                  <Link2 aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={urlDraft}
+                    onChange={(e) => setUrlDraft(e.target.value)}
+                    inputMode="url"
+                    spellCheck={false}
+                    placeholder="Tempel URL gambar — icon langsung terpasang"
+                    aria-label="URL gambar icon"
+                    className="h-9 pl-8 pr-8 text-xs"
+                  />
+                  <span aria-hidden="true" className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                    {urlState === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : null}
+                    {urlState === "ok" ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : null}
+                    {urlState === "bad" ? <AlertCircle className="h-3.5 w-3.5 text-destructive" /> : null}
+                  </span>
+                </div>
+                <p role={urlState === "bad" ? "alert" : undefined} className="text-xs text-muted-foreground">
+                  {urlState === "bad"
+                    ? "URL tidak memuat gambar — periksa link, atau pakai unggahan."
+                    : urlState === "ok"
+                      ? "Gambar termuat — icon URL terpasang (tanpa pemangkasan)."
+                      : "Unggahan dibuka di editor potong (geser, zoom, putar, balik). URL apa pun yang berisi gambar langsung dipakai."}
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Gambar dipangkas persegi otomatis. Tanpa icon, game memakai monogram nama.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -508,6 +560,25 @@ function GameEditor({
           <Button size="sm" onClick={submit}>Simpan draft</Button>
         </DialogFooter>
       </DialogContent>
+
+      <IconEditorDialog
+        open={editorSrc !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            if (editorSrc) URL.revokeObjectURL(editorSrc);
+            setEditorSrc(null);
+          }
+        }}
+        src={editorSrc}
+        onApply={(dataUri) => {
+          setImage(dataUri);
+          setUrlDraft("");
+          setProbe(null);
+          toast.success("Icon terpasang", {
+            description: "Simpan draft lalu sinkronkan untuk menerapkan.",
+          });
+        }}
+      />
     </Dialog>
   );
 }
@@ -550,7 +621,11 @@ function GameDetail({
               { label: "Kategori", value: categoryNames.length > 0 ? categoryNames.join(", ") : "—" },
               {
                 label: "Ikon",
-                value: game.image ? "Terpasang (unggahan)" : "Monogram otomatis",
+                value: game.image
+                  ? game.image.startsWith("http")
+                    ? "Terpasang (URL eksternal)"
+                    : "Terpasang (unggahan)"
+                  : "Monogram otomatis",
               },
               { label: "Deskripsi", value: game.description, block: true },
               {

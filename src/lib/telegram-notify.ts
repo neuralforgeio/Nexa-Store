@@ -52,8 +52,13 @@ function botToken(): string | null {
   return process.env.TELEGRAM_BOT_TOKEN?.trim() || null;
 }
 
-/** Kirim ping "pesan baru" ke Telegram pemilik — fire-and-forget. */
-export async function sendOwnerChatNotification(conversation: ChatConversation, origin: string): Promise<void> {
+/** Kirim ping "pesan baru" ke Telegram pemilik — fire-and-forget.
+ *  v1.14.0: botPreview — cuplikan jawaban Nexa Bot bila AI sudah menjawab. */
+export async function sendOwnerChatNotification(
+  conversation: ChatConversation,
+  origin: string,
+  botPreview?: string
+): Promise<void> {
   const token = botToken();
   if (!token) return;
   const chatId = await resolveOwnerChatId();
@@ -62,6 +67,9 @@ export async function sendOwnerChatNotification(conversation: ChatConversation, 
   const last = conversation.messages[conversation.messages.length - 1];
   if (!last) return;
   const preview = last.text.length > PREVIEW_MAX ? `${last.text.slice(0, PREVIEW_MAX)}…` : last.text;
+  const botNote = botPreview
+    ? `\n🤖 <b>Nexa Bot menjawab:</b> ${esc(botPreview.length > 220 ? `${botPreview.slice(0, 220)}…` : botPreview)}`
+    : "";
   const text = [
     "💬 <b>PESAN BARU DARI PENGGUNA</b>",
     "",
@@ -69,9 +77,12 @@ export async function sendOwnerChatNotification(conversation: ChatConversation, 
     "Sumber: website",
     "",
     esc(preview),
+    botNote,
     "",
     "Balas lewat dashboard — pesanmu tampil di widget chat pengunjung.",
-  ].join("\n");
+  ]
+    .filter((l) => l !== undefined)
+    .join("\n");
 
   const dashboardBase = (process.env.NEXT_PUBLIC_APP_URL?.trim() || origin).replace(/\/+$/, "");
   const dashboardUrl = `${dashboardBase}/admin/chat`;

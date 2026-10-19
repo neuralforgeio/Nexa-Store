@@ -5,20 +5,26 @@ import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-f
 import { parseChat } from "@/lib/site-features/schema";
 import { chatBridgeEnabled, notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
 import { sendOwnerChatNotification } from "@/lib/telegram-notify";
-import type { ChatConversation } from "@/lib/site-features/types";
+import { nexaBotAnswer, readAiModeFromStore } from "@/lib/nexa-bot/engine";
+import type { ChatConversation, ChatMessage } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
  * Public live-chat endpoint (v1.3.0).
  *
- * GET  /api/chat/messages?token=<32hex>   → poll messages (last 50).
+ * GET  /api/chat/messages?token=<32hex>   → poll messages (last 50) + mode AI.
  * POST /api/chat/messages {token, text}   → send a visitor message.
  *
  * The visitor token is generated client-side (random, localStorage) and only
  * its SHA-256 becomes the conversation id — raw tokens never touch persistence.
  * Instant delivery rides WebSocket when available; this endpoint is the
  * always-works fallback (and the write path for user messages).
+ *
+ * v1.14.0: pesan pengunjung dijawab OTOMATIS oleh Nexa Bot (AI lokal,
+ * @nlpjs/basic) selama saklar nexaBot.autoReply aktif di data store. Mode AI
+ * dimatikan → hanya developer/admin yang menjawab (balasan tetap ke Telegram).
  */
 
 const SEND_WINDOW_MS = 5 * 60_000;
@@ -61,20 +67,52 @@ function prune(conversations: ChatConversation[]): ChatConversation[] {
   }));
 }
 
+/** Tambahkan balasan Nexa Bot ke percakapan (commit terpisah agar preview
+ *  notifikasi pemilik tetap menampilkan pesan PENGGUNA, bukan jawaban bot). */
+async function appendBotMessage(conversationId: string, text: string): Promise<ChatMessage | null> {
+  let appended: ChatMessage | null = null;
+  await updateFeature("chat", "chat: nexa bot reply", (currentRaw) => {
+    const file = parseChat(currentRaw);
+    const conversations = [...file.conversations];
+    const index = conversations.findIndex((c) => c.id === conversationId);
+    if (index === -1) throw new Error("not-found");
+    const prev = conversations[index];
+    const message: ChatMessage = {
+      id: `m_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      from: "bot",
+      text: text.slice(0, 800),
+      at: new Date().toISOString(),
+    };
+    conversations[index] = {
+      ...prev,
+      messages: [...prev.messages, message],
+      lastMessageAt: message.at,
+    };
+    appended = message;
+    return { conversations: prune(conversations) };
+  });
+  return appended;
+}
+
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") ?? "";
   if (!TOKEN_RE.test(token)) return jsonError(400, "validation", "Token percakapan tidak valid.");
   const conversationId = conversationIdForToken(token);
 
   try {
-    const raw = await readFeature("chat");
+    const [raw, botState] = await Promise.all([
+      readFeature("chat"),
+      readFeature("bot-state"),
+    ]);
+    const aiAutoReply = await readAiModeFromStore(async () => botState);
     const file = parseChat(raw);
     const conv = file.conversations.find((c) => c.id === conversationId);
-    if (!conv) return jsonOk({ conversationId, name: null, messages: [] });
+    if (!conv) return jsonOk({ conversationId, name: null, messages: [], aiAutoReply });
     return jsonOk({
       conversationId,
       name: conv.name,
       messages: conv.messages.slice(-50),
+      aiAutoReply,
     });
   } catch {
     return jsonError(502, "chat.unavailable", "Obrolan tidak dapat dimuat. Coba lagi.");
@@ -104,7 +142,7 @@ export async function POST(req: NextRequest) {
 
   try {
     let updated: ChatConversation | null = null;
-    let message: { id: string; from: "user" | "owner"; text: string; at: string } | null = null;
+    let message: ChatMessage | null = null;
     await updateFeature("chat", "chat: visitor message", (currentRaw) => {
       const file = parseChat(currentRaw);
       const conversations = [...file.conversations];
@@ -152,10 +190,34 @@ export async function POST(req: NextRequest) {
       } else {
         // v1.8.0: after() menjamin notifikasi dieksekusi setelah respons —
         // `void` biasa bisa ter-freeze runtime serverless sebelum terkirim.
-        after(() => sendOwnerChatNotification(conversation, req.nextUrl.origin));
+        // v1.14.0: sertakan cuplikan jawaban Nexa Bot bila AI ikut menjawab.
+        after(() =>
+          sendOwnerChatNotification(
+            conversation,
+            req.nextUrl.origin,
+            botMessage ? botMessage.text : undefined
+          )
+        );
       }
     }
-    return jsonOk({ sent: true, message });
+
+    // v1.14.0: Nexa Bot menjawab otomatis (mode AI aktif). Kegagalan bot
+    // TIDAK pernah menggagalkan pesan pengunjung.
+    let botMessage: ChatMessage | null = null;
+    const botState = await readFeature("bot-state").catch(() => null);
+    const aiAutoReply = await readAiModeFromStore(async () => botState);
+    if (aiAutoReply && updated) {
+      try {
+        const reply = await nexaBotAnswer(text);
+        if (reply?.answer) {
+          botMessage = await appendBotMessage(conversationId, reply.answer);
+        }
+      } catch {
+        // bot gagal — pengunjung tetap terkirim, admin tetap dapat notifikasi
+      }
+    }
+
+    return jsonOk({ sent: true, message, botMessage, aiAutoReply });
   } catch {
     return jsonError(502, "chat.send-failed", "Pesan gagal terkirim. Coba lagi.");
   }
