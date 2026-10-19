@@ -82,33 +82,33 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 60,
+      "views": 63,
       "uniques": 3,
       "byPath": {
         "/": 14,
         "/games/free-fire": 8,
         "/admin/products": 3,
-        "/games": 17,
+        "/games": 18,
         "/games/valorant": 2,
         "/help": 2,
         "/track": 7,
         "/login": 1,
-        "/games/ff-max": 3,
+        "/games/ff-max": 5,
         "/reports": 1,
         "/games/fc-mobile": 1,
         "/games/genshin-impact": 1
       },
       "byReferrer": {
-        "langsung": 51,
+        "langsung": 54,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
-        "desktop": 55,
+        "desktop": 58,
         "mobile": 5
       },
       "events": {
-        "chat_open": 4,
+        "chat_open": 5,
         "order_click": 3,
         "wa_handoff": 2,
         "order_track": 4
@@ -271,6 +271,9 @@
     1792395891540,
     1792395891540,
     1792395891540,
-    1792395891540
+    1792395891540,
+    1792396094871,
+    1792396094871,
+    1792396094871
   ]
 }
