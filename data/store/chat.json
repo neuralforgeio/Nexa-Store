@@ -22,9 +22,15 @@
           "from": "user",
           "text": "kamu diciptakan siapa",
           "at": "2026-10-19T08:13:16.817Z"
+        },
+        {
+          "id": "m_mvez91t7xiu9",
+          "from": "bot",
+          "text": "Aku Nexa Bot ⚡ — asisten AI NEXA STORE, toko top up game favoritmu. Otakku dilatih dari data katalog store ini dan diproses sepenuhnya secara lokal. Mau lihat harga? Ketik saja nama game-nya!",
+          "at": "2026-10-19T08:13:17.803Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T08:13:16.817Z",
+      "lastMessageAt": "2026-10-19T08:13:17.803Z",
       "unreadByOwner": 2,
       "ownerLastReadAt": null
     }
