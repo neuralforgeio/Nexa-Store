@@ -10,9 +10,15 @@
           "from": "user",
           "text": "siapa sih pencipta mu",
           "at": "2026-10-19T09:03:05.013Z"
+        },
+        {
+          "id": "m_mvf113ji630e",
+          "from": "bot",
+          "text": "Aku dibangun oleh Dearly Febriano Irwansyah 👨‍💻 — seorang Software Engineer asal Surabaya, Indonesia. Kamu bisa lihat karya-karyanya di GitHub: github.com/neuralforgeio. Untuk urusan top up game, aku yang siap bantu!",
+          "at": "2026-10-19T09:03:06.030Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T09:03:05.013Z",
+      "lastMessageAt": "2026-10-19T09:03:06.030Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": null
     }
