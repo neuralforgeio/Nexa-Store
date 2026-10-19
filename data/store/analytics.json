@@ -82,26 +82,28 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 45,
+      "views": 49,
       "uniques": 2,
       "byPath": {
-        "/": 10,
+        "/": 11,
         "/games/free-fire": 8,
         "/admin/products": 3,
-        "/games": 13,
+        "/games": 14,
         "/games/valorant": 1,
         "/help": 2,
         "/track": 5,
         "/login": 1,
         "/games/ff-max": 1,
-        "/reports": 1
+        "/reports": 1,
+        "/games/fc-mobile": 1,
+        "/games/genshin-impact": 1
       },
       "byReferrer": {
         "langsung": 43,
-        "com.google.android.googlequicksearchbox": 2
+        "com.google.android.googlequicksearchbox": 6
       },
       "byDevice": {
-        "desktop": 41,
+        "desktop": 45,
         "mobile": 4
       },
       "events": {
@@ -252,6 +254,10 @@
     1792395476079,
     1792395476079,
     1792395505871,
-    1792395505871
+    1792395505871,
+    1792395557246,
+    1792395557246,
+    1792395557246,
+    1792395557246
   ]
 }
