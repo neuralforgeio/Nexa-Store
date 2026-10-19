@@ -46,8 +46,13 @@ function cpRead(path: string): string {
 test("writeFiles bumps revision and stores history", async () => {
   const { repo, dir } = tempRepo();
   const before = await repo.readSnapshot();
+  // Dataset-agnostic (v1.13.0): mutate the first product instead of a frozen
+  // seed id — the catalog is owner-managed live data now.
+  const target = before.snapshot.products[0];
+  const originalPrice = target.priceIdr;
+  const changedPrice = originalPrice + 1500;
   const products = `${JSON.stringify(
-    { products: before.snapshot.products.map((p) => (p.id === "ml-59" ? { ...p, priceIdr: 19000 } : p)) },
+    { products: before.snapshot.products.map((p) => (p.id === target.id ? { ...p, priceIdr: changedPrice } : p)) },
     null,
     2
   )}\n`;
@@ -63,7 +68,7 @@ test("writeFiles bumps revision and stores history", async () => {
   expect(result.commitMessage).toBe("store: update product pricing");
   const after = await repo.readSnapshot();
   expect(after.revision).toBe("local-2");
-  expect(after.snapshot.products.find((p) => p.id === "ml-59")?.priceIdr).toBe(19000);
+  expect(after.snapshot.products.find((p) => p.id === target.id)?.priceIdr).toBe(changedPrice);
 
   const history = await repo.history(5);
   expect(history[0].revision).toBe("local-2");
@@ -71,7 +76,7 @@ test("writeFiles bumps revision and stores history", async () => {
 
   // Restore path: read the previous revision and verify content.
   const restored = (await repo.readFileAt("local-1", "products")) as { products: Array<{ id: string; priceIdr: number }> };
-  expect(restored.products.find((p) => p.id === "ml-59")?.priceIdr).toBe(17000);
+  expect(restored.products.find((p) => p.id === target.id)?.priceIdr).toBe(originalPrice);
   rmSync(dir, { recursive: true, force: true });
 });
 
