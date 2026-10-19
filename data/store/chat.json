@@ -34,9 +34,15 @@
           "from": "user",
           "text": "yang paling laris apa",
           "at": "2026-10-19T10:41:49.090Z"
+        },
+        {
+          "id": "m_mvf4k3asmzl8",
+          "from": "bot",
+          "text": "💎 Paling worth it (ada bonus ekstra):\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮",
+          "at": "2026-10-19T10:41:51.028Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T10:41:49.090Z",
+      "lastMessageAt": "2026-10-19T10:41:51.028Z",
       "unreadByOwner": 2,
       "ownerLastReadAt": "2026-10-19T09:57:45.710Z"
     },
