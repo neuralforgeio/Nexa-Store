@@ -1,3 +1,15 @@
 {
-  "banners": []
+  "banners": [
+    {
+      "id": "bnn_44c57cb64e",
+      "severity": "info",
+      "title": "Website Baru",
+      "message": "Halo Gamers! 👋 Nexa Store resmi pindah ke website baru: nexastoregame.vercel.app🚀  Top up game favoritmu jadi lebih mudah dan cepat. Harga dijamin final tanpa biaya tersembunyi, tanpa perlu daftar akun—pilih produk, lalu kirim pesanan via WhatsApp!  Yuk, langsung kunjungi Nexa Store sekarang! ✨",
+      "startsAt": "2026-10-19T09:00:00.000Z",
+      "endsAt": "2026-10-19T17:00:00.000Z",
+      "enabled": true,
+      "createdAt": "2026-10-19T08:45:34.797Z",
+      "createdBy": "dearlyfebrianoi@gmail.com"
+    }
+  ]
 }
