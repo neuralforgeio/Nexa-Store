@@ -1,6 +1,31 @@
 {
   "orders": [
     {
+      "id": "NEXA-261019-FW62",
+      "source": "instant",
+      "summary": "FF MAX — Member Bulanan",
+      "customerName": "kwontol",
+      "items": [
+        {
+          "gameName": "FF MAX",
+          "productName": "Member Bulanan",
+          "price": 84000
+        }
+      ],
+      "total": 84000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-10-19T07:40:29.148Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-10-19T07:40:29.148Z",
+          "reason": null
+        }
+      ]
+    },
+    {
       "id": "NEXA-261019-3FVB",
       "source": "instant",
       "summary": "Genshin Impact — 300 + 30 Genesis Crystals",
