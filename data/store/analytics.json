@@ -82,19 +82,20 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 8,
+      "views": 11,
       "uniques": 1,
       "byPath": {
         "/": 2,
-        "/games/free-fire": 3,
+        "/games/free-fire": 4,
         "/admin/products": 2,
-        "/games": 1
+        "/games": 2,
+        "/games/valorant": 1
       },
       "byReferrer": {
-        "langsung": 8
+        "langsung": 11
       },
       "byDevice": {
-        "desktop": 7,
+        "desktop": 10,
         "mobile": 1
       },
       "events": {}
@@ -202,6 +203,9 @@
     1792387537798,
     1792387537798,
     1792387540403,
-    1792387540403
+    1792387540403,
+    1792387570011,
+    1792387570011,
+    1792387570011
   ]
 }
