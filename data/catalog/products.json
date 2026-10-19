@@ -647,6 +647,26 @@
       "currency": "IDR",
       "enabled": true,
       "sortOrder": 13000
+    },
+    {
+      "id": "free-fire-200",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "200",
+      "priceIdr": 26000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 26000
+    },
+    {
+      "id": "free-fire-350",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "350",
+      "priceIdr": 45000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 45000
     }
   ]
 }
