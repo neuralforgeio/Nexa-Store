@@ -16,10 +16,16 @@
           "from": "bot",
           "text": "Halo! 👋 Aku Nexa Bot, asisten NEXA STORE ⚡ Ketik nama game buat lihat daftar harga (mis. \"free fire\"), atau tanya \"cara top up\", \"lacak pesanan\", dan \"rekomendasi termurah\".",
           "at": "2026-10-19T08:12:41.073Z"
+        },
+        {
+          "id": "m_mvez911ta53a",
+          "from": "user",
+          "text": "kamu diciptakan siapa",
+          "at": "2026-10-19T08:13:16.817Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T08:12:41.073Z",
-      "unreadByOwner": 1,
+      "lastMessageAt": "2026-10-19T08:13:16.817Z",
+      "unreadByOwner": 2,
       "ownerLastReadAt": null
     }
   ]
