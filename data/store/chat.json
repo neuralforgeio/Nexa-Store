@@ -22,9 +22,15 @@
           "from": "user",
           "text": "haloo",
           "at": "2026-10-19T10:41:37.893Z"
+        },
+        {
+          "id": "m_mvf4jui5rmpv",
+          "from": "bot",
+          "text": "Halo! 👋 Aku Nexa Bot, asisten NEXA STORE ⚡ Ketik nama game buat lihat daftar harga (mis. \"free fire\"), atau tanya \"cara top up\", \"lacak pesanan\", dan \"rekomendasi termurah\".",
+          "at": "2026-10-19T10:41:39.629Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T10:41:37.893Z",
+      "lastMessageAt": "2026-10-19T10:41:39.629Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": "2026-10-19T09:57:45.710Z"
     },
