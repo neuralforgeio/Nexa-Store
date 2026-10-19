@@ -17,7 +17,11 @@ import { RepoError } from "./types";
  * GitHub-backed persistence adapter (PRD §18, §30.3).
  * - Repo/branch/owner resolved ONLY from server env (never client input).
  * - Writes only to the canonical path allowlist.
- * - Conflict detection via branch head SHA (Git object SHA, PRD §18.3).
+ * - Conflict detection is CONTENT-level: per-file blob SHA comparison plus
+ *   an atomic force:false ref update (PRD §18.3). The branch head moves
+ *   whenever runtime write-through commits land (analytics, orders, chat,
+ *   bot state) — those never touch catalog files, so a moved head alone
+ *   must NOT be treated as a catalog conflict.
  * - Multi-file batch = one commit (Git Data API: blobs → tree → commit → ref).
  * - GitHub error bodies are never surfaced raw to end users.
  *
@@ -210,66 +214,103 @@ export class GitHubCatalogRepository implements CatalogRepository {
       if (!(key in CANONICAL_FILES)) {
         throw new RepoError("validation", `Jalur berkas tidak diizinkan: ${key}`);
       }
+      if (!input.baseFileShas[key]) {
+        throw new RepoError(
+          "conflict",
+          `Basis revisi untuk ${CANONICAL_FILES[key]} tidak diketahui. Muat ulang data sebelum menyimpan lagi.`
+        );
+      }
     }
 
-    const head = await this.branchHeadSha();
-    if (head !== input.baseRevision) {
-      throw new RepoError(
-        "conflict",
-        "Data berubah di repository sejak halaman ini dibuka. Muat ulang data sebelum menyimpan lagi."
-      );
-    }
-
-    // Blobs for each changed file.
-    type BlobResponse = { sha: string };
-    const treeItems: Array<{ path: string; mode: "100644"; type: "blob"; sha: string }> = [];
-    for (const key of keys) {
-      const blob = await this.api<BlobResponse>("POST", `${this.repoPath()}/git/blobs`, {
-        content: Buffer.from(input.files[key] as string, "utf8").toString("base64"),
-        encoding: "base64",
-      });
-      treeItems.push({ path: CANONICAL_FILES[key], mode: "100644", type: "blob", sha: blob.data.sha });
-    }
-
-    // Tree based on current head tree (only changed paths are replaced).
     type CommitResponse = { sha: string; tree: { sha: string } };
-    const headCommit = await this.api<CommitResponse>("GET", `${this.repoPath()}/git/commits/${head}`);
-    const tree = await this.api<{ sha: string }>("POST", `${this.repoPath()}/git/trees`, {
-      base_tree: headCommit.data.tree.sha,
-      tree: treeItems,
-    });
+    type ContentsResponse = { sha: string; content: string; encoding: string };
+    type BlobResponse = { sha: string };
 
-    // Re-check head right before commit (narrow the race window).
-    const headNow = await this.branchHeadSha();
-    if (headNow !== head) {
-      throw new RepoError(
-        "conflict",
-        "Data berubah di repository sejak halaman ini dibuka. Muat ulang data sebelum menyimpan lagi."
-      );
+    // Attempt loop: the branch head may move while we build the commit —
+    // runtime write-through (analytics, orders, chat, bot state) commits
+    // without touching catalog content. Content safety is guaranteed by
+    // (1) the per-file blob SHA check below (mirrors the local adapter) and
+    // (2) the atomic force:false ref update, which rejects a non-fast-forward
+    // move; on that race we simply re-verify and retry on the new head.
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const head = await this.branchHeadSha();
+
+      // Content-level conflict detection for exactly the files being written.
+      for (const key of keys) {
+        const res = await this.api<ContentsResponse>(
+          "GET",
+          `${this.repoPath()}/contents/${CANONICAL_FILES[key]}?ref=${encodeURIComponent(head)}`
+        );
+        if (res.data.sha !== input.baseFileShas[key]) {
+          throw new RepoError(
+            "conflict",
+            `Berkas ${CANONICAL_FILES[key]} berubah sejak dibaca. Muat ulang data sebelum menyimpan lagi.`
+          );
+        }
+      }
+
+      // Blobs for each changed file.
+      const treeItems: Array<{ path: string; mode: "100644"; type: "blob"; sha: string }> = [];
+      for (const key of keys) {
+        const blob = await this.api<BlobResponse>("POST", `${this.repoPath()}/git/blobs`, {
+          content: Buffer.from(input.files[key] as string, "utf8").toString("base64"),
+          encoding: "base64",
+        });
+        treeItems.push({ path: CANONICAL_FILES[key], mode: "100644", type: "blob", sha: blob.data.sha });
+      }
+
+      // Tree based on current head tree (only changed paths are replaced).
+      const headCommit = await this.api<CommitResponse>("GET", `${this.repoPath()}/git/commits/${head}`);
+      const tree = await this.api<{ sha: string }>("POST", `${this.repoPath()}/git/trees`, {
+        base_tree: headCommit.data.tree.sha,
+        tree: treeItems,
+      });
+
+      const commit = await this.api<CommitResponse>("POST", `${this.repoPath()}/git/commits`, {
+        message: input.message,
+        tree: tree.data.sha,
+        parents: [head],
+        author: {
+          name: input.author.name,
+          email: input.author.email,
+          date: new Date().toISOString(),
+        },
+      });
+
+      try {
+        await this.api<RefResponse2>("PATCH", `${this.repoPath()}/git/refs/heads/${this.config.branch}`, {
+          sha: commit.data.sha,
+          force: false,
+        });
+        return {
+          revision: commit.data.sha,
+          commitMessage: input.message,
+          files: keys,
+          writtenAt: new Date().toISOString(),
+        };
+      } catch (e) {
+        const retryable =
+          e instanceof RepoError &&
+          e.kind !== "auth" &&
+          e.kind !== "rate-limit" &&
+          e.kind !== "validation";
+        if (!retryable || attempt === maxAttempts) {
+          if (retryable) {
+            // The ref kept moving under us (e.g. busy runtime traffic).
+            // Surface a conflict so the client reloads and re-applies.
+            throw new RepoError(
+              "conflict",
+              "Data berubah di repository saat penyimpanan berlangsung. Muat ulang data lalu coba lagi."
+            );
+          }
+          throw e;
+        }
+        // Ref moved mid-write → re-verify blob SHAs against the new head.
+      }
     }
 
-    const commit = await this.api<CommitResponse>("POST", `${this.repoPath()}/git/commits`, {
-      message: input.message,
-      tree: tree.data.sha,
-      parents: [head],
-      author: {
-        name: input.author.name,
-        email: input.author.email,
-        date: new Date().toISOString(),
-      },
-    });
-
-    await this.api<RefResponse2>("PATCH", `${this.repoPath()}/git/refs/heads/${this.config.branch}`, {
-      sha: commit.data.sha,
-      force: false,
-    });
-
-    return {
-      revision: commit.data.sha,
-      commitMessage: input.message,
-      files: keys,
-      writtenAt: new Date().toISOString(),
-    };
+    throw new RepoError("network", "Penyimpanan tidak dapat diselesaikan. Coba lagi sebentar lagi.");
   }
 
   async history(limit = 20): Promise<HistoryEntry[]> {

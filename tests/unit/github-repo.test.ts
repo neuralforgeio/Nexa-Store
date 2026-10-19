@@ -84,20 +84,70 @@ test("readSnapshot decodes base64 contents and validates them", async () => {
   expect(calls.every((c) => c.path.startsWith("/repos/octo/nexa-store/"))).toBe(true);
 });
 
-test("stale baseRevision on write is a conflict (PRD §18.3)", async () => {
+test("changed catalog content since read is a conflict (content-level, PRD §18.3)", async () => {
   const { impl } = mockFetch([
-    { match: (c) => c.path === "/repos/octo/nexa-store/git/ref/heads/main", status: 200, data: { object: { sha: "newer-than-base" } } },
+    { match: (c) => c.path === "/repos/octo/nexa-store/git/ref/heads/main" && c.method === "GET", status: 200, data: { object: { sha: "head-current" } } },
+    // Blob SHA at head differs from the client's base → the file's content
+    // genuinely changed since the client read it.
+    {
+      match: (c) => c.path === "/repos/octo/nexa-store/contents/data/store/settings.json",
+      status: 200,
+      data: { sha: "blob-changed-by-someone-else", content: "", encoding: "utf-8" },
+    },
   ]);
   const repo = new GitHubCatalogRepository(config, impl);
   await expect(
     repo.writeFiles({
       files: { settings: "{}" },
-      baseRevision: "older-base",
-      baseFileShas: { games: "x", products: "x", categories: "x", settings: "x", "checkout-template": "x", "access-control": "x" },
+      baseRevision: "head-current",
+      baseFileShas: { games: "x", products: "x", categories: "x", settings: "blob-original", "checkout-template": "x", "access-control": "x" },
       message: "store: test",
       author: { name: "t", email: "t@t.dev" },
     })
   ).rejects.toMatchObject({ kind: "conflict" });
+});
+
+test("head moved by unrelated runtime commits does NOT conflict (v1.11.1)", async () => {
+  // Regression for the production bug: analytics/orders/chat write-through
+  // commits move the branch head constantly, so requiring head equality
+  // made admin catalog saves 409 on a live store. A moved head with intact
+  // per-file blob SHAs must save cleanly.
+  const { impl, calls } = mockFetch([
+    // Branch head has moved since the client's baseRevision …
+    { match: (c) => c.path === "/repos/octo/nexa-store/git/ref/heads/main" && c.method === "GET", status: 200, data: { object: { sha: "head-after-analytics-commit" } } },
+    // …but the blob SHA of the file being written is unchanged.
+    {
+      match: (c) => c.path === "/repos/octo/nexa-store/contents/data/store/settings.json",
+      status: 200,
+      data: { sha: "blob-s1", content: "", encoding: "utf-8" },
+    },
+    { match: (c) => c.path === "/repos/octo/nexa-store/git/blobs" && c.method === "POST", status: 201, data: { sha: "blob-new" } },
+    {
+      match: (c) => c.path === "/repos/octo/nexa-store/git/commits/head-after-analytics-commit",
+      status: 200,
+      data: { sha: "head-after-analytics-commit", tree: { sha: "tree-base" } },
+    },
+    { match: (c) => c.path === "/repos/octo/nexa-store/git/trees" && c.method === "POST", status: 201, data: { sha: "tree-new" } },
+    { match: (c) => c.path === "/repos/octo/nexa-store/git/commits" && c.method === "POST", status: 201, data: { sha: "commit-new" } },
+    {
+      match: (c) => c.path === "/repos/octo/nexa-store/git/refs/heads/main" && c.method === "PATCH",
+      status: 200,
+      data: { object: { sha: "commit-new" } },
+    },
+  ]);
+  const repo = new GitHubCatalogRepository(config, impl);
+  const result = await repo.writeFiles({
+    files: { settings: "{\"storeName\":\"Nexa Store\"}" },
+    baseRevision: "stale-head-from-page-load",
+    baseFileShas: { games: "x", products: "x", categories: "x", settings: "blob-s1", "checkout-template": "x", "access-control": "x" },
+    message: "store: test",
+    author: { name: "t", email: "t@t.dev" },
+  });
+  expect(result.revision).toBe("commit-new");
+  expect(result.files).toEqual(["settings"]);
+  // The write went through a single commit on the current head.
+  const patch = calls.find((c) => c.method === "PATCH");
+  expect(patch?.body).toMatchObject({ sha: "commit-new", force: false });
 });
 
 test("401 maps to auth error without exposing the body (PRD §30.1)", async () => {
