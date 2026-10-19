@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_1f98790e536982c10f1b4bc1",
+      "name": "Dearly",
+      "createdAt": "2026-10-19T08:12:40.181Z",
+      "messages": [
+        {
+          "id": "m_mvez88s5tvpd",
+          "from": "user",
+          "text": "hi",
+          "at": "2026-10-19T08:12:40.181Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-19T08:12:40.181Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
