@@ -82,13 +82,13 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 87,
+      "views": 89,
       "uniques": 6,
       "byPath": {
-        "/": 23,
+        "/": 24,
         "/games/free-fire": 8,
         "/admin/products": 3,
-        "/games": 19,
+        "/games": 20,
         "/games/valorant": 2,
         "/help": 2,
         "/track": 19,
@@ -100,13 +100,13 @@
         "/dev/control": 1
       },
       "byReferrer": {
-        "langsung": 78,
+        "langsung": 80,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
         "desktop": 79,
-        "mobile": 8
+        "mobile": 10
       },
       "events": {
         "chat_open": 7,
@@ -301,6 +301,8 @@
     1792400456947,
     1792400459466,
     1792400459466,
-    1792405678337
+    1792405678337,
+    1792406108925,
+    1792406108925
   ]
 }
