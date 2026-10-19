@@ -743,12 +743,24 @@ async function onCallback(q: NonNullable<tg.TelegramUpdate["callback_query"]>): 
             }
           }
           clearFlow(s);
+          // v1.15.0 — SATU KETUKAN: langsung tampilkan konfirmasi. (Dulu: bot
+          // memaksa admin mengetik keterangan dulu — terasa seperti sudah
+          // berubah padahal belum, sumber bug "status tidak berubah".)
           s.orderCtx = { orderId, origin, status: tail };
-          s.stage = "input";
-          s.input = "order-reason";
-          await send(ui.orderReasonPromptText(orderId, tail));
+          s.stage = "confirm";
+          s.pending = { type: "order-status", orderId, origin, status: tail, reason: "" };
+          await send(
+            ui.orderStatusConfirmText(orderId, tail, ""),
+            [
+              [{ text: "✅ Ya, ubah sekarang", callback_data: "confirm:yes" }],
+              [{ text: "📝 Dengan keterangan", callback_data: `ordnote:${orderId}` }],
+              [{ text: "❌ Batal", callback_data: "confirm:no" }],
+            ]
+          );
           return;
         }
+
+        // ordnote:<id> dipindah ke case tersendiri (bukan prefiks "ord:").
 
         // ord:<id> tanpa status → tampilkan kartu pesanan.
         const order = (await nexa.orderTrack(orderId)) ?? (await nexa.orderTrack(orderId, config.localBase));
@@ -757,6 +769,20 @@ async function onCallback(q: NonNullable<tg.TelegramUpdate["callback_query"]>): 
           return;
         }
         await edit(ui.orderCardText(order, "prod"), ui.orderStatusKeyboard(orderId));
+        return;
+      }
+
+      // ordnote:<id> — lanjut ke alur keterangan dari konfirmasi satu-ketuk (v1.15.0).
+      case data.startsWith("ordnote:"): {
+        const noteId = data.slice(8);
+        const ctx = s.orderCtx;
+        if (!ctx || ctx.orderId !== noteId) {
+          await ok("Konteks status sudah hangus. Buka /lacak_order lagi.");
+          return;
+        }
+        s.stage = "input";
+        s.input = "order-reason";
+        await send(ui.orderReasonPromptText(noteId, ctx.status));
         return;
       }
 
@@ -1162,7 +1188,51 @@ async function onMessage(msg: NonNullable<tg.TelegramUpdate["message"]>): Promis
     return;
   }
 
-  await tg.sendMessage(chatId, "Ketuk /menu untuk membuka menu kendali — atau ketik / untuk melihat semua perintah.");
+  // v1.15.0: teks bebas pemilik → tanyakan ke Nexa Bot (AI lokal, harga
+  // katalog LIVE) — dulu hanya hint menu yang menjawab.
+  await answerWithNexaBot(chatId, s, text);
+}
+
+/**
+ * v1.15.0 — jawab teks bebas pemilik lewat Nexa Bot (AI lokal).
+ * Pipeline dibagikan dengan api/chat.js (nexa-standalone.js); katalog LIVE
+ * disuntikkan supaya harga tidak pernah basi. Gagal memuat otak → hint menu.
+ */
+async function answerWithNexaBot(chatId: number, s: Session, text: string): Promise<void> {
+  if (s.stage === "confirm" || s.stage === "routes") {
+    await tg.sendMessage(
+      chatId,
+      "Ada konfirmasi menunggu — ketuk tombolnya dulu, atau /cancel untuk membatalkan.\n\n(Tanya apa saja soal store setelahnya — aku jawab!)"
+    );
+    return;
+  }
+  try {
+    const standalone = (await import("../../../nexa-standalone.js")) as {
+      answer: (text: string, lexicon?: unknown) => Promise<{ answer: string; intent: string; score: number }>;
+      loadBrain: () => Promise<{ lexicon: unknown }>;
+      mergeLexicon: (base: never, games: unknown[], products: unknown[]) => unknown;
+    };
+    const brain = await standalone.loadBrain();
+    let lexicon: unknown;
+    try {
+      const catalog = await nexa.getCatalog();
+      lexicon = standalone.mergeLexicon(
+        brain.lexicon as never,
+        catalog?.games ?? [],
+        catalog?.products ?? []
+      );
+    } catch {
+      // katalog tak terbaca → leksikon terlatih (tetap benar, mungkin basi)
+    }
+    const reply = await standalone.answer(text, lexicon ?? undefined);
+    await tg.sendMessage(chatId, ["🤖 <b>NEXA BOT</b>", "", tg.esc(reply.answer)].join("\n"));
+  } catch (e) {
+    log("nexa bot gagal:", (e as Error).message);
+    await tg.sendMessage(
+      chatId,
+      "Ketuk /menu untuk membuka menu kendali — atau ketik / untuk melihat semua perintah."
+    );
+  }
 }
 
 async function onPhoto(chatId: number, s: Session, msg: NonNullable<tg.TelegramUpdate["message"]>): Promise<void> {
@@ -2092,21 +2162,35 @@ async function executePending(chatId: number, messageId: number, pending: NonNul
             pending.reason,
             pending.origin === "local" ? config.localBase : undefined
           );
+          // v1.15.0 — VERIFIKASI: baca ulang status dari halaman lacak. Cache
+          // baca 3 dtk lintas instance bisa menyodorkan data lama → coba
+          // sekali lagi setelah jeda singkat sebelum melaporkan gagal.
+          const verifyBase = pending.origin === "local" ? config.localBase : undefined;
+          let after = await nexa.orderTrack(pending.orderId, verifyBase).catch(() => null);
+          if (after && after.status !== pending.status) {
+            await new Promise((r) => setTimeout(r, 1300));
+            after = await nexa.orderTrack(pending.orderId, verifyBase).catch(() => null);
+          }
+          const verified = after?.status === pending.status;
           await edit(
             [
-              "\u2705 <b>STATUS PESANAN DIPERBARUI</b>",
+              verified ? "✅ <b>STATUS PESANAN DIPERBARUI</b>" : "⚠️ <b>PERUBAHAN BELUM TERVERIFIKASI</b>",
               "",
               `ID: <code>${tg.esc(pending.orderId)}</code>`,
               `Status: <b>${ui.ORDER_STATUS_LABEL[pending.status] ?? pending.status}</b>`,
               pending.reason ? `Keterangan: ${tg.esc(pending.reason)}` : "",
               "",
-              "Pengunjung melihat perubahan ini di halaman Lacak Pesanan.",
+              verified
+                ? "Terverifikasi — pengunjung melihat perubahan ini di halaman Lacak Pesanan."
+                : `Halaman lacak masih menampilkan <b>${
+                    ui.ORDER_STATUS_LABEL[after?.status ?? ""] ?? after?.status ?? "?"
+                  }</b>. Tunggu ±5 detik lalu cek lagi — bila tetap, ubah lewat Dashboard → Pesanan.`,
             ]
               .filter(Boolean)
               .join("\n"),
             [
-              [{ text: "\ud83d\udd01 ID lain", callback_data: "ord" }],
-              [{ text: "\u2b05\ufe0f Menu", callback_data: "menu" }],
+              [{ text: "🔁 ID lain", callback_data: "ord" }],
+              [{ text: "⬅️ Menu", callback_data: "menu" }],
             ]
           );
         } catch (e) {

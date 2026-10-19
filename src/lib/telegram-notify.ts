@@ -376,3 +376,46 @@ export async function sendOwnerOrderNotification(o: OrderNotifyPayload, timeWib:
     console.error("[telegram-notify] order kirim error:", (e as Error).message);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Mode AI obrolan dimatikan pengunjung (v1.15.0) — admin perlu tahu bahwa
+// obrolan berikutnya menunggu jawaban manusia.
+// ---------------------------------------------------------------------------
+
+export async function sendOwnerChatModeNotification(aiEnabled: boolean): Promise<void> {
+  if (aiEnabled) return; // menyalakan kembali tidak perlu notifikasi
+  const token = botToken();
+  if (!token) return;
+  const chatId = await resolveOwnerChatId();
+  if (!chatId) return;
+
+  const text = [
+    "🔕 <b>MODE AI DIMATIKAN</b>",
+    "",
+    "Seorang pengunjung mematikan jawaban instan Nexa Bot",
+    "di widget obrolan — pesan berikutnya menunggu jawabanmu.",
+    "",
+    "Balas lewat dashboard, atau nyalakan kembali AI lewat /ai di bot ini.",
+  ].join("\n");
+
+  try {
+    const res = await telegramBreaker.run(() =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+        signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
+      })
+    );
+    if (!res.ok) {
+      console.error("[telegram-notify] chat-mode sendMessage gagal:", res.status);
+    }
+  } catch (e) {
+    console.error("[telegram-notify] chat-mode kirim error:", (e as Error).message);
+  }
+}

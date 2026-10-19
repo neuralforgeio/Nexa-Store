@@ -27,6 +27,7 @@ import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { AdminGames } from "@/components/admin/admin-games";
 import { AdminCategories } from "@/components/admin/admin-categories";
 import { AdminProducts } from "@/components/admin/admin-products";
+import { AdminOrders } from "@/components/admin/admin-orders";
 import { AdminSettings } from "@/components/admin/admin-settings";
 import { AdminCheckout } from "@/components/admin/admin-checkout";
 import { DevDashboard } from "@/components/developer/dev-dashboard";
@@ -335,6 +336,14 @@ function AdminSectionView({
       return (
         <SectionBoundary name="admin:products">
           <AdminProducts />
+        </SectionBoundary>
+      );
+    // Pesanan (v1.15.0) — status pesanan pelanggan + keterangan; izin
+    // dikontrol server-side lewat capability orders.manage.
+    case "orders":
+      return (
+        <SectionBoundary name="admin:orders">
+          <AdminOrders />
         </SectionBoundary>
       );
     case "settings":

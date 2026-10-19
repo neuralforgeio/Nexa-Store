@@ -9,7 +9,9 @@ export const runtime = "nodejs";
 
 /**
  * Kelola pesanan (v1.6.0) — dipakai bot Telegram (/lacak-order).
- * GET  ?id=      → detail satu pesanan (perlu sesi admin/developer).
+ * GET  (tanpa ?id=) → daftar pesanan terbaru, maks. 100 (panel Admin →
+ *        Pesanan; perlu capability orders.manage).
+ * GET  ?id=          → detail satu pesanan (perlu sesi admin/developer).
  * PATCH {id, status, reason} → ubah status + keterangan (user membaca
  *        keterangan ini dari halaman Lacak Pesanan).
  */
@@ -33,6 +35,17 @@ export async function GET(req: NextRequest) {
 
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const file = (await readFeature("orders")) as { orders: OrderRecord[] };
+
+  // Tanpa ?id= → daftar pesanan terbaru (terbaru dulu, maks. 100) untuk
+  // panel Admin → Pesanan. Disimpan sudah terbaru-dulu, tapi sort eksplisit
+  // tetap dipakai supaya urutan dijamin stabil.
+  if (!id) {
+    const orders = [...file.orders]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 100);
+    return jsonOk({ orders, statusLabel: STATUS_LABEL });
+  }
+
   const order = file.orders.find((o) => o.id === id);
   if (!order) return jsonError(404, "not-found", "Pesanan tidak ditemukan.");
   return jsonOk({ order, statusLabel: STATUS_LABEL });

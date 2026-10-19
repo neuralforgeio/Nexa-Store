@@ -1,13 +1,18 @@
 /**
- * nexa-resolve.js — lapisan resolusi entitas katalog untuk Nexa Bot (v1.14.0).
+ * nexa-resolve.js — lapisan resolusi entitas katalog untuk Nexa Bot (v1.15.0).
  *
- * Dipakai bersama oleh api/chat.js (Serverless Vercel, CommonJS) dan
- * src/lib/nexa-bot/engine.ts (Next.js) lewat import relatif.
+ * Dipakai bersama oleh api/chat.js (Serverless Vercel, CommonJS),
+ * src/lib/nexa-bot/engine.ts (Next.js), dan nexa-math.js (kalkulator)
+ * lewat import relatif.
  *
  * Tugas: deteksi penyebutan game (alias) + nominal (angka / bonus n+m / kata
  * seperti "member mingguan") secara deterministik — seperti NER — supaya
  * pertanyaan presisi ("ff 350", "genshin 300+30") terjawab tepat, sementara
  * klasifikasi niat fuzzy tetap di tangan model NLP.
+ *
+ * v1.15.0: + resolveProductMention — pencarian produk LINTAS game untuk
+ * kalkulator ("member mingguan dikali 2"); + sapaan fuzzy (halooo/haiii
+ * dikenali lewat pelurusan huruf berulang).
  *
  * Murni lokal — tanpa network, tanpa dependensi.
  */
@@ -32,6 +37,11 @@ function escapeRe(s) {
 /** Normalisasi: huruf kecil, titik pemisah ribuan pada angka dilebur. */
 function normalize(text) {
   return ` ${String(text).toLowerCase().replace(/\s+/g, " ").replace(/(\d)\.(\d{3})/g, "$1$2").trim()} `;
+}
+
+/** Pelurusan huruf berulang: "haloooo"/"haiii" → "halo"/"hai". */
+function dedupeLetters(word) {
+  return word.replace(/([a-z])\1{1,}/g, "$1");
 }
 
 /** Cari game berdasar alias — alias terpanjang menang (ff max > ff). */
@@ -111,6 +121,66 @@ function resolveCatalogQuery(text, lexicon) {
   return { type: "game", gameId: hit.game.id, gameName: hit.game.name };
 }
 
+/**
+ * Resolusi penyebutan PRODUK lintas game — dipakai kalkulator nexa-math.
+ * Menerima frasa bebas ("member mingguan", "ff 70", "ml 568") dan
+ * mengembalikan kandidat produk berurutan skor, lengkap dengan harga
+ * (priceIdr dibaca dari leksikon; engine mengisi harga LIVE).
+ *
+ * @returns {Array<{id:string, gameId:string, game:string, label:string, price:number}>}
+ */
+function resolveProductMention(text, lexicon) {
+  const norm = normalize(text);
+  if (!norm.trim()) return [];
+  const words = norm.trim().split(" ").filter(Boolean);
+
+  const out = [];
+  const push = (p, game) => {
+    if (!p || out.some((c) => c.id === p.id)) return;
+    out.push({
+      id: p.id,
+      gameId: p.gameId,
+      game: game.name,
+      label: p.label || p.tokens?.join(" ") || p.id,
+      price: typeof p.priceIdr === "number" ? p.priceIdr : 0,
+    });
+  };
+
+  // Jalur 1: ada penyebutan game → fokus ke produk game itu.
+  const hit = findGame(norm, lexicon);
+  if (hit) {
+    const products = (lexicon.products || []).filter((p) => p.gameId === hit.game.id);
+    const exact = findProduct(norm, products);
+    if (exact) {
+      push(exact, hit.game);
+      return out;
+    }
+    // Game disebut tanpa nominal → bukan produk; kalkulator mundur sopan.
+    return [];
+  }
+
+  // Jalur 2: tanpa game → cari produk berdasar cakupan kata label di SEMUA
+  // game ("member mingguan" → Free Fire / FF MAX / ML …). Satu kata harus
+  // spesifik (mis. "weekly"); dua+ kata butuh cakupan ≥ 1/2 kata label.
+  const all = lexicon.products || [];
+  const scored = [];
+  for (const p of all) {
+    const toks = (p.tokens || []).filter((t) => t && t.length > 1);
+    if (toks.length === 0) continue;
+    let matched = 0;
+    for (const w of words) if (toks.includes(w)) matched++;
+    if (matched === 0) continue;
+    const phraseSpecific = words.length >= 2 ? matched >= Math.min(2, words.length) : matched >= 1 && toks.length <= 3;
+    if (!phraseSpecific) continue;
+    const game = (lexicon.games || []).find((g) => g.id === p.gameId);
+    if (!game) continue;
+    scored.push({ p, game, score: matched / toks.length + matched });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  for (const s of scored.slice(0, 4)) push(s.p, s.game);
+  return out;
+}
+
 /** Gerbang konteks: apakah pesan berada dalam ranah NEXA STORE? */
 function withinDomain(text, lexicon) {
   const norm = normalize(text).trim();
@@ -125,8 +195,21 @@ function withinDomain(text, lexicon) {
       if (w.length > suf.length + 2 && w.endsWith(suf) && tokens.has(w.slice(0, -suf.length))) return true;
     }
   }
-  for (const g of lexicon.greetings || []) if (wordSet.has(g)) return true;
+  // Sapaan fuzzy: "haloo", "haiii", "hallooo" dikenali lewat pelurusan huruf
+  // berulang — v1.14 gagal di sini ("haloo" ditolak sebagai di luar ranah).
+  const greetings = new Set(lexicon.greetings || []);
+  for (const w of words) {
+    if (greetings.has(w)) return true;
+    const folded = dedupeLetters(w);
+    if (folded !== w && greetings.has(folded)) return true;
+  }
   return false;
 }
 
-module.exports = { resolveCatalogQuery, withinDomain, normalize };
+module.exports = {
+  resolveCatalogQuery,
+  resolveProductMention,
+  withinDomain,
+  normalize,
+  findGame,
+};

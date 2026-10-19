@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { useCatalog } from "@/lib/queries";
 import { useCartReconcile } from "@/lib/cart/resolve";
 import { CartDrawer } from "./cart-drawer";
+import { FlyToCartLayer } from "./fly-to-cart";
 
 type CartUI = {
   open: boolean;
@@ -32,6 +33,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartUIContext.Provider value={value}>
       {children}
       <CartDrawer open={open} onOpenChange={setOpen} />
+      {/* Fly-to-cart animation layer — present on every storefront page. */}
+      <FlyToCartLayer />
     </CartUIContext.Provider>
   );
 }

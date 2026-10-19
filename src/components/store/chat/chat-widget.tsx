@@ -11,6 +11,7 @@ import {
   Bell,
   BellOff,
   Bot,
+  BotOff,
   Check,
   MessageCircle,
   Send,
@@ -28,6 +29,10 @@ import { cn } from "@/lib/utils";
  * it (panel sandbox gateway), HTTP polling everywhere else — production
  * included. Sending always goes through POST /api/chat/messages so
  * validation + rate limiting stay server-side.
+ *
+ * v1.15.0 — jawaban Nexa Bot muncul dengan animasi mengetik kata-demi-kata
+ * (+ indikator “sedang mengetik”), dan ada tombol saklar AI di header: matikan
+ * agar dijawab admin, nyalakan kembali kapan pun (permintaan pemilik).
  */
 
 const TOKEN_KEY = "nexa.chat.token";
@@ -66,8 +71,13 @@ export function ChatWidget() {
   const [pushBusy, setPushBusy] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [aiMode, setAiMode] = useState(true);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [botTyping, setBotTyping] = useState(false);
+  const [animateIds, setAnimateIds] = useState<Set<string>>(() => new Set());
   const tokenRef = useRef<string>("");
   const seenAtRef = useRef<string>("");
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const firstLoadRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const openRef = useRef(false);
@@ -208,7 +218,55 @@ export function ChatWidget() {
     if (open) setUnread(0);
   }, [open]);
 
+  // v1.15.0 — saklar AI: matikan agar dijawab admin, nyalakan kembali oleh
+  // siapa pun yang memakai widget ini (state global, dibatasi rate di server).
+  const toggleAi = async () => {
+    if (aiBusy) return;
+    setAiBusy(true);
+    const next = !aiMode;
+    try {
+      const res = await fetch("/api/chat/ai-mode", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ enabled: next }),
+      });
+      const json = (await res.json()) as { ok: boolean; data?: { aiAutoReply: boolean }; error?: { message: string } };
+      if (!res.ok || !json.ok || typeof json.data?.aiAutoReply !== "boolean") {
+        throw new Error(json.error?.message ?? "Gagal mengubah mode AI.");
+      }
+      setAiMode(json.data.aiAutoReply);
+      toast.success(
+        json.data.aiAutoReply ? "Nexa Bot aktif kembali" : "AI dimatikan",
+        {
+          description: json.data.aiAutoReply
+            ? "Pesanmu langsung dijawab instan oleh asisten AI."
+            : "Pesanmu akan dijawab oleh admin — mohon tunggu ya.",
+        }
+      );
+    } catch (e) {
+      toast.error("Gagal mengubah mode AI", { description: (e as Error).message });
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   const mergeMessages = useCallback((incoming: ChatMessageDto[]) => {
+    // v1.15.0 — deteksi balasan bot BARU (bukan riwayat) untuk animasi ketik.
+    const freshBotIds: string[] = [];
+    for (const m of incoming) {
+      if (knownIdsRef.current.has(m.id)) continue;
+      knownIdsRef.current.add(m.id);
+      if (firstLoadRef.current && m.from === "bot") freshBotIds.push(m.id);
+    }
+    firstLoadRef.current = true;
+    if (freshBotIds.length > 0) {
+      setAnimateIds((prev) => {
+        const next = new Set(prev);
+        for (const id of freshBotIds) next.add(id);
+        return next;
+      });
+      setBotTyping(false);
+    }
     setMessages((prev) => {
       const map = new Map(prev.map((m) => [m.id, m]));
       for (const m of incoming) map.set(m.id, m);
@@ -320,6 +378,8 @@ export function ChatWidget() {
     const text = draft.trim();
     if (!text || sending) return;
     setSending(true);
+    // v1.15.0 — indikator “Nexa Bot sedang mengetik” selagi menunggu balasan.
+    if (aiMode) setBotTyping(true);
     try {
       const trimmedName = name.trim().slice(0, 40);
       if (trimmedName) {
@@ -348,6 +408,8 @@ export function ChatWidget() {
         // membuat percakapan terasa aneh.
         await new Promise((r) => setTimeout(r, 450));
         mergeMessages([json.data.botMessage]);
+      } else {
+        setBotTyping(false);
       }
       if (typeof json.data.aiAutoReply === "boolean") setAiMode(json.data.aiAutoReply);
       setDraft("");
@@ -355,8 +417,19 @@ export function ChatWidget() {
       toast.error("Pesan tidak terkirim", { description: (e as Error).message });
     } finally {
       setSending(false);
+      setBotTyping(false);
     }
   };
+
+  // v1.15.0 — selesaikan animasi ketik per id (callback stabil untuk BotTypedText).
+  const finishTyping = useCallback((id: string) => {
+    setAnimateIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
 
   const panel = useMemo(
     () => (
@@ -379,6 +452,28 @@ export function ChatWidget() {
               {wsLive ? "tersambung langsung" : aiMode ? "dijawab instan oleh Nexa Bot" : "dijawab oleh pemilik store"}
             </p>
           </div>
+          <button
+            type="button"
+            aria-label={aiMode ? "Matikan jawaban AI — biarkan admin menjawab" : "Nyalakan jawaban AI Nexa Bot"}
+            aria-pressed={aiMode}
+            title={
+              aiMode
+                ? "Nexa Bot menjawab instan — ketuk untuk mematikan (dijawab admin)"
+                : "Dijawab admin — ketuk untuk menyalakan Nexa Bot"
+            }
+            onClick={() => void toggleAi()}
+            disabled={aiBusy}
+            className={cn(
+              "rounded-md p-1.5 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50",
+              aiMode ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            {aiMode ? (
+              <Bot aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              <BotOff aria-hidden="true" className="h-4 w-4" />
+            )}
+          </button>
           <button
             type="button"
             aria-label={pushOn ? "Matikan notifikasi balasan" : "Nyalakan notifikasi balasan"}
@@ -450,39 +545,66 @@ export function ChatWidget() {
               </p>
             </div>
           ) : (
-            messages.map((m) => (
-              <div
-                key={m.id}
-                className={cn("flex", m.from === "user" ? "justify-end" : "justify-start")}
-              >
+            <>
+              {messages.map((m) => (
                 <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
-                    m.from === "user"
-                      ? "rounded-br-md bg-primary text-primary-foreground"
-                      : m.from === "bot"
-                        ? "rounded-bl-md border border-primary/25 bg-primary/[0.06]"
-                        : "rounded-bl-md border bg-muted/60"
-                  )}
+                  key={m.id}
+                  className={cn("flex", m.from === "user" ? "justify-end" : "justify-start")}
                 >
-                  {m.from === "bot" ? (
-                    <p className="mb-1 flex items-center gap-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary/80">
-                      <Bot aria-hidden="true" className="h-3 w-3" />
-                      Nexa Bot
-                    </p>
-                  ) : null}
-                  <p className="whitespace-pre-wrap break-words">{m.text}</p>
-                  <p
+                  <div
                     className={cn(
-                      "mt-1 text-right text-[10px] tabular",
-                      m.from === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
+                      "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
+                      m.from === "user"
+                        ? "rounded-br-md bg-primary text-primary-foreground"
+                        : m.from === "bot"
+                          ? "rounded-bl-md border border-primary/25 bg-primary/[0.06]"
+                          : "rounded-bl-md border bg-muted/60"
                     )}
                   >
-                    {new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date(m.at))}
-                  </p>
+                    {m.from === "bot" ? (
+                      <p className="mb-1 flex items-center gap-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+                        <Bot aria-hidden="true" className="h-3 w-3" />
+                        Nexa Bot
+                      </p>
+                    ) : null}
+                    <BotTypedText
+                      text={m.text}
+                      id={m.id}
+                      animate={m.from === "bot" && animateIds.has(m.id)}
+                      onFinished={finishTyping}
+                    />
+                    <p
+                      className={cn(
+                        "mt-1 text-right text-[10px] tabular",
+                        m.from === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}
+                    >
+                      {new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date(m.at))}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              {/* v1.15.0 — indikator Nexa Bot sedang mengetik. */}
+              {botTyping ? (
+                <div className="flex justify-start" aria-live="polite">
+                  <div className="rounded-2xl rounded-bl-md border border-primary/25 bg-primary/[0.06] px-3.5 py-2.5 shadow-sm">
+                    <span className="flex items-center gap-1.5">
+                      <Bot aria-hidden="true" className="h-3 w-3 text-primary/80" />
+                      {[0, 1, 2].map((i) => (
+                        <motion.span
+                          key={i}
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-primary/70"
+                          animate={reduced ? undefined : { opacity: [0.25, 1, 0.25] }}
+                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.18 }}
+                        />
+                      ))}
+                      <span className="sr-only">Nexa Bot sedang mengetik</span>
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 
@@ -558,7 +680,7 @@ export function ChatWidget() {
         </div>
       </motion.div>
     ),
-    [reduced, wsLive, messages, name, nameEdit, draft, sending, pushOn, pushBusy, confirmClear, aiMode]
+    [reduced, wsLive, messages, name, nameEdit, draft, sending, pushOn, pushBusy, confirmClear, aiMode, aiBusy, botTyping, animateIds, finishTyping]
   );
 
   return (
@@ -595,5 +717,59 @@ export function ChatWidget() {
         ) : null}
       </motion.button>
     </>
+  );
+}
+
+/**
+ * v1.15.0 — teks balasan bot yang "mengetik" kata demi kata. Riwayat lama
+ * (animate=false) langsung tampil penuh; reduced-motion dihormati.
+ * onFinished stabil per-id supaya efek timer hanya berjali sekali.
+ */
+function BotTypedText({
+  text,
+  id,
+  animate,
+  onFinished,
+}: {
+  text: string;
+  id: string;
+  animate: boolean;
+  onFinished: (id: string) => void;
+}) {
+  const reduced = useReducedMotion();
+  const words = useMemo(() => text.match(/\S+\s*/g) ?? [text], [text]);
+  const shouldAnimate = animate && !reduced;
+  // null = tampil penuh (riwayat / reduced-motion / animasi selesai).
+  const [revealed, setRevealed] = useState<number | null>(shouldAnimate ? 0 : null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldAnimate || startedRef.current) return;
+    startedRef.current = true;
+    // Pesan panjang tetap selesai <= ±1,8 dtk; pendek mengetik santai.
+    const perWord = Math.min(70, Math.max(16, 1800 / Math.max(words.length, 1)));
+    let i = 0;
+    const timer = setInterval(() => {
+      i += 1;
+      setRevealed(i >= words.length ? null : i);
+      if (i >= words.length) {
+        clearInterval(timer);
+        onFinished(id);
+      }
+    }, perWord);
+    return () => clearInterval(timer);
+  }, [shouldAnimate, words.length, onFinished, id]);
+
+  const typing = revealed !== null && revealed < words.length;
+  return (
+    <p className="whitespace-pre-wrap break-words">
+      {words.slice(0, typing ? revealed : words.length).join("")}
+      {typing ? (
+        <span
+          aria-hidden="true"
+          className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 animate-pulse rounded-full bg-primary/80"
+        />
+      ) : null}
+    </p>
   );
 }

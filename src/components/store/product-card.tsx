@@ -12,15 +12,19 @@ import { useCartStore } from "@/lib/cart/store";
 import { MAX_CART_ITEMS } from "@/lib/cart/types";
 import { formatIdr } from "@/lib/format/idr";
 import { cn } from "@/lib/utils";
-import { Check, Plus, TimerReset } from "lucide-react";
+import { Check, ShoppingCart, TimerReset, Zap } from "lucide-react";
+import { FLY_TO_CART_EVENT } from "./cart/fly-to-cart";
+import type { FlyToCartDetail } from "./cart/fly-to-cart";
 
 /**
- * Denomination-led product card with two actions:
- * - Pressing anywhere on the card opens the instant single-item order sheet.
- * - The "Tambah" pill quick-adds the product to the cart (max 5 items).
+ * Denomination-led product card with two action surfaces:
+ * - Pressing anywhere on the card (or the "Beli" button) opens the instant
+ *   single-item order sheet.
+ * - The "Keranjang" pill quick-adds the product to the cart (max 5 items) and
+ *   fires the fly-to-cart animation (see cart/fly-to-cart.tsx).
  *
  * The whole-card button is a transparent overlay (z-0); the content above it
- * is pointer-events-none so clicks fall through. The quick-add pill re-enables
+ * is pointer-events-none so clicks fall through. The action cluster re-enables
  * pointer events on top of the overlay.
  */
 export const ProductCard = memo(function ProductCard({
@@ -45,6 +49,7 @@ export const ProductCard = memo(function ProductCard({
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const articleRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const { data: features } = useSiteFeatures();
   const promo = effectivePriceForGame(product.priceIdr, features?.promos, gameId);
@@ -68,12 +73,34 @@ export const ProductCard = memo(function ProductCard({
     setAdded(true);
     if (addedTimer.current) clearTimeout(addedTimer.current);
     addedTimer.current = setTimeout(() => setAdded(false), 1400);
+
+    // Fly-to-cart: hand the animation layer the source geometry (the card's
+    // game mark, or the card itself when the mark is not shown).
+    const source =
+      articleRef.current?.querySelector<HTMLElement>("[data-game-mark]") ?? articleRef.current;
+    if (source) {
+      window.dispatchEvent(
+        new CustomEvent<FlyToCartDetail>(FLY_TO_CART_EVENT, {
+          detail: {
+            rect: source.getBoundingClientRect(),
+            image: gameImage ?? null,
+            name: gameName,
+          },
+        })
+      );
+    }
+  }
+
+  function instantBuy(e: React.MouseEvent) {
+    e.stopPropagation();
+    onOrder(product);
   }
 
   const bonus = product.bonus?.trim();
 
   return (
     <motion.article
+      ref={articleRef}
       layout="position"
       initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -81,7 +108,7 @@ export const ProductCard = memo(function ProductCard({
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
       aria-label={`${product.denomination} ${product.name} ${gameName}`}
       className={cn(
-        "group/card relative flex w-full flex-col gap-3 rounded-xl border bg-card p-4 text-left shadow-card",
+        "group/card @container relative flex w-full flex-col gap-3 rounded-xl border bg-card p-4 text-left shadow-card",
         "transition-[border-color,box-shadow,transform] duration-200 ease-out",
         "hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-card-hover",
         disabled && "pointer-events-none opacity-60"
@@ -100,7 +127,10 @@ export const ProductCard = memo(function ProductCard({
       <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-3">
         {showGame ? (
           <div className="flex items-center gap-2">
-            <GameMark name={gameName} image={gameImage} size="sm" />
+            {/* data-game-mark: fly-to-cart origin (GameMark does not take refs). */}
+            <span data-game-mark className="flex">
+              <GameMark name={gameName} image={gameImage} size="sm" />
+            </span>
             <span className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {gameName}
             </span>
@@ -142,33 +172,58 @@ export const ProductCard = memo(function ProductCard({
         </div>
       </div>
 
-      {/* Quick-add to cart — above the overlay, in the footer row. */}
-      <motion.button
-        type="button"
-        onClick={quickAdd}
-        disabled={disabled}
-        aria-label={`Tambah ${product.denomination} ${product.name} ${gameName} ke keranjang`}
-        initial={false}
-        animate={
-          added && !reducedMotion
-            ? { scale: [1, 0.92, 1.04, 1], transition: { duration: 0.35 } }
-            : { scale: 1 }
-        }
+      {/* Action cluster — above the order overlay, bottom-right. On wide
+          cards it floats beside the price (absolute bottom-right, same as the
+          old quick-add pill). Narrow cards (container query on the card's
+          content box) cannot fit cluster + price side by side, so the cluster
+          drops into flow as its own row under the price — no overlap, both
+          stay readable (prices reach "Rp 27.279.000" in this catalog). */}
+      <div
         className={cn(
-          "absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold",
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-          added
-            ? "bg-primary text-primary-foreground shadow-card"
-            : "border border-primary/30 bg-background/90 text-primary shadow-card backdrop-blur transition-colors hover:border-primary/60 hover:bg-primary/10"
+          "absolute bottom-4 right-4 z-20 flex items-center gap-2",
+          "@max-[320px]:relative @max-[320px]:bottom-auto @max-[320px]:right-auto @max-[320px]:self-end"
         )}
       >
-        {added ? (
-          <Check aria-hidden="true" className="h-3 w-3" />
-        ) : (
-          <Plus aria-hidden="true" className="h-3 w-3" />
-        )}
-        {added ? "Ditambahkan" : "Tambah"}
-      </motion.button>
+        <button
+          type="button"
+          onClick={instantBuy}
+          disabled={disabled}
+          aria-label={`Beli ${product.denomination} ${product.name} ${gameName} sekarang`}
+          className={cn(
+            "flex h-8 items-center gap-1 rounded-full bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground shadow-card",
+            "transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          )}
+        >
+          <Zap aria-hidden="true" className="h-3 w-3" />
+          Beli
+        </button>
+        <motion.button
+          type="button"
+          onClick={quickAdd}
+          disabled={disabled}
+          aria-label={`Tambah ${product.denomination} ${product.name} ${gameName} ke keranjang`}
+          initial={false}
+          animate={
+            added && !reducedMotion
+              ? { scale: [1, 0.92, 1.04, 1], transition: { duration: 0.35 } }
+              : { scale: 1 }
+          }
+          className={cn(
+            "flex h-8 items-center gap-1 rounded-full px-2.5 text-[11px] font-semibold",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            added
+              ? "bg-primary text-primary-foreground shadow-card"
+              : "border border-primary/30 bg-background/90 text-primary shadow-card backdrop-blur transition-colors hover:border-primary/60 hover:bg-primary/10"
+          )}
+        >
+          {added ? (
+            <Check aria-hidden="true" className="h-3 w-3" />
+          ) : (
+            <ShoppingCart aria-hidden="true" className="h-3 w-3" />
+          )}
+          {added ? "Ditambahkan" : "Keranjang"}
+        </motion.button>
+      </div>
     </motion.article>
   );
 });

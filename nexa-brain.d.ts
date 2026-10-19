@@ -15,6 +15,10 @@ export interface BrainProduct {
   denomFull: string;
   bonus: boolean;
   tokens: string[];
+  /** v1.15.0: dipakai kalkulator & resolusi lintas game. */
+  priceIdr?: number;
+  label?: string;
+  gameName?: string;
 }
 
 export interface BrainLexicon {
@@ -33,6 +37,7 @@ export interface BrainPersona {
   engine: string;
   fallback: string;
   offContext: string;
+  guardRefusal?: string;
 }
 
 declare const brain: {
