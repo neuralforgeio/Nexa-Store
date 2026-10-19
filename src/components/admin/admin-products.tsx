@@ -34,6 +34,7 @@ import {
 import { GameMark } from "@/components/shared/game-mark";
 import { LoadingState, ErrorState, EmptyState } from "@/components/shared/state-views";
 import { SyncBar } from "./sync-bar";
+import { DetailSheet, StatusPill, rowClickGuard } from "./detail-sheet";
 import type { Product } from "@/lib/catalog/types";
 import { parseIdrInput, formatIdr } from "@/lib/format/idr";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function AdminProducts() {
   const [gameFilter, setGameFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | "new" | null>(null);
+  const [inspecting, setInspecting] = useState<Product | null>(null);
 
   const working = draft?.products ?? data?.products ?? [];
 
@@ -172,7 +174,11 @@ export function AdminProducts() {
               {visible.map((p) => {
                 const game = data.games.find((g) => g.id === p.gameId);
                 return (
-                  <TableRow key={p.id} className={cn(!p.enabled && "opacity-55")}>
+                  <TableRow
+                    key={p.id}
+                    onClick={rowClickGuard(() => setInspecting(p))}
+                    className={cn("cursor-pointer", !p.enabled && "opacity-55")}
+                  >
                     <TableCell>
                       <GameMark name={game?.name ?? "?"} image={game?.image} size="sm" />
                     </TableCell>
@@ -225,6 +231,17 @@ export function AdminProducts() {
           toast.info("Draft ditambahkan", { description: "Perubahan belum tersimpan. Sinkronkan lewat tombol di bawah." });
         }}
         existingIds={new Set(working.map((p) => p.id))}
+      />
+
+      <ProductDetail
+        product={inspecting}
+        gameName={data.games.find((g) => g.id === inspecting?.gameId)?.name ?? "?"}
+        gameImage={data.games.find((g) => g.id === inspecting?.gameId)?.image}
+        onClose={() => setInspecting(null)}
+        onEdit={(p) => {
+          setInspecting(null);
+          setEditing(p);
+        }}
       />
 
       <SyncBar
@@ -401,5 +418,61 @@ function ProductEditor({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Right-side spec sheet for one product (v1.12.0 detail sidebar). */
+function ProductDetail({
+  product,
+  gameName,
+  gameImage,
+  onClose,
+  onEdit,
+}: {
+  product: Product | null;
+  gameName: string;
+  gameImage?: string | null;
+  onClose: () => void;
+  onEdit: (product: Product) => void;
+}) {
+  return (
+    <DetailSheet
+      open={product !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      lead={product ? <GameMark name={gameName} image={gameImage} size="md" /> : null}
+      title={product ? `${product.denomination} ${product.name}` : ""}
+      subtitle={gameName}
+      badge={product ? <StatusPill enabled={product.enabled} /> : null}
+      fields={
+        product
+          ? [
+              {
+                label: "Harga",
+                value: (
+                  <span className="font-display text-base font-semibold tabular">
+                    {formatIdr(product.priceIdr)}
+                  </span>
+                ),
+              },
+              { label: "Bonus", value: product.bonus },
+              { label: "Game", value: gameName },
+              { label: "Urutan tampil", value: product.sortOrder },
+              { label: "ID produk", value: product.id, mono: true },
+              { label: "Harga (angka)", value: `Rp ${product.priceIdr.toLocaleString("id-ID")}`, mono: true },
+              { label: "Catatan", value: product.note, block: true },
+            ]
+          : []
+      }
+      footer={
+        product ? (
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEdit(product)}>
+            <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+            Ubah produk ini
+          </Button>
+        ) : null
+      }
+    />
   );
 }

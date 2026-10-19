@@ -1,5 +1,31 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+/**
+ * Content-Security-Policy (v1.12.0 hardening). Static (nonce-less) because
+ * Next's inline bootstrap needs 'unsafe-inline'; it still blocks every
+ * external script/style/font origin, which is the meaningful attack surface.
+ * Dev (Turbopack HMR) additionally needs eval. frame-ancestors 'self' keeps
+ * the same-origin sandbox preview working while blocking cross-origin
+ * clickjacking embeds.
+ */
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "frame-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   typescript: {
     // v1.8.0: type error TIDAK diabaikan lagi (temuan /debugging) — build
@@ -11,6 +37,21 @@ const nextConfig: NextConfig = {
   // analysis cannot trace — force-include it in the serverless bundle.
   outputFileTracingIncludes: {
     "/api/**": ["./data/**/*"],
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: csp },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+        ],
+      },
+    ];
   },
   async rewrites() {
     return {

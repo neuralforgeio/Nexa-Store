@@ -64,5 +64,55 @@ export function jsonError(
   message: string,
   extra?: Record<string, unknown>
 ): NextResponse {
-  return NextResponse.json({ ok: false, error: { code, message, ...extra } }, { status });
+  return NextResponse.json({ ok: false, error: { code, message, ...extra } }, { status: status });
+}
+
+// ---------------------------------------------------------------------------
+// Mutation rate limit (v1.12.0 hardening): authenticated saves are capped per
+// session so a hijacked session cannot hammer the persistence layer (GitHub
+// API quota / repo churn). Generous enough for real admin work — the whole
+// catalog rebuild fits inside one window.
+// ---------------------------------------------------------------------------
+
+const MUTATION_WINDOW_MS = 5 * 60 * 1000;
+const MUTATION_MAX = 40;
+
+const mutationHits = new Map<string, number[]>();
+let mutationSweepAt = 0;
+
+function sweepMutations(now: number): void {
+  if (now - mutationSweepAt < 60_000) return;
+  mutationSweepAt = now;
+  for (const [key, hits] of mutationHits) {
+    const live = hits.filter((t) => now - t < MUTATION_WINDOW_MS);
+    if (live.length === 0) mutationHits.delete(key);
+    else mutationHits.set(key, live);
+  }
+}
+
+/**
+ * Per-session mutation guard. Returns a 429 response when the session is
+ * over the budget, or null when the mutation may proceed.
+ */
+export function enforceMutationRateLimit(email: string): NextResponse | null {
+  const now = Date.now();
+  sweepMutations(now);
+  const key = `mut:${email}`;
+  const hits = (mutationHits.get(key) ?? []).filter((t) => now - t < MUTATION_WINDOW_MS);
+  if (hits.length >= MUTATION_MAX) {
+    const oldest = Math.min(...hits);
+    const retryAfterSeconds = Math.max(Math.ceil((oldest + MUTATION_WINDOW_MS - now) / 1000), 1);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          code: "rate-limited",
+          message: `Terlalu banyak penyimpanan beruntun. Tunggu ${retryAfterSeconds} detik lalu coba lagi.`,
+        },
+      },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+    );
+  }
+  mutationHits.set(key, [...hits, now]);
+  return null;
 }

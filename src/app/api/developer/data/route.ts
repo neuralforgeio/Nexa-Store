@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { jsonError, jsonOk, requireCapability, getSession } from "@/lib/api/http";
+import { jsonError, jsonOk, requireCapability, getSession, enforceMutationRateLimit } from "@/lib/api/http";
 import { getRepository } from "@/lib/catalog/repo";
 import { RepoError } from "@/lib/catalog/repo/types";
 import { validateFile } from "@/lib/catalog/schema";
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
   const session = getSession(req);
   if (!session.email) return jsonError(401, "unauthorized", "Masuk terlebih dahulu.");
+  const limited = enforceMutationRateLimit(session.email);
+  if (limited) return limited;
 
   let body: unknown;
   try {

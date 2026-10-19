@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useManagementCatalog } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import {
 import { GameMark } from "@/components/shared/game-mark";
 import { LoadingState, ErrorState, EmptyState } from "@/components/shared/state-views";
 import { SyncBar } from "./sync-bar";
+import { DetailSheet, StatusPill, rowClickGuard } from "./detail-sheet";
 import type { Game, OrderField } from "@/lib/catalog/types";
 import { Plus, Pencil, ArrowUp, ArrowDown, Trash2, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -76,6 +78,7 @@ export function AdminGames() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [editing, setEditing] = useState<Game | "new" | null>(null);
+  const [inspecting, setInspecting] = useState<Game | null>(null);
 
   const working = draft?.games ?? data?.games ?? [];
 
@@ -142,7 +145,11 @@ export function AdminGames() {
               {[...working]
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((g) => (
-                  <TableRow key={g.id} className={!g.enabled ? "opacity-55" : undefined}>
+                  <TableRow
+                    key={g.id}
+                    onClick={rowClickGuard(() => setInspecting(g))}
+                    className={cn("cursor-pointer", !g.enabled && "opacity-55")}
+                  >
                     <TableCell>
                       <GameMark name={g.name} image={g.image} size="sm" />
                     </TableCell>
@@ -200,6 +207,17 @@ export function AdminGames() {
           });
           setEditing(null);
           toast.info("Draft ditambahkan", { description: "Sinkronkan untuk menyimpan." });
+        }}
+      />
+
+      <GameDetail
+        game={inspecting}
+        products={data.products}
+        categories={data.categories}
+        onClose={() => setInspecting(null)}
+        onEdit={(g) => {
+          setInspecting(null);
+          setEditing(g);
         }}
       />
 
@@ -491,5 +509,85 @@ function GameEditor({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Right-side spec sheet for one game (v1.12.0 detail sidebar). */
+function GameDetail({
+  game,
+  products,
+  categories,
+  onClose,
+  onEdit,
+}: {
+  game: Game | null;
+  products: Array<{ id: string; gameId: string; enabled: boolean }>;
+  categories: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onEdit: (game: Game) => void;
+}) {
+  const productCount = game ? products.filter((p) => p.gameId === game.id).length : 0;
+  const categoryNames = game
+    ? categories.filter((c) => game.categoryIds.includes(c.id)).map((c) => c.name)
+    : [];
+
+  return (
+    <DetailSheet
+      open={game !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      lead={game ? <GameMark name={game.name} image={game.image} size="md" /> : null}
+      title={game?.name ?? ""}
+      subtitle={`${productCount} nominal terdaftar`}
+      badge={game ? <StatusPill enabled={game.enabled} /> : null}
+      fields={
+        game
+          ? [
+              { label: "Slug", value: game.slug, mono: true },
+              { label: "ID game", value: game.id, mono: true },
+              { label: "Urutan tampil", value: game.sortOrder },
+              { label: "Kategori", value: categoryNames.length > 0 ? categoryNames.join(", ") : "—" },
+              {
+                label: "Ikon",
+                value: game.image ? "Terpasang (unggahan)" : "Monogram otomatis",
+              },
+              { label: "Deskripsi", value: game.description, block: true },
+              {
+                label: "Field pesanan",
+                block: true,
+                value:
+                  game.orderFieldSchema.length > 0 ? (
+                    <ul className="space-y-1.5">
+                      {game.orderFieldSchema.map((field) => (
+                        <li key={field.key} className="flex items-baseline justify-between gap-3 text-sm">
+                          <span>
+                            {field.label}
+                            {field.required ? (
+                              <span className="ml-1 font-medium text-primary">*</span>
+                            ) : null}
+                          </span>
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            {field.key} · {field.type}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]
+          : []
+      }
+      footer={
+        game ? (
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEdit(game)}>
+            <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+            Ubah game ini
+          </Button>
+        ) : null
+      }
+    />
   );
 }

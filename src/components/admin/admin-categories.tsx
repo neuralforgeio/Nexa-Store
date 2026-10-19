@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useManagementCatalog } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { LoadingState, ErrorState, EmptyState } from "@/components/shared/state-views";
 import { SyncBar } from "./sync-bar";
+import { DetailSheet, StatusPill, rowClickGuard } from "./detail-sheet";
 import type { Category } from "@/lib/catalog/types";
 import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +38,7 @@ export function AdminCategories() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [editing, setEditing] = useState<Category | "new" | null>(null);
+  const [inspecting, setInspecting] = useState<Category | null>(null);
 
   const working = draft?.categories ?? data?.categories ?? [];
 
@@ -88,7 +91,11 @@ export function AdminCategories() {
               {[...working]
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((c) => (
-                  <TableRow key={c.id} className={!c.enabled ? "opacity-55" : undefined}>
+                  <TableRow
+                    key={c.id}
+                    onClick={rowClickGuard(() => setInspecting(c))}
+                    className={cn("cursor-pointer", !c.enabled && "opacity-55")}
+                  >
                     <TableCell>
                       <p className="font-medium">{c.name}</p>
                       <p className="font-mono text-xs text-muted-foreground">{c.slug}</p>
@@ -128,6 +135,17 @@ export function AdminCategories() {
           });
           setEditing(null);
           toast.info("Draft ditambahkan", { description: "Sinkronkan untuk menyimpan." });
+        }}
+      />
+
+      <CategoryDetail
+        category={inspecting}
+        products={data.products}
+        games={data.games}
+        onClose={() => setInspecting(null)}
+        onEdit={(c) => {
+          setInspecting(null);
+          setEditing(c);
         }}
       />
 
@@ -237,5 +255,66 @@ function CategoryEditor({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Right-side spec sheet for one category (v1.12.0 detail sidebar). */
+function CategoryDetail({
+  category,
+  products,
+  games,
+  onClose,
+  onEdit,
+}: {
+  category: Category | null;
+  products: Array<{ id: string; categoryId?: string }>;
+  games: Array<{ id: string; name: string; categoryIds: string[] }>;
+  onClose: () => void;
+  onEdit: (category: Category) => void;
+}) {
+  const memberGames = category
+    ? games.filter((g) => g.categoryIds.includes(category.id)).map((g) => g.name)
+    : [];
+  const productCount = category
+    ? products.filter((p) => p.categoryId === category.id).length
+    : 0;
+
+  return (
+    <DetailSheet
+      open={category !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      lead={
+        category ? (
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 font-display text-sm font-semibold text-primary">
+            {category.name.slice(0, 2).toUpperCase()}
+          </span>
+        ) : null
+      }
+      title={category?.name ?? ""}
+      subtitle={category ? `${memberGames.length} game tergabung` : undefined}
+      badge={category ? <StatusPill enabled={category.enabled} /> : null}
+      fields={
+        category
+          ? [
+              { label: "Slug", value: category.slug, mono: true },
+              { label: "ID kategori", value: category.id, mono: true },
+              { label: "Urutan tampil", value: category.sortOrder },
+              { label: "Produk berkategori ini", value: productCount },
+              { label: "Game tergabung", value: memberGames.length > 0 ? memberGames.join(", ") : "—", block: true },
+              { label: "Deskripsi", value: category.description, block: true },
+            ]
+          : []
+      }
+      footer={
+        category ? (
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onEdit(category)}>
+            <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+            Ubah kategori ini
+          </Button>
+        ) : null
+      }
+    />
   );
 }
