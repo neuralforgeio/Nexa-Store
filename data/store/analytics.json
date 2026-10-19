@@ -82,7 +82,7 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 73,
+      "views": 76,
       "uniques": 5,
       "byPath": {
         "/": 19,
@@ -91,7 +91,7 @@
         "/games": 19,
         "/games/valorant": 2,
         "/help": 2,
-        "/track": 10,
+        "/track": 13,
         "/login": 2,
         "/games/ff-max": 5,
         "/reports": 1,
@@ -99,12 +99,12 @@
         "/games/genshin-impact": 1
       },
       "byReferrer": {
-        "langsung": 64,
+        "langsung": 67,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
-        "desktop": 67,
+        "desktop": 70,
         "mobile": 6
       },
       "events": {
@@ -285,6 +285,9 @@
     1792399775780,
     1792400118341,
     1792400118341,
-    1792400118341
+    1792400118341,
+    1792400120299,
+    1792400120300,
+    1792400120300
   ]
 }
