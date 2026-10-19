@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSettingsBundle, useSettingsMutation } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 export function AdminSettings() {
   const { data, isPending, isError, refetch } = useSettingsBundle(true);
   const mutation = useSettingsMutation();
+  const qc = useQueryClient();
   const [draft, setDraft] = useState<SettingsBundleDraft | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -81,8 +83,14 @@ export function AdminSettings() {
     } catch (e) {
       if (e instanceof ApiError && e.code === "repo.conflict") {
         toast.error("Konflik data terdeteksi", {
-          description: "Data berubah sejak halaman dibuka. Muat ulang lalu isi kembali.",
+          description: "Data berubah sejak halaman dibuka. Muat ulang data, lalu isi kembali.",
           duration: 10000,
+          action: {
+            label: "Muat ulang",
+            onClick: () => {
+              void qc.invalidateQueries({ queryKey: ["settings"] });
+            },
+          },
         });
       } else if (e instanceof ApiError) {
         toast.error("Gagal menyimpan", { description: e.message });

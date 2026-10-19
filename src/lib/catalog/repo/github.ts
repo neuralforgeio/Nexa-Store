@@ -3,6 +3,7 @@ import type { CatalogSnapshot } from "../schema";
 import { CANONICAL_FILES } from "../types";
 import { validateFile } from "../schema";
 import { validateCatalogIntegrity } from "../validation";
+import { createHash } from "node:crypto";
 import type {
   CatalogRepository,
   FileShas,
@@ -32,6 +33,16 @@ import { RepoError } from "./types";
 const API = "https://api.github.com";
 const TIMEOUT_MS = 15000;
 const ALL_KEYS = Object.keys(CANONICAL_FILES) as CanonicalFileKey[];
+
+/**
+ * Deterministic git blob SHA (`blob <len>\0<content>`) — the same value
+ * GitHub reports for the stored file, computable without an extra API call.
+ */
+function gitBlobSha(content: string): string {
+  const body = Buffer.from(content, "utf8");
+  const header = Buffer.from(`blob ${body.byteLength}\0`, "utf8");
+  return createHash("sha1").update(Buffer.concat([header, body])).digest("hex");
+}
 
 export type GitHubConfig = {
   owner: string;
@@ -283,11 +294,19 @@ export class GitHubCatalogRepository implements CatalogRepository {
           sha: commit.data.sha,
           force: false,
         });
+        // New blob SHA per written file so clients can advance their base
+        // immediately instead of false-conflicting on the next save while
+        // the post-save refetch is still in flight.
+        const writtenFileShas: Partial<Record<CanonicalFileKey, string>> = {};
+        for (const key of keys) {
+          writtenFileShas[key] = gitBlobSha(input.files[key] as string);
+        }
         return {
           revision: commit.data.sha,
           commitMessage: input.message,
           files: keys,
           writtenAt: new Date().toISOString(),
+          writtenFileShas,
         };
       } catch (e) {
         const retryable =

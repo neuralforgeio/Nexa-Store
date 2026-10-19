@@ -88,7 +88,9 @@ export function GameCard({
             </span>
           </span>
           {game.description ? (
-            <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
+            // No `block` here — it would override line-clamp's display:-webkit-box
+            // and un-clamp the text into a tall messy card (reported on /games).
+            <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
               {game.description}
             </span>
           ) : null}

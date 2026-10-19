@@ -23,6 +23,12 @@ export type WriteResult = {
   commitMessage: string;
   files: CanonicalFileKey[];
   writtenAt: string;
+  /**
+   * New content hash for each written file (git blob SHA on GitHub, sha256
+   * locally). Lets clients advance their optimistic-concurrency base without
+   * waiting for a refetch — back-to-back saves no longer false-conflict.
+   */
+  writtenFileShas?: Partial<FileShas>;
 };
 
 export type HistoryEntry = {

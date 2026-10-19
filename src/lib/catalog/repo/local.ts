@@ -212,11 +212,19 @@ export class LocalCatalogRepository implements CatalogRepository {
       lastCommitMessage: input.message,
     });
 
+    // New content hash per written file so clients can advance their base
+    // immediately (sha256 here mirrors readSnapshot's fileShas semantics).
+    const writtenFileShas: Partial<FileShas> = {};
+    for (const key of keys) {
+      writtenFileShas[key] = sha256(input.files[key] as string);
+    }
+
     return {
       revision: `local-${nextRevision}`,
       commitMessage: input.message,
       files: keys,
       writtenAt,
+      writtenFileShas,
     };
   }
 

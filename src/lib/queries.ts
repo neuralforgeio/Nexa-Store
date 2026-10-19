@@ -192,6 +192,8 @@ export type MutationResult = {
   commitMessage: string;
   files: string[];
   writtenAt: string;
+  /** New content hash per written file — used to advance the local base. */
+  fileShas?: Record<string, string>;
   diff: { gamesChanged: number; productsChanged: number; categoriesChanged: number; lines: string[] };
 };
 
@@ -283,11 +285,23 @@ export function useSettingsMutation() {
       settings: SettingsBundle["settings"];
       checkoutTemplate: SettingsBundle["checkoutTemplate"];
     }) =>
-      api.post<{ revision: string; commitMessage: string; writtenAt: string }>(
+      api.post<{ revision: string; commitMessage: string; writtenAt: string; fileShas?: Record<string, string> }>(
         "/api/management/settings",
         input
       ),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // Advance the cached base immediately so a save fired before the
+      // refetch lands doesn't false-conflict (same treatment as the
+      // catalog SyncBar).
+      qc.setQueryData<SettingsBundle>(["settings"], (old) =>
+        old
+          ? {
+              ...old,
+              revision: result.revision,
+              fileShas: { ...old.fileShas, ...(result.fileShas ?? {}) },
+            }
+          : old
+      );
       qc.invalidateQueries({ queryKey: ["settings"] });
       qc.invalidateQueries({ queryKey: ["catalog"] });
       qc.invalidateQueries({ queryKey: ["git-status"] });

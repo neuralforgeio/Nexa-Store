@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,6 +43,7 @@ export function SyncBar({
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const mutation = useCatalogMutation();
+  const qc = useQueryClient();
 
   const diff = useMemo(() => computeDiff(base, drafts), [base, drafts]);
   const dirty = diff.total > 0;
@@ -89,6 +91,26 @@ export function SyncBar({
         operations,
       });
       setPreviewOpen(false);
+
+      // Advance the cached base IMMEDIATELY (revision + fresh file SHAs +
+      // the applied draft lists). Without this, the next save sent while the
+      // post-sync refetch is still in flight would use a stale base and
+      // false-409 — the reported "second product add always fails" bug.
+      // The conflict check passed, so the server state for the written files
+      // equals these drafts.
+      qc.setQueryData<ManagementCatalog>(["mgmt-catalog"], (old) =>
+        old
+          ? {
+              ...old,
+              revision: result.revision,
+              fileShas: { ...old.fileShas, ...(result.fileShas ?? {}) },
+              ...(drafts.products ? { products: drafts.products } : {}),
+              ...(drafts.games ? { games: drafts.games } : {}),
+              ...(drafts.categories ? { categories: drafts.categories } : {}),
+            }
+          : old
+      );
+
       toast.success("Perubahan tersimpan dan dikirim ke penyimpanan", {
         description: `${result.commitMessage} · ${result.files.join(", ")} · revisi ${result.revision.slice(0, 12)}`,
         duration: 7000,
@@ -97,8 +119,14 @@ export function SyncBar({
     } catch (e) {
       if (e instanceof ApiError && e.code === "repo.conflict") {
         toast.error("Konflik data terdeteksi", {
-          description: "Data berubah sejak halaman ini dibuka. Muat ulang data sebelum menyimpan lagi.",
+          description: "Data berubah sejak halaman ini dibuka. Muat ulang data, lalu simpan kembali.",
           duration: 10000,
+          action: {
+            label: "Muat ulang",
+            onClick: () => {
+              void qc.invalidateQueries({ queryKey: ["mgmt-catalog"] });
+            },
+          },
         });
       } else if (e instanceof ApiError) {
         toast.error("Gagal menyimpan", { description: e.message });

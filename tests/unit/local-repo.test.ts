@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { LocalCatalogRepository, sha256 } from "@/lib/catalog/repo/local";
 import { RepoError } from "@/lib/catalog/repo/types";
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, cpSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, cpSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -24,14 +24,24 @@ function tempRepo(): { repo: LocalCatalogRepository; dir: string } {
 
 test("readSnapshot validates and returns all canonical data", async () => {
   const { repo, dir } = tempRepo();
+  // Dataset-agnostic (v1.11.2): the catalog is live-managed data, so counts
+  // are derived from the source files instead of frozen seed numbers.
+  const sourceGames = JSON.parse(cpRead("data/catalog/games.json")) as { games: unknown[] };
+  const sourceProducts = JSON.parse(cpRead("data/catalog/products.json")) as { products: unknown[] };
   const read = await repo.readSnapshot();
-  expect(read.snapshot.games.length).toBe(8);
-  expect(read.snapshot.products.length).toBe(61);
+  expect(read.snapshot.games.length).toBe(sourceGames.games.length);
+  expect(read.snapshot.products.length).toBe(sourceProducts.products.length);
+  expect(read.snapshot.games.length).toBeGreaterThan(0);
+  expect(read.snapshot.products.length).toBeGreaterThan(0);
   expect(read.revision).toBe("local-1");
   expect(read.adapter).toBe("local");
   await expect(repo.health()).resolves.toMatchObject({ ok: true });
   rmSync(dir, { recursive: true, force: true });
 });
+
+function cpRead(path: string): string {
+  return readFileSync(path, "utf8");
+}
 
 test("writeFiles bumps revision and stores history", async () => {
   const { repo, dir } = tempRepo();

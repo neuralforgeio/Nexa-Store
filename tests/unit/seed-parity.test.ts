@@ -2,9 +2,12 @@ import { test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 
 /**
- * Seed parity guard (A11, PRD §53): every price in the canonical data files
- * must match the PRD §14 tables verbatim. This test is the independent
- * cross-check between the PRD document values and the shipped data.
+ * Live catalog guard (A11, PRD §53 — adapted v1.11.2). The original exact
+ * seed-parity check was a build-time transcription guard; once the store
+ * went live the catalog became owner-managed data (new games, edited
+ * prices), so the invariant is now structural: the PRD seed games remain
+ * the foundation, ids are unique, products reference existing games, and
+ * money values stay safe integers.
  */
 
 const PRD_TABLES: Record<string, Array<[denomination: string, bonus: string | null, price: number]>> = {
@@ -87,25 +90,31 @@ const PRD_TABLES: Record<string, Array<[denomination: string, bonus: string | nu
   ],
 };
 
-const EXPECTED_TOTAL = Object.values(PRD_TABLES).reduce((sum, rows) => sum + rows.length, 0);
+const PRD_SEED_GAME_IDS = Object.keys(PRD_TABLES);
 
-test("canonical products.json matches the PRD §14 tables exactly", () => {
-  const data = JSON.parse(readFileSync("data/catalog/products.json", "utf8")) as {
-    products: Array<{ gameId: string; denomination: string; bonus?: string; priceIdr: number }>;
+test("catalog keeps the PRD seed games as its foundation (live data, structure only)", () => {
+  const games = JSON.parse(readFileSync("data/catalog/games.json", "utf8")) as {
+    games: Array<{ id: string; slug: string }>;
+  };
+  const products = JSON.parse(readFileSync("data/catalog/products.json", "utf8")) as {
+    products: Array<{ id: string; gameId: string; priceIdr: number; enabled: boolean }>;
   };
 
-  expect(data.products.length).toBe(EXPECTED_TOTAL);
-
-  for (const [gameId, rows] of Object.entries(PRD_TABLES)) {
-    const actual = data.products.filter((p) => p.gameId === gameId);
-    expect(actual.length).toBe(rows.length);
-    for (const [denomination, bonus, price] of rows) {
-      const match = actual.find((p) => p.denomination === denomination);
-      expect(match).toBeDefined();
-      expect(match!.priceIdr).toBe(price);
-      expect(match!.bonus ?? null).toBe(bonus);
-    }
+  // Every seed game still exists — the live catalog only grows on top of it.
+  const gameIds = new Set(games.games.map((g) => g.id));
+  for (const gameId of PRD_SEED_GAME_IDS) {
+    expect(gameIds.has(gameId)).toBe(true);
   }
+
+  // Structural integrity for the live dataset.
+  const productIds = new Set<string>();
+  for (const p of products.products) {
+    expect(productIds.has(p.id)).toBe(false);
+    productIds.add(p.id);
+    expect(gameIds.has(p.gameId)).toBe(true);
+    expect(Number.isSafeInteger(p.priceIdr)).toBe(true);
+  }
+  expect(products.products.length).toBeGreaterThan(0);
 });
 
 test("PRD tables themselves are internally consistent (no duplicate denominations)", () => {

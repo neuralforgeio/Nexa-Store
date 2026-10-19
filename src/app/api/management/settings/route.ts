@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
       revision: result.revision,
       commitMessage: result.commitMessage,
       writtenAt: result.writtenAt,
+      // Per-file content hashes of what was just written — lets the client
+      // advance its optimistic-concurrency base immediately.
+      fileShas: result.writtenFileShas ?? {},
     });
   } catch (e) {
     if (e instanceof RepoError) {

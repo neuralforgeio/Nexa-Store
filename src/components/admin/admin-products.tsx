@@ -267,6 +267,11 @@ function ProductEditor({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const key = isNew ? "new" : current?.id ?? null;
+  // When the dialog closes, forget the last-initialized key so the NEXT
+  // "Produk baru" starts from a blank form instead of the previous values.
+  if (!key && initializedFor !== null) {
+    setInitializedFor(null);
+  }
   if (key && initializedFor !== key) {
     setInitializedFor(key);
     setErrors({});

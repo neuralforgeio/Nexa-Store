@@ -245,6 +245,10 @@ function GameEditor({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const key = isNew ? "new" : current?.id ?? null;
+  // Reset on close so the next "baru" open starts blank, not from stale values.
+  if (!key && initializedFor !== null) {
+    setInitializedFor(null);
+  }
   if (key && initializedFor !== key) {
     setInitializedFor(key);
     setErrors({});

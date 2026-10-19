@@ -101,6 +101,9 @@ export async function POST(req: NextRequest) {
       commitMessage: result.commitMessage,
       files: result.files,
       writtenAt: result.writtenAt,
+      // Per-file content hashes of what was just written — lets the client
+      // advance its optimistic-concurrency base immediately.
+      fileShas: result.writtenFileShas ?? {},
       diff: applied.diff,
     });
   } catch (e) {
