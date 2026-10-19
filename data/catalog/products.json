@@ -667,6 +667,166 @@
       "currency": "IDR",
       "enabled": true,
       "sortOrder": 45000
+    },
+    {
+      "id": "free-fire-400",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "400",
+      "priceIdr": 52000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 52000
+    },
+    {
+      "id": "free-fire-500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "500",
+      "priceIdr": 67000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 67000
+    },
+    {
+      "id": "free-fire-600",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "600",
+      "priceIdr": 77000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 77000
+    },
+    {
+      "id": "free-fire-700",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "700",
+      "priceIdr": 90000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 90000
+    },
+    {
+      "id": "free-fire-800",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "800",
+      "priceIdr": 102000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 102000
+    },
+    {
+      "id": "free-fire-900",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "900",
+      "priceIdr": 114000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 114000
+    },
+    {
+      "id": "free-fire-1000",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "1000",
+      "priceIdr": 126000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 126000
+    },
+    {
+      "id": "free-fire-1500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "1500",
+      "priceIdr": 187000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 187000
+    },
+    {
+      "id": "free-fire-2000",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "2000",
+      "priceIdr": 246000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 246000
+    },
+    {
+      "id": "free-fire-2500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "2500",
+      "priceIdr": 307000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 307000
+    },
+    {
+      "id": "free-fire-3000",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "3000",
+      "priceIdr": 370000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 370000
+    },
+    {
+      "id": "free-fire-3500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "3500",
+      "priceIdr": 430000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 430000
+    },
+    {
+      "id": "free-fire-4000",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "4000",
+      "priceIdr": 465000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 465000
+    },
+    {
+      "id": "free-fire-4500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "4500",
+      "priceIdr": 553000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 553000
+    },
+    {
+      "id": "free-fire-5000",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "5000",
+      "priceIdr": 612000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 612000
+    },
+    {
+      "id": "free-fire-5500",
+      "gameId": "free-fire",
+      "name": "Rp.",
+      "denomination": "5500",
+      "priceIdr": 677000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 677000
     }
   ]
 }
