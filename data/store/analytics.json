@@ -82,10 +82,10 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 89,
-      "uniques": 6,
+      "views": 92,
+      "uniques": 8,
       "byPath": {
-        "/": 24,
+        "/": 25,
         "/games/free-fire": 8,
         "/admin/products": 3,
         "/games": 20,
@@ -97,16 +97,17 @@
         "/reports": 1,
         "/games/fc-mobile": 1,
         "/games/genshin-impact": 1,
-        "/dev/control": 1
+        "/dev/control": 1,
+        "/admin/chat": 2
       },
       "byReferrer": {
-        "langsung": 80,
+        "langsung": 83,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
-        "desktop": 79,
-        "mobile": 10
+        "desktop": 80,
+        "mobile": 12
       },
       "events": {
         "chat_open": 7,
@@ -128,7 +129,7 @@
     "3b29781cd243ebaff310ee25": "2026-09-14",
     "d548fe6d02428c984993d1b5": "2026-09-15",
     "ec0963e60382d0410ac6a9e2": "2026-10-19",
-    "8625fd7155ba80d4294ed006": "2026-09-14",
+    "8625fd7155ba80d4294ed006": "2026-10-19",
     "0f0b8775ecfa8df8903cd496": "2026-09-14",
     "6cfa5f10b42075eab4c5f5aa": "2026-09-21",
     "6f1d875b05f1b8193e221c73": "2026-09-22",
@@ -136,7 +137,8 @@
     "d5b0bf65b3291f3e2540c51f": "2026-10-19",
     "8444430aa231f09d5da72584": "2026-10-19",
     "bf02a1ef0987ad97e2c9a08e": "2026-10-19",
-    "ae27b58c021f8908f72fde18": "2026-10-19"
+    "ae27b58c021f8908f72fde18": "2026-10-19",
+    "a6b9045f08b07437aa8c36bd": "2026-10-19"
   },
   "recent": [
     1789319955843,
@@ -303,6 +305,9 @@
     1792400459466,
     1792405678337,
     1792406108925,
-    1792406108925
+    1792406108925,
+    1792406293051,
+    1792406293051,
+    1792406293051
   ]
 }
