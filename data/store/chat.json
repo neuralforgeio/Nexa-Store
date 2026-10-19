@@ -52,10 +52,16 @@
           "from": "bot",
           "text": "Maaf, di luar wewenangku 😅 Aku Nexa Bot — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu. Tanya aku soal harga game, cara top up, atau lacak pesanan ya!",
           "at": "2026-10-19T08:41:04.537Z"
+        },
+        {
+          "id": "m_mvf090um5ltm",
+          "from": "user",
+          "text": "kalau member mingguan dikali 2 jadi berapa",
+          "at": "2026-10-19T08:41:16.174Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T08:41:04.537Z",
-      "unreadByOwner": 4,
+      "lastMessageAt": "2026-10-19T08:41:16.174Z",
+      "unreadByOwner": 5,
       "ownerLastReadAt": null
     },
     {
