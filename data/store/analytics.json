@@ -82,13 +82,13 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 36,
-      "uniques": 1,
+      "views": 37,
+      "uniques": 2,
       "byPath": {
         "/": 7,
         "/games/free-fire": 8,
         "/admin/products": 3,
-        "/games": 10,
+        "/games": 11,
         "/games/valorant": 1,
         "/help": 2,
         "/track": 3,
@@ -96,15 +96,16 @@
         "/games/ff-max": 1
       },
       "byReferrer": {
-        "langsung": 36
+        "langsung": 37
       },
       "byDevice": {
-        "desktop": 32,
+        "desktop": 33,
         "mobile": 4
       },
       "events": {
         "chat_open": 4,
-        "order_click": 1
+        "order_click": 1,
+        "wa_handoff": 1
       }
     }
   },
@@ -124,7 +125,8 @@
     "0f0b8775ecfa8df8903cd496": "2026-09-14",
     "6cfa5f10b42075eab4c5f5aa": "2026-09-21",
     "6f1d875b05f1b8193e221c73": "2026-09-22",
-    "f42407d827c59166359c0767": "2026-10-19"
+    "f42407d827c59166359c0767": "2026-10-19",
+    "d5b0bf65b3291f3e2540c51f": "2026-10-19"
   },
   "recent": [
     1789319955843,
@@ -238,6 +240,7 @@
     1792395175139,
     1792395175139,
     1792395292182,
-    1792395292182
+    1792395292182,
+    1792395310282
   ]
 }
