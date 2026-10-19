@@ -117,19 +117,21 @@
       }
     },
     "2026-10-20": {
-      "views": 6,
+      "views": 10,
       "uniques": 2,
       "byPath": {
         "/": 2,
         "/games/free-fire": 1,
-        "/games": 2,
-        "/games/roblox": 1
+        "/games": 4,
+        "/games/roblox": 1,
+        "/games/mobile-legends": 1,
+        "/games/point-blank": 1
       },
       "byReferrer": {
-        "langsung": 6
+        "langsung": 10
       },
       "byDevice": {
-        "mobile": 6
+        "mobile": 10
       },
       "events": {}
     }
@@ -342,6 +344,10 @@
     1792452611407,
     1792452611407,
     1792452642154,
-    1792452642154
+    1792452642154,
+    1792452663413,
+    1792452663413,
+    1792452663413,
+    1792452663413
   ]
 }
