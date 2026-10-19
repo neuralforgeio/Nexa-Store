@@ -82,29 +82,30 @@
       "events": {}
     },
     "2026-10-19": {
-      "views": 78,
-      "uniques": 5,
+      "views": 81,
+      "uniques": 6,
       "byPath": {
-        "/": 20,
+        "/": 21,
         "/games/free-fire": 8,
         "/admin/products": 3,
         "/games": 19,
         "/games/valorant": 2,
         "/help": 2,
-        "/track": 14,
+        "/track": 15,
         "/login": 2,
         "/games/ff-max": 5,
         "/reports": 1,
         "/games/fc-mobile": 1,
-        "/games/genshin-impact": 1
+        "/games/genshin-impact": 1,
+        "/dev/control": 1
       },
       "byReferrer": {
-        "langsung": 69,
+        "langsung": 72,
         "com.google.android.googlequicksearchbox": 8,
         "github.com": 1
       },
       "byDevice": {
-        "desktop": 72,
+        "desktop": 75,
         "mobile": 6
       },
       "events": {
@@ -134,7 +135,8 @@
     "f42407d827c59166359c0767": "2026-10-19",
     "d5b0bf65b3291f3e2540c51f": "2026-10-19",
     "8444430aa231f09d5da72584": "2026-10-19",
-    "bf02a1ef0987ad97e2c9a08e": "2026-10-19"
+    "bf02a1ef0987ad97e2c9a08e": "2026-10-19",
+    "ae27b58c021f8908f72fde18": "2026-10-19"
   },
   "recent": [
     1789319955843,
@@ -290,6 +292,9 @@
     1792400120300,
     1792400120300,
     1792400196342,
-    1792400196342
+    1792400196342,
+    1792400432196,
+    1792400432196,
+    1792400432196
   ]
 }
