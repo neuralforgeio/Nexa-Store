@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_27cf0202a287672f4dcc6760",
+      "name": "Darderdor",
+      "createdAt": "2026-10-19T07:31:58.881Z",
+      "messages": [
+        {
+          "id": "m_mvexrx2993v5",
+          "from": "user",
+          "text": "halo",
+          "at": "2026-10-19T07:31:58.881Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-19T07:31:58.881Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
