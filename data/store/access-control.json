@@ -8,13 +8,12 @@
     "updatedBy": "dearlyfebrianoi@gmail.com"
   },
   "maintenance": {
-    "active": true,
+    "active": false,
     "scope": "routes",
     "routes": [
       "/track"
     ],
-    "note": "🛠️ SEMENTARA DALAM PERBAIKAN\nMohon maaf para Gamers, fitur lacak pesanan sedang maintenance sebentar karena kendala update status dari admin. Untuk cek status pesanan, silakan langsung hubungi admin via WhatsApp ya! 🙏✨",
-    "updatedAt": "2026-10-19T08:54:52.871Z",
+    "updatedAt": "2026-10-19T10:06:10.127Z",
     "updatedBy": "dearlyfebrianoi@gmail.com"
   }
 }
