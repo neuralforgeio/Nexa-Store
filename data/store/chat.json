@@ -28,10 +28,16 @@
           "from": "bot",
           "text": "Aku Nexa Bot ⚡ — asisten AI NEXA STORE, toko top up game favoritmu. Otakku dilatih dari data katalog store ini dan diproses sepenuhnya secara lokal. Mau lihat harga? Ketik saja nama game-nya!",
           "at": "2026-10-19T08:13:17.803Z"
+        },
+        {
+          "id": "m_mvez9dqza1yt",
+          "from": "user",
+          "text": "apa yang paling murah",
+          "at": "2026-10-19T08:13:33.275Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T08:13:17.803Z",
-      "unreadByOwner": 2,
+      "lastMessageAt": "2026-10-19T08:13:33.275Z",
+      "unreadByOwner": 3,
       "ownerLastReadAt": null
     }
   ]
