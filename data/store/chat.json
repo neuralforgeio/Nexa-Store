@@ -10,9 +10,15 @@
           "from": "user",
           "text": "haloo",
           "at": "2026-10-19T08:40:05.655Z"
+        },
+        {
+          "id": "m_mvf07j2psypq",
+          "from": "bot",
+          "text": "Maaf, di luar wewenangku 😅 Aku Nexa Bot — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu. Tanya aku soal harga game, cara top up, atau lacak pesanan ya!",
+          "at": "2026-10-19T08:40:06.481Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T08:40:05.655Z",
+      "lastMessageAt": "2026-10-19T08:40:06.481Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": null
     },
