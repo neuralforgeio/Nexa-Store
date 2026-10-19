@@ -52,10 +52,16 @@
           "from": "bot",
           "text": "Aku bisa bantu: 🎮 daftar harga 22 game (ketik nama game, mis. \"ml\" atau \"ff\") • 💸 rekomendasi top up termurah • 📋 cara top up & pembayaran • 📦 lacak pesanan • 🐞 lapor bug. Cukup ketik pertanyaanmu seputar NEXA STORE!",
           "at": "2026-10-19T10:42:04.448Z"
+        },
+        {
+          "id": "m_mvf4knq4zh01",
+          "from": "user",
+          "text": "cara top up gimana sih",
+          "at": "2026-10-19T10:42:17.500Z"
         }
       ],
-      "lastMessageAt": "2026-10-19T10:42:04.448Z",
-      "unreadByOwner": 3,
+      "lastMessageAt": "2026-10-19T10:42:17.500Z",
+      "unreadByOwner": 4,
       "ownerLastReadAt": "2026-10-19T09:57:45.710Z"
     },
     {
