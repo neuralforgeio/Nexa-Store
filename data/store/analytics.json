@@ -136,18 +136,19 @@
       "events": {}
     },
     "2026-10-21": {
-      "views": 4,
+      "views": 6,
       "uniques": 1,
       "byPath": {
         "/": 1,
-        "/games": 2,
-        "/games/roblox": 1
+        "/games": 3,
+        "/games/roblox": 1,
+        "/games/zenless-zone-zero": 1
       },
       "byReferrer": {
-        "langsung": 4
+        "langsung": 6
       },
       "byDevice": {
-        "mobile": 4
+        "mobile": 6
       },
       "events": {}
     }
@@ -368,6 +369,8 @@
     1792538942685,
     1792538942685,
     1792538982804,
-    1792538982804
+    1792538982804,
+    1792539011088,
+    1792539011088
   ]
 }
