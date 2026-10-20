@@ -3,5 +3,8 @@
     "userId": 6058186994,
     "chatId": 6058186994,
     "pairedAt": "2026-10-19T08:46:58.755Z"
+  },
+  "nexaBot": {
+    "autoReply": false
   }
 }
