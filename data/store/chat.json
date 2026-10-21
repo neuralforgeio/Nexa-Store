@@ -20,7 +20,12 @@
       ],
       "lastMessageAt": "2026-10-21T11:26:40.524Z",
       "unreadByOwner": 1,
-      "ownerLastReadAt": null
+      "ownerLastReadAt": null,
+      "agent": {
+        "productId": "free-fire-2000",
+        "gameId": "free-fire",
+        "at": "2026-10-21T11:26:41.295Z"
+      }
     },
     {
       "id": "c_3b939b6161fad6b1235376b7",
