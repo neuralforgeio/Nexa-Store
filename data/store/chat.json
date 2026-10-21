@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_aa861052b2d1261efa8be1db",
+      "name": "Dearly",
+      "createdAt": "2026-10-21T11:26:38.147Z",
+      "messages": [
+        {
+          "id": "m_mvi11e0z472m",
+          "from": "user",
+          "text": "pesan 2000 diamonds free fire",
+          "at": "2026-10-21T11:26:38.147Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T11:26:38.147Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_3b939b6161fad6b1235376b7",
       "name": "ProdFinal",
       "createdAt": "2026-10-21T11:26:08.088Z",
