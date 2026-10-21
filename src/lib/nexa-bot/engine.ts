@@ -205,12 +205,13 @@ function renderProduct(p: Product, game: Game): string {
 }
 
 function renderGameList(game: Game, products: Product[]): string {
-  const items = products
+  const sorted = products
     .slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((p) => `- **${prettyLabel(p, game)}** — ${idr(p.priceIdr)}`);
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const items = sorted.map((p) => `- **${prettyLabel(p, game)}** — ${idr(p.priceIdr)}`);
+  const hintLabel = sorted[0] ? labelOf(sorted[0], game) : "nominal";
   const head = `### ⚡ ${game.name} — Daftar Harga\n\n`;
-  const tail = `\n💡 Bilang \`pesan 70 diamonds ${game.name.toLowerCase()}\` — langsung kumasukkan ke keranjang!`;
+  const tail = `\n💡 Bilang \`pesan ${hintLabel} ${game.name.toLowerCase()}\` — langsung kumasukkan ke keranjang!`;
   const budget = 740 - head.length - tail.length;
   let used = 0;
   const out: string[] = [];

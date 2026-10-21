@@ -327,27 +327,34 @@ function listAnswer(game, products, trainedAt) {
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((p) => ({ label: productLabel(p, game), price: p.priceIdr }));
-  const head = `⚡ ${game.name} — harga per ${trainedAt}:\n`;
-  const tail = `\nSemua nominal + order ada di halaman game-nya 🎮`;
+  const head = `### ⚡ ${game.name} — Daftar Harga\n\n`;
+  const cheapestHint = items[0]?.label ?? "nominal";
+  const tail = `\n\n💡 Bilang \`pesan ${cheapestHint} ${game.name.toLowerCase()}\` — langsung kumasukkan ke keranjang!`;
   const budget = 760 - head.length - tail.length;
   const lines = [];
   let used = 0;
   for (const it of items) {
-    const piece = `${it.label} ${idr(it.price)}`;
-    const add = (lines.length ? " • " : "") + piece;
+    const piece = `- **${it.label}** — ${idr(it.price)}`;
+    const add = (lines.length ? "\n" : "") + piece;
     if (used + add.length > budget) {
-      lines.push("…");
+      lines.push("- …");
       break;
     }
     lines.push(piece);
     used += add.length;
   }
-  return head + lines.join(" • ") + tail;
+  return head + lines.join("\n") + tail;
 }
 
 function productAnswer(product, game) {
   const label = productLabel(product, game);
-  return `${label.replace(/\b\w/g, (c) => c.toUpperCase())} ${game.name}: ${idr(product.priceIdr)} ⚡ Pesan di halaman ${game.name} — isi data akun, checkout via WhatsApp, langsung diproses.`;
+  const pretty = label.replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    `### ⚡ ${pretty} — ${game.name}\n\n` +
+    `💵 Harga: **${idr(product.priceIdr)}**\n\n` +
+    `Mau langsung pesan? Bilang saja \`pesan ${label} ${game.name.toLowerCase()}\` — otomatis kumasukkan ke keranjangmu!\n\n` +
+    `Atau buka halaman **${game.name}** → pilih nominal → checkout via WhatsApp.`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -512,23 +519,23 @@ function buildCorpus(games, products, trainedAt, opts = {}) {
     intent: "rekomendasi.cheap",
     utterances: ["rekomendasi termurah", "top up paling murah", "yang paling murah", "harga termurah", "top up murah", "budget tipis", "duit tipis", "murah banget apa", "paling hemat", "rekomendasi murah", "yang murah apa", "top up dibawah 20 ribu", "budget 10 ribu", "budget 20 ribu", "hemat duit", "yang paling murah apa", "top up kecil", "top up dibawah 15 ribu", "dibawah 20rb", "murah"],
     answer:
-      "💸 Top up termurah di NEXA STORE:\n" +
-      cheapest.slice(0, 8).map((c) => `• ${c.game.name} — ${productLabel(c.product, c.game)} ${idr(c.product.priceIdr)}`).join("\n") +
-      "\nKetik nama game-nya buat lihat semua nominal!",
+      "### 💸 Top up termurah di NEXA STORE\n\n" +
+      cheapest.slice(0, 8).map((c) => `- **${c.game.name}** — ${productLabel(c.product, c.game)} · ${idr(c.product.priceIdr)}`).join("\n") +
+      "\n\n💡 Ketik nama game-nya buat lihat semua nominal!",
   });
 
   intents.push({
     intent: "rekomendasi.popular",
     utterances: ["game populer", "game terlaris", "rekomendasi game", "game yang lagi rame", "yang sering dibeli", "game recommended", "top game", "game terbaik", "game favorit", "rekomendasi top up", "mau top up apa ya", "bingung mau top up apa", "saran game dong", "game apa yang bagus"],
     answer:
-      "🔥 Paling laris di NEXA STORE:\n" +
+      "### 🔥 Paling laris di NEXA STORE\n\n" +
       POPULAR.map((id) => {
         const g = games.find((x) => x.id === id);
-        return g ? `• ${g.name} — ketik "${(GAME_META[id]?.aliases ?? [g.name.toLowerCase()])[0]}" buat lihat harga` : null;
+        return g ? `- **${g.name}** — ketik \`${(GAME_META[id]?.aliases ?? [g.name.toLowerCase()])[0]}\` buat lihat harga` : null;
       })
         .filter(Boolean)
         .join("\n") +
-      "\nSemua ada 22 game — ketik \"daftar game\" buat lihat semuanya!",
+      `\n\nSemua ada **${games.length} game** — ketik \`daftar game\` buat lihat semuanya!`,
   });
 
   const bonusProducts = products.filter((p) => (p.denomination ?? "").includes("+") && p.enabled !== false).slice(0, 10);
@@ -536,15 +543,15 @@ function buildCorpus(games, products, trainedAt, opts = {}) {
     intent: "rekomendasi.value",
     utterances: ["bonus paling besar", "paling worth it", "best value", "yang paling worth", "hemat bonus", "bonus terbanyak", "yang ada bonusnya", "paling untung", "worth it yang mana"],
     answer:
-      "💎 Paling worth it (ada bonus ekstra):\n" +
+      "### 💎 Paling worth it (ada bonus ekstra)\n\n" +
       bonusProducts
         .map((p) => {
           const g = games.find((x) => x.id === p.gameId);
-          return g ? `• ${g.name} ${p.denomination} — ${idr(p.priceIdr)}` : null;
+          return g ? `- **${g.name} ${p.denomination}** — ${idr(p.priceIdr)}` : null;
         })
         .filter(Boolean)
         .join("\n") +
-      "\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮",
+      "\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮",
   });
 
   intents.push({

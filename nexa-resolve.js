@@ -254,6 +254,24 @@ function resolveProductForOrder(text, lexicon) {
     if (byPrice) return { productId: byPrice.id, gameId: hit.game.id, via: "price" };
   }
 
+  // 4) Cakupan label kata-penuh — untuk nominal non-angka ("member mingguan",
+  //    "weekly diamond pass"). Wajib: SEMUA token label hadir + hasil UNIK
+  //    (ambigu → tolak, jangan salah menambah produk ke keranjang).
+  const words = new Set(norm.trim().split(" "));
+  const gameNameTokens = new Set(
+    String(hit.game.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean)
+  );
+  const labelMatches = new Set();
+  for (const p of products) {
+    const toks = (p.tokens || []).filter((t) => t && t.length > 1 && !gameNameTokens.has(t));
+    if (toks.length === 0) continue;
+    if (toks.every((t) => words.has(t))) labelMatches.add(p.id);
+  }
+  if (labelMatches.size === 1) {
+    const id = labelMatches.values().next().value;
+    return { productId: id, gameId: hit.game.id, via: "label" };
+  }
+
   return null;
 }
 
