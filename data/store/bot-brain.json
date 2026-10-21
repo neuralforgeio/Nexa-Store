@@ -1,3 +1,15 @@
 {
-  "customIntents": []
+  "version": null,
+  "trainedAt": null,
+  "customIntents": [
+    {
+      "intent": "faq.ongkir",
+      "utterances": [
+        "apakah ada ongkir",
+        "biaya kirim berapa",
+        "perlu bayar ongkos kirim gak"
+      ],
+      "answer": "Tidak ada ongkir sama sekali, {name}! 🚀 Semua produk digital — langsung masuk ke akun game-mu."
+    }
+  ]
 }
