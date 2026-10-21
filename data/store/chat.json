@@ -10,9 +10,15 @@
           "from": "user",
           "text": "hai, apakah kamu mengenal saya",
           "at": "2026-10-21T09:25:41.495Z"
+        },
+        {
+          "id": "m_mvhwpweg8xki",
+          "from": "bot",
+          "text": "Tentu aku mengenalmu — kamu Dearly, kan? 😄 Namamu kubaca dari identitas chat-mu di sini. Dearly, ada yang bisa kubantu soal top up hari ini?",
+          "at": "2026-10-21T09:25:43.624Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T09:25:41.495Z",
+      "lastMessageAt": "2026-10-21T09:25:43.624Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": null
     },
