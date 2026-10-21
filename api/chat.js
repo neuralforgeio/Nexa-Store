@@ -1,17 +1,18 @@
 /* eslint-disable */
 /**
- * api/chat.js — Nexa Bot Serverless Function (v1.15.0).
+ * api/chat.js — Nexa Bot Serverless Function (v1.17.0).
  *
  * Chatbot AI murni berbasis @nlpjs/basic. Fungsi ini me-load "otak" AI lokal
  * (file model.nlp hasil training train.js), menerima input teks via POST,
  * lalu memprosesnya SECARA LOKAL untuk mengembalikan jawaban & saran terbaik.
  * Tanpa API eksternal (OpenAI/Gemini), tanpa Vercel AI SDK.
  *
- * Pipeline v1.15.0 (nexa-standalone.js, dibagikan dengan bot Telegram):
+ * Pipeline v1.17.0 (nexa-standalone.js, dibagikan dengan bot Telegram):
  * penjaga keamanan (anti-bocor api key/env/kode) → kalkulator (nexa-math) →
- * resolver katalog → NLP → gerbang konteks.
+ * resolver katalog → overlay kustom (TF-IDF dataset impor) → NLP → gerbang
+ * konteks. Sadar-pengguna: body {userName} mempersonalisasi jawaban.
  *
- * POST { "text": "harga free fire" }
+ * POST { "text": "harga free fire", "userName": "Dearly" }
  *   → { "ok": true, "data": { "bot": "Nexa Bot", "intent": "...", "score": 1,
  *        "answer": "..." } }
  * GET → info singkat.
@@ -49,15 +50,19 @@ module.exports = async (req, res) => {
   }
 
   let text = "";
+  let userName = null;
+  const readBody = (obj) => {
+    text = typeof obj.text === "string" ? obj.text : "";
+    userName = typeof obj.userName === "string" && obj.userName.trim() ? obj.userName.trim().slice(0, 40) : null;
+  };
   if (typeof req.body === "string") {
     try {
-      const parsed = JSON.parse(req.body);
-      text = parsed && typeof parsed.text === "string" ? parsed.text : "";
+      readBody(JSON.parse(req.body));
     } catch {
       text = "";
     }
   } else if (req.body && typeof req.body === "object") {
-    text = typeof req.body.text === "string" ? req.body.text : "";
+    readBody(req.body);
   }
 
   if (!text.trim()) {
@@ -66,7 +71,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const out = await standalone.answer(text);
+    const out = await standalone.answer(text, undefined, { userName });
     res.status(200).json({
       ok: true,
       data: { bot: "Nexa Bot", intent: out.intent, score: out.score, answer: out.answer },

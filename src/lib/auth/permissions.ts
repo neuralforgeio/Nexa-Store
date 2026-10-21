@@ -33,7 +33,8 @@ export type Capability =
   | "chat.manage"
   | "reports.manage"
   | "orders.manage"
-  | "analytics.read";
+  | "analytics.read"
+  | "botAi.manage";
 
 const ADMIN_CAPABILITIES = new Set<Capability>([
   "storefront.view",
@@ -71,6 +72,7 @@ const DEVELOPER_CAPABILITIES = new Set<Capability>([
   "schedules.manage",
   "chat.manage",
   "analytics.read",
+  "botAi.manage",
 ]);
 
 const CUSTOMER_CAPABILITIES = new Set<Capability>(["storefront.view"]);

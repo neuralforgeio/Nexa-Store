@@ -3,22 +3,31 @@ import brain from "../../../nexa-brain.js";
 import { resolveCatalogQuery, resolveProductMention, withinDomain } from "../../../nexa-resolve.js";
 import { containsLeakAttempt, sanitizeAnswer, GUARD_ANSWER } from "../../../nexa-guard.js";
 import { detectMath, solveMath } from "../../../nexa-math.js";
+import { buildOverlay, matchOverlay, personalize } from "../../../nexa-overlay.js";
+import { renderIntentLive, renderOrderStatus, ORDER_ID_RE } from "../../../nexa-userctx.js";
 import { getRepository } from "@/lib/catalog/repo";
 import type { Game, Product } from "@/lib/catalog/types";
+import { readFeature } from "@/lib/site-features/store";
+import { botBrainFileSchema, parsePromos, parseOrders, type BotBrainFile, type CustomIntent } from "@/lib/site-features/schema";
+import { activePromos } from "@/lib/site-features/types";
 
 /**
- * Nexa Bot engine (v1.15.0) — otak AI lokal untuk obrolan storefront.
+ * Nexa Bot engine (v1.17.0) — otak AI lokal untuk obrolan storefront.
  *
- * Pipeline: penjaga keamanan (anti-bocor) → kalkulator (nexa-math, harga
- * LIVE) → resolver entitas katalog (NER ala Indonesia: alias game + nominal)
- * → klasifikasi niat NLP (@nlpjs/basic, model dilatih train.js) → gerbang
- * konteks. Jawaban harga selalu dirender dari katalog LIVE.
+ * Pipeline: penjaga keamanan (anti-bocor) → STATUS PESANAN (ID Order NEXA-…)
+ * → kalkulator (nexa-math, harga LIVE) → resolver entitas katalog (NER ala
+ * Indonesia: alias game + nominal) → LAPISAN KUSTOM (overlay TF-IDF atas
+ * dataset hasil impor — langsung hidup tanpa training) → klasifikasi niat
+ * NLP (model bawaan ATAU model hasil latih ulang dari panel AI developer)
+ * → gerbang konteks. Jawaban harga selalu dirender dari katalog LIVE.
  *
- * AUTO-TRAINING v1.15.0 — pengetahuan bot tidak perlu dilatih ulang saat
- * data berubah: leksikon runtime menggabungkan otak terlatih dengan katalog
- * LIVE (game baru otomatis dikenali dari namanya, harga berubah → jawaban
- * berubah, produk dihapus → tak disebut lagi). Model statis hanya memahami
- * BAHASA (niat); FAKTA selalu dibaca segar dari data.
+ * v1.17.0 — SADAR PENGGUNA: identitas chat (nama pengunjung) atau nama
+ * Telegram diikutkan sebagai ctx — sapaan, "kamu mengenal saya?", dan
+ * jawaban kustom ({name}) dipersonalisasi.
+ *
+ * v1.17.0 — OTAK KUSTOM: data/store/bot-brain.json (fitur store, dual-mode
+ * sandbox/produksi) memuat dataset kustom + model hasil training ulang.
+ * Model kustom dipakai bila valid; dataset kustom selalu dipakai overlay.
  *
  * 100% lokal — tanpa API eksternal.
  */
@@ -29,19 +38,93 @@ export type BotReply = {
   answer: string;
 };
 
+/** Konteks percakapan — nama pengguna dari identitas chat / Telegram. */
+export type BotCtx = {
+  userName?: string | null;
+};
+
 const MAX_ANSWER = 780; // chatFileSchema: text max 800 — beri ruang.
 
-let nlpPromise: Promise<Nlp> | null = null;
+// ---------------------------------------------------------------------------
+// Otak: bundel repo (default) + otak kustom dari data store
+// ---------------------------------------------------------------------------
+
+type BrainState = {
+  /** kunci versi — "bundled" | "custom-<trainedAt>" */
+  key: string;
+  /** model NLP kustom (string JSON) bila hasil training tersimpan */
+  modelJson: string | null;
+  customIntents: CustomIntent[];
+  overlay: ReturnType<typeof buildOverlay>;
+  at: number;
+};
+
+let brainState: BrainState | null = null;
+const BRAIN_REFRESH_MS = 30_000;
+
+function emptyOverlayState(key: string, modelJson: string | null, customIntents: CustomIntent[]): BrainState {
+  return { key, modelJson, customIntents, overlay: buildOverlay(customIntents), at: Date.now() };
+}
+
+/** Otak aktif saat ini — kustom bila ada, bawaan sebagai fallback. */
+async function currentBrain(): Promise<BrainState> {
+  if (brainState && Date.now() - brainState.at < BRAIN_REFRESH_MS) return brainState;
+  try {
+    const raw = await readFeature("bot-brain");
+    const parsed = botBrainFileSchema.safeParse(raw);
+    if (!parsed.success) {
+      brainState = emptyOverlayState("bundled", null, []);
+      return brainState;
+    }
+    const file: BotBrainFile = parsed.data;
+    const key = file.modelJson && file.trainedAt ? `custom-${file.trainedAt}` : "bundled";
+    // Optimasi: hanya segarkan overlay saat dataset/trainedAt berubah.
+    if (brainState && brainState.key === key && brainState.customIntents === file.customIntents) {
+      brainState.at = Date.now();
+      return brainState;
+    }
+    brainState = emptyOverlayState(key, file.modelJson ?? null, file.customIntents);
+    return brainState;
+  } catch {
+    brainState = emptyOverlayState("bundled", null, []);
+    return brainState;
+  }
+}
+
+const nlpCache = new Map<string, Promise<Nlp>>();
+
+function getNlpFor(key: string, modelJson: string | null): Promise<Nlp> {
+  if (!modelJson) return getNlp();
+  let p = nlpCache.get(key);
+  if (!p) {
+    p = Promise.resolve().then(() => {
+      const nlp = new Nlp({ languages: ["en"], threshold: 0.5, autoSave: false });
+      nlp.import(modelJson);
+      return nlp;
+    });
+    p.catch(() => nlpCache.delete(key));
+    nlpCache.set(key, p);
+    if (nlpCache.size > 4) {
+      // pertahankan kunci terbaru — buang yang paling lama.
+      const first = nlpCache.keys().next().value;
+      if (first && first !== key) nlpCache.delete(first);
+    }
+  }
+  return p;
+}
 
 function getNlp(): Promise<Nlp> {
-  if (!nlpPromise) {
-    nlpPromise = Promise.resolve().then(() => {
+  let p = nlpCache.get("bundled");
+  if (!p) {
+    p = Promise.resolve().then(() => {
       const nlp = new Nlp({ languages: ["en"], threshold: 0.5, autoSave: false });
       nlp.import(JSON.stringify(brain.model));
       return nlp;
     });
+    p.catch(() => nlpCache.delete("bundled"));
+    nlpCache.set("bundled", p);
   }
-  return nlpPromise;
+  return p;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,9 +274,10 @@ function mergeLiveLexicon(base: Lexicon, live: LiveSnapshot): Lexicon {
   return { ...base, games, products };
 }
 
-async function trainedAnswer(intent: string): Promise<string | null> {
+async function trainedAnswer(intent: string, modelJson: string | null): Promise<string | null> {
   try {
-    const nlp = await getNlp();
+    const state = await currentBrain();
+    const nlp = await getNlpFor(state.key, modelJson);
     const answers = await nlp.findAllAnswers("en", intent);
     return answers?.[0]?.answer ?? null;
   } catch {
@@ -278,11 +362,43 @@ const LIVE_RENDERERS: Record<string, (live: { games: Game[]; products: Product[]
   "rekomendasi.value": renderLiveValue,
 };
 
+/** Promo aktif (dirender dari data promo live, v1.17.0). */
+async function renderActivePromos(): Promise<string> {
+  try {
+    const raw = await readFeature("promos");
+    const file = parsePromos(raw);
+    const now = new Date();
+    const active = activePromos(file.promos, now).slice(0, 6);
+    if (active.length === 0) {
+      return "Belum ada promo aktif saat ini 🏷️ Tapi tenang — potongan suka muncul tanpa pengumuman di halaman depan. Pantau terus, atau tanya \"rekomendasi termurah\" buat yang hemat!";
+    }
+    const lines = active.map((p) => `• ${p.title} — diskon ${p.percentOff}%${p.endsAt ? ` s/d ${new Date(p.endsAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""}`);
+    return (
+      "🏷️ Promo AKTIF sekarang di NEXA STORE:\n" +
+      lines.join("\n") +
+      "\nPotongan otomatis terpasang di harga nominal. Jangan sampai kehabisan!"
+    );
+  } catch {
+    return "";
+  }
+}
+
+/** Cari pesanan berdasar ID Order yang tertanam di pesan (v1.17.0). */
+async function findOrderById(orderId: string): Promise<Record<string, unknown> | null> {
+  try {
+    const raw = await readFeature("orders");
+    const file = parseOrders(raw);
+    return (file.orders.find((o) => o.id === orderId) as unknown as Record<string, unknown>) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Jawaban utama
 // ---------------------------------------------------------------------------
 
-export async function nexaBotAnswer(text: string): Promise<BotReply> {
+export async function nexaBotAnswer(text: string, ctx: BotCtx = {}): Promise<BotReply> {
   const clean = (text ?? "").trim().slice(0, 800);
   if (!clean) {
     return { intent: "None", score: 0, answer: brain.persona.fallback };
@@ -298,6 +414,19 @@ export async function nexaBotAnswer(text: string): Promise<BotReply> {
   // resolver, dan renderer rekomendasi (fakta selalu segar).
   const live = await readLiveCatalog();
   const lexicon = mergeLiveLexicon(brain.lexicon as Lexicon, live);
+  const state = await currentBrain();
+  const userName = ctx.userName ?? null;
+
+  // 0.5 STATUS PESANAN (v1.17.0) — ID Order NEXA-… di pesan → resi instan.
+  const orderIdHit = clean.toUpperCase().match(ORDER_ID_RE);
+  if (orderIdHit) {
+    const order = await findOrderById(orderIdHit[0]);
+    return {
+      intent: order ? "order.status" : "order.notfound",
+      score: 1,
+      answer: sanitizeAnswer(renderOrderStatus(order).slice(0, MAX_ANSWER)),
+    };
+  }
 
   // 1. Kalkulator — harga operand dibaca LIVE ("member mingguan dikali 2").
   if (detectMath(clean)) {
@@ -318,7 +447,7 @@ export async function nexaBotAnswer(text: string): Promise<BotReply> {
       if (product && game) {
         return { intent: `price.${product.id}`, score: 1, answer: renderProduct(product, game) };
       }
-      const fallback = await trainedAnswer(`price.${hit.productId}`);
+      const fallback = await trainedAnswer(`price.${hit.productId}`, state.modelJson);
       if (fallback) return { intent: `price.${hit.productId}`, score: 1, answer: fallback.slice(0, MAX_ANSWER) };
       return { intent: `price.${hit.productId}`, score: 1, answer: brain.persona.fallback };
     }
@@ -327,18 +456,41 @@ export async function nexaBotAnswer(text: string): Promise<BotReply> {
     if (game && products.length > 0) {
       return { intent: `game.${game.id}`, score: 1, answer: renderGameList(game, products) };
     }
-    const fallback = await trainedAnswer(`game.${hit.gameId}`);
+    const fallback = await trainedAnswer(`game.${hit.gameId}`, state.modelJson);
     if (fallback) return { intent: `game.${hit.gameId}`, score: 1, answer: fallback.slice(0, MAX_ANSWER) };
     return { intent: `game.${hit.gameId}`, score: 1, answer: brain.persona.fallback };
   }
 
+  // 2.5 LAPISAN KUSTOM (v1.17.0) — dataset hasil impor dicocokkan secara
+  // statistik (TF-IDF cosine) SEBELUM klasifikasi NLP — langsung hidup.
+  if (state.customIntents.length > 0) {
+    const overlayHit = matchOverlay(state.overlay, clean);
+    if (overlayHit) {
+      return {
+        intent: overlayHit.intent,
+        score: overlayHit.score,
+        answer: sanitizeAnswer(personalize(overlayHit.answer, userName).slice(0, MAX_ANSWER)),
+      };
+    }
+  }
+
   // 3. Klasifikasi NLP — jawaban positif hanya diterima bila pesan memang
   //    dalam ranah (gerbang mencegah teks acak diklasifikasi paksa).
-  const nlp = await getNlp();
+  const nlp = await getNlpFor(state.key, state.modelJson);
   const r = await nlp.process("en", clean);
   if (r && r.intent !== "None" && r.score >= 0.5 && r.answer) {
     const isRefusal = r.intent.startsWith("off.") || r.intent.startsWith("security.");
     if (isRefusal || withinDomain(clean, lexicon as never) || withinDomain(clean, brain.lexicon)) {
+      // v1.17.0: renderer sadar-pengguna & sadar-fakta menimpa jawaban statis
+      // (sapaan personal, "kamu mengenal saya", statistik toko live…).
+      const personal = renderIntentLive(r.intent, { lexicon, userName });
+      if (personal) {
+        return { intent: r.intent, score: r.score, answer: sanitizeAnswer(personal.slice(0, MAX_ANSWER)) };
+      }
+      if (r.intent === "store.promo.now") {
+        const promos = await renderActivePromos();
+        if (promos) return { intent: r.intent, score: r.score, answer: sanitizeAnswer(promos.slice(0, MAX_ANSWER)) };
+      }
       const liveRenderer = LIVE_RENDERERS[r.intent];
       const rendered = live && typeof liveRenderer === "function" ? liveRenderer(live) : "";
       const answer = rendered || r.answer;
@@ -362,6 +514,45 @@ export async function readAiModeFromStore(readBotState: () => Promise<unknown>):
   } catch {
     return true;
   }
+}
+
+/** Metadata otak aktif — dipakai panel AI developer. */
+export async function brainStatus(): Promise<{
+  active: "bundled" | "custom";
+  custom: { version: string | null; trainedAt: string | null; intentsCount: number | null; utterancesCount: number | null; customCount: number; hasModel: boolean } | null;
+  bundled: { version: string; trainedAt: string; trainedAtLabel: string };
+}> {
+  const state = await currentBrain().catch(() => null);
+  let file: BotBrainFile | null = null;
+  try {
+    const parsed = botBrainFileSchema.safeParse(await readFeature("bot-brain"));
+    file = parsed.success ? parsed.data : null;
+  } catch {
+    file = null;
+  }
+  return {
+    active: state?.modelJson ? "custom" : "bundled",
+    custom: file
+      ? {
+          version: file.version ?? null,
+          trainedAt: file.trainedAt ?? null,
+          intentsCount: file.intentsCount ?? null,
+          utterancesCount: file.utterancesCount ?? null,
+          customCount: file.customIntents.length,
+          hasModel: Boolean(file.modelJson),
+        }
+      : null,
+    bundled: {
+      version: brain.version,
+      trainedAt: brain.trainedAt,
+      trainedAtLabel: brain.trainedAtLabel,
+    },
+  };
+}
+
+/** Paksa segarkan cache otak (dipanggil setelah latih ulang / impor). */
+export function invalidateBrainCache(): void {
+  brainState = null;
 }
 
 export const botPersona = brain.persona;

@@ -6,6 +6,7 @@ import { circuitBreaker, CircuitOpenError } from "@/lib/circuit-breaker";
 import {
   EMPTY_ANALYTICS,
   EMPTY_BANNERS,
+  EMPTY_BOT_BRAIN,
   EMPTY_BOT_STATE,
   EMPTY_CHAT,
   EMPTY_ORDERS,
@@ -20,6 +21,7 @@ import {
   parseSchedules,
   analyticsFileSchema,
   bannersFileSchema,
+  botBrainFileSchema,
   botStateFileSchema,
   chatFileSchema,
   ordersFileSchema,
@@ -52,7 +54,8 @@ export type FeatureKey =
   | "bot-state"
   | "reports"
   | "orders"
-  | "push-subs";
+  | "push-subs"
+  | "bot-brain";
 
 const FILES: Record<FeatureKey, string> = {
   promos: "data/store/promos.json",
@@ -64,7 +67,15 @@ const FILES: Record<FeatureKey, string> = {
   reports: "data/store/reports.json",
   orders: "data/store/orders.json",
   "push-subs": "data/store/push-subs.json",
+  "bot-brain": "data/store/bot-brain.json",
 };
+
+/**
+ * Fitur yang file-nya bisa jauh di atas 1 MB (model NLP hasil training) —
+ * dibaca dengan media-type raw karena Contents API JSON menolak file >1MB.
+ * SHA untuk penulisan berikutnya diambil dari header ETag (blob sha).
+ */
+const BIG_RAW_KEYS = new Set<FeatureKey>(["bot-brain"]);
 
 const API = "https://api.github.com";
 const TIMEOUT_MS = 12000;
@@ -142,8 +153,13 @@ async function readRaw(key: FeatureKey, forceFresh = false): Promise<CachedFile>
   if (!forceFresh && cached && Date.now() - cached.at < READ_CACHE_TTL_MS) return cached;
 
   const repoPath = `/repos/${cfg.owner}/${cfg.repository}/contents/${path}?ref=${encodeURIComponent(cfg.branch)}`;
+  const bigRaw = BIG_RAW_KEYS.has(key);
   const res = await ghFetch(cfg, repoPath, {
-    headers: cached?.etag ? { "If-None-Match": cached.etag } : undefined,
+    headers: {
+      ...(cached?.etag ? { "If-None-Match": cached.etag } : {}),
+      // File besar: ambil byte mentah (JSON contents API hanya untuk <1MB).
+      ...(bigRaw ? { Accept: "application/vnd.github.raw" } : {}),
+    },
   });
   if (res.status === 304 && cached) {
     const refreshed = { ...cached, at: Date.now() };
@@ -161,10 +177,21 @@ async function readRaw(key: FeatureKey, forceFresh = false): Promise<CachedFile>
   if (!res.ok) {
     throw new FeatureStoreError(`GitHub menolak pembacaan data (HTTP ${res.status}).`);
   }
-  type ContentsResponse = { sha: string; content: string; encoding: string };
-  const data = (await res.json()) as ContentsResponse;
-  const raw = data.encoding === "base64" ? Buffer.from(data.content, "base64").toString("utf8") : data.content;
-  const fresh: CachedFile = { raw, sha: data.sha, etag: res.headers.get("etag"), at: Date.now() };
+  const etag = res.headers.get("etag");
+  let raw: string;
+  let sha: string | null;
+  if (bigRaw) {
+    // Respons mentah: sha tidak ada di body — pakai ETag (blob sha) sebagai
+    // penanda versi untuk penulisan berikutnya.
+    raw = await res.text();
+    sha = etag ? etag.replace(/[^0-9a-f]/g, "") || cached?.sha || null : cached?.sha || null;
+  } else {
+    type ContentsResponse = { sha: string; content: string; encoding: string };
+    const data = (await res.json()) as ContentsResponse;
+    raw = data.encoding === "base64" ? Buffer.from(data.content, "base64").toString("utf8") : data.content;
+    sha = data.sha;
+  }
+  const fresh: CachedFile = { raw, sha, etag, at: Date.now() };
   fileCache.set(key, fresh);
   return fresh;
 }
@@ -226,7 +253,9 @@ function validate(key: FeatureKey, raw: string): void {
                   ? ordersFileSchema.safeParse(data)
                   : key === "push-subs"
                     ? pushSubsFileSchema.safeParse(data)
-                    : analyticsFileSchema.safeParse(data);
+                    : key === "bot-brain"
+                      ? botBrainFileSchema.safeParse(data)
+                      : analyticsFileSchema.safeParse(data);
   if (!check.success) {
     const issue = check.error?.issues?.[0];
     throw new FeatureStoreError(
@@ -288,6 +317,8 @@ function defaultFor(key: FeatureKey): unknown {
       return EMPTY_ORDERS;
     case "push-subs":
       return EMPTY_PUSH_SUBS;
+    case "bot-brain":
+      return EMPTY_BOT_BRAIN;
   }
 }
 

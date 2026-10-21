@@ -43,6 +43,7 @@ import { DevBanner } from "@/components/developer/dev-banner";
 import { DevReports } from "@/components/developer/dev-reports";
 import { DevAnalytics } from "@/components/developer/dev-analytics";
 import { DevSchedule } from "@/components/developer/dev-schedule";
+import { DevAi } from "@/components/developer/dev-ai";
 import { Button } from "@/components/ui/button";
 import { SectionBoundary } from "@/components/shared/section-boundary";
 
@@ -462,6 +463,12 @@ function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSecti
       return (
         <SectionBoundary name="dev:deployment">
           <DevDeployment />
+        </SectionBoundary>
+      );
+    case "ai":
+      return (
+        <SectionBoundary name="dev:ai">
+          <DevAi />
         </SectionBoundary>
       );
   }

@@ -485,3 +485,96 @@ export function useAnalytics(enabled: boolean) {
     refetchInterval: 30_000,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Panel AI Bot (v1.17.0) — dataset, latih ulang, konsol uji
+// ---------------------------------------------------------------------------
+
+export type AiDatasetIntent = { intent: string; utterances: string[]; answer: string };
+
+export type AiBotStatus = {
+  brain: {
+    active: "bundled" | "custom";
+    custom: {
+      version: string | null;
+      trainedAt: string | null;
+      intentsCount: number | null;
+      utterancesCount: number | null;
+      customCount: number;
+      hasModel: boolean;
+    } | null;
+    bundled: { version: string; trainedAt: string; trainedAtLabel: string };
+  };
+  dataset: AiDatasetIntent[];
+  catalog: { games: number; products: number } | null;
+  engine: { mode: string; pipeline: string; personalization: string };
+};
+
+export type AiTrainResult = {
+  trained: boolean;
+  modelSaved: boolean;
+  saveError: string | null;
+  stats: { games: number; products: number; intents: number; utterances: number; customIntents: number };
+  timing: { trainMs: number; totalMs: number };
+  modelSizeMb: number;
+};
+
+export function useAiBot(enabled: boolean) {
+  return useQuery({
+    queryKey: ["ai-bot"],
+    queryFn: () => api.get<AiBotStatus>("/api/developer/ai"),
+    enabled,
+  });
+}
+
+export function useAiDatasetMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { action: "upsert" | "delete"; intent: string; utterances?: string[]; answer?: string }) =>
+      input.action === "upsert"
+        ? api.post<{ dataset: AiDatasetIntent[] }>("/api/developer/ai/dataset", {
+            intent: input.intent,
+            utterances: input.utterances ?? [],
+            answer: input.answer ?? "",
+          })
+        : api.del<{ dataset: AiDatasetIntent[] }>("/api/developer/ai/dataset", { intent: input.intent }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ai-bot"] });
+    },
+  });
+}
+
+export function useAiImportMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { items: Array<Record<string, unknown>>; mode: "merge" | "replace" }) =>
+      api.post<{ imported: number; rejected: number; errors: string[]; datasetSize: number }>(
+        "/api/developer/ai/import",
+        input
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ai-bot"] });
+    },
+  });
+}
+
+export function useAiTrainMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<AiTrainResult>("/api/developer/ai/train", {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ai-bot"] });
+    },
+  });
+}
+
+export function useAiResetMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { keepDataset: boolean }) =>
+      api.del<{ reset: boolean; dataset: AiDatasetIntent[] }>("/api/developer/ai/brain", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ai-bot"] });
+    },
+  });
+}

@@ -130,6 +130,31 @@ export type OrdersFile = z.infer<typeof ordersFileSchema>;
 export type PushSubsFile = z.infer<typeof pushSubsFileSchema>;
 
 /**
+ * Otak Nexa Bot hasil latih ulang panel AI (v1.17.0) — data/store/bot-brain.json.
+ * Berisi dataset kustom (hasil impor, langsung hidup via lapisan overlay
+ * TF-IDF) + model NLP JSON hasil training (opsional — file besar, dibaca
+ * dengan media-type raw di GitHub). Absent = bot memakai otak bawaan repo.
+ */
+export const customIntentSchema = z.object({
+  intent: z.string().regex(/^[a-z0-9][a-z0-9._-]{1,59}$/),
+  utterances: z.array(z.string().trim().min(2).max(160)).min(1).max(60),
+  answer: z.string().trim().min(1).max(780),
+});
+
+export const botBrainFileSchema = z.object({
+  version: z.string().min(1).max(30).nullable().optional(),
+  trainedAt: z.string().datetime().nullable().optional(),
+  intentsCount: z.number().int().min(0).optional(),
+  utterancesCount: z.number().int().min(0).optional(),
+  /** Model NLP.js hasil training, minified JSON string (± 3-6 MB). */
+  modelJson: z.string().min(10).max(14_000_000).optional(),
+  customIntents: z.array(customIntentSchema).max(200),
+});
+
+export type BotBrainFile = z.infer<typeof botBrainFileSchema>;
+export type CustomIntent = z.infer<typeof customIntentSchema>;
+
+/**
  * Laporan pengguna (v1.6.0) — bug / saran fitur / lainnya.
  * v1.8.0: byte media kini tersimpan permanen di data/media/reports/
  * (dual-mode: sandbox FS / GitHub produksi) — `storedAt` menandai laporan
@@ -209,6 +234,7 @@ export const EMPTY_BOT_STATE: BotStateFile = { owner: null };
 export const EMPTY_REPORTS: ReportsFile = { reports: [] };
 export const EMPTY_ORDERS: OrdersFile = { orders: [] };
 export const EMPTY_PUSH_SUBS: PushSubsFile = { subs: {} };
+export const EMPTY_BOT_BRAIN: BotBrainFile = { customIntents: [] };
 
 export function parsePromos(raw: unknown): PromosFile {
   const parsed = promosFileSchema.safeParse(raw);

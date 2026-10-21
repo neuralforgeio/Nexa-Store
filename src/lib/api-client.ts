@@ -60,4 +60,7 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /** DELETE with a JSON body (v1.17.0 — panel AI dataset/reset). */
+  del: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "DELETE", body: JSON.stringify(body) }),
 };

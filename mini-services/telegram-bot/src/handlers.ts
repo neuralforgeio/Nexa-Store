@@ -1190,15 +1190,17 @@ async function onMessage(msg: NonNullable<tg.TelegramUpdate["message"]>): Promis
 
   // v1.15.0: teks bebas pemilik → tanyakan ke Nexa Bot (AI lokal, harga
   // katalog LIVE) — dulu hanya hint menu yang menjawab.
-  await answerWithNexaBot(chatId, s, text);
+  // v1.17.0: nama Telegram diikutkan — jawaban dipersonalisasi.
+  await answerWithNexaBot(chatId, s, text, msg.from?.first_name ?? null);
 }
 
 /**
  * v1.15.0 — jawab teks bebas pemilik lewat Nexa Bot (AI lokal).
  * Pipeline dibagikan dengan api/chat.js (nexa-standalone.js); katalog LIVE
  * disuntikkan supaya harga tidak pernah basi. Gagal memuat otak → hint menu.
+ * v1.17.0 — ctx.userName (nama Telegram) ikut mempersonalisasi jawaban.
  */
-async function answerWithNexaBot(chatId: number, s: Session, text: string): Promise<void> {
+async function answerWithNexaBot(chatId: number, s: Session, text: string, userName: string | null): Promise<void> {
   if (s.stage === "confirm" || s.stage === "routes") {
     await tg.sendMessage(
       chatId,
@@ -1208,7 +1210,11 @@ async function answerWithNexaBot(chatId: number, s: Session, text: string): Prom
   }
   try {
     const standalone = (await import("../../../nexa-standalone.js")) as {
-      answer: (text: string, lexicon?: unknown) => Promise<{ answer: string; intent: string; score: number }>;
+      answer: (
+        text: string,
+        lexicon?: unknown,
+        ctx?: { userName?: string | null }
+      ) => Promise<{ answer: string; intent: string; score: number }>;
       loadBrain: () => Promise<{ lexicon: unknown }>;
       mergeLexicon: (base: never, games: unknown[], products: unknown[]) => unknown;
     };
@@ -1224,7 +1230,7 @@ async function answerWithNexaBot(chatId: number, s: Session, text: string): Prom
     } catch {
       // katalog tak terbaca → leksikon terlatih (tetap benar, mungkin basi)
     }
-    const reply = await standalone.answer(text, lexicon ?? undefined);
+    const reply = await standalone.answer(text, lexicon ?? undefined, { userName });
     await tg.sendMessage(chatId, ["🤖 <b>NEXA BOT</b>", "", tg.esc(reply.answer)].join("\n"));
   } catch (e) {
     log("nexa bot gagal:", (e as Error).message);

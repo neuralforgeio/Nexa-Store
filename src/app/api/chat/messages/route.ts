@@ -207,8 +207,11 @@ export async function POST(req: NextRequest) {
     const botState = await readFeature("bot-state").catch(() => null);
     const aiAutoReply = await readAiModeFromStore(async () => botState);
     if (aiAutoReply && updated) {
+      // v1.17.0: identitas pengunjung (nama) diikutkan — bot menyapa personal
+      // dan menjawab "kamu mengenal saya?" dengan nama yang benar.
+      const conversation: ChatConversation = updated;
       try {
-        const reply = await nexaBotAnswer(text);
+        const reply = await nexaBotAnswer(text, { userName: conversation.name ?? null });
         if (reply?.answer) {
           botMessage = await appendBotMessage(conversationId, reply.answer);
         }

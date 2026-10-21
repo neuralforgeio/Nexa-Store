@@ -45,7 +45,8 @@ export type DeveloperSection =
   | "promo"
   | "banner"
   | "analytics"
-  | "schedule";
+  | "schedule"
+  | "ai";
 
 const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "orders", "settings", "checkout", "promo", "banner", "chat", "reports"];
 const DEVELOPER_SECTIONS: DeveloperSection[] = [
@@ -61,6 +62,7 @@ const DEVELOPER_SECTIONS: DeveloperSection[] = [
   "data",
   "diagnostics",
   "deployment",
+  "ai",
 ];
 
 export function parsePath(rawPath: string): Route {
