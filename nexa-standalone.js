@@ -155,11 +155,19 @@ async function loadCustomBrain() {
 /** Diagnostik ringan untuk GET /api/chat — tanpa rahasia. */
 async function brainInfo() {
   const s = await loadCustomBrain();
+  let llm = { available: false, source: "unavailable" };
+  try {
+    const { llmStatus } = require("./nexa-llm.js");
+    llm = await llmStatus();
+  } catch {
+    /* SDK/otak LLM tak tersedia di lingkungan ini */
+  }
   return {
     source: s.source,
     key: s.key,
     customIntents: s.customIntents.length,
     hasModel: Boolean(s.modelJson),
+    llm,
   };
 }
 

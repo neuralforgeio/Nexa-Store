@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
       data: {
         bot: "Nexa Bot",
         by: "Dearly Febriano Irwansyah (github.com/neuralforgeio)",
-        engine: "@nlpjs/basic — model lokal NEXA STORE",
+        engine: "dua-otak: LLM (pemahaman + penalaran data live) + NLP lokal cadangan",
         brain: info,
         usage: 'POST {"text":"harga free fire","userName":"Dearly"}',
       },

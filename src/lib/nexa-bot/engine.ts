@@ -391,14 +391,33 @@ function renderLivePopular(live: { games: Game[]; products: Product[] }): string
 }
 
 function renderLiveValue(live: { games: Game[]; products: Product[] }): string {
+  // v1.19.0: produk berbonus terdeteksi lewat field `bonus` ATAU tanda "+"
+  // di denominasi (dua format katalog) — sebelumnya selalu kosong.
   const withBonus = live.products
-    .filter((p) => p.enabled && (p.denomination ?? "").includes("+"))
+    .filter((p) => p.enabled && (p.bonus || (p.denomination ?? "").includes("+")))
     .slice(0, 10);
   const lines = withBonus.map((p) => {
     const game = live.games.find((g) => g.id === p.gameId);
-    return game ? `- **${game.name} ${p.denomination}** — ${idr(p.priceIdr)}` : null;
+    return game
+      ? `- **${game.name} ${p.denomination}${p.bonus ? ` (+${String(p.bonus).replace(/\s+/g, "")})` : ""}** — ${idr(p.priceIdr)}`
+      : null;
   });
-  if (lines.length === 0) return "";
+  if (lines.length === 0) {
+    // Fallback: daftar termurah per game — jangan pernah balas kosong.
+    const rows: Array<{ game: Game; product: Product; price: number }> = [];
+    for (const game of live.games) {
+      const items = live.products.filter((p) => p.gameId === game.id && p.enabled);
+      const min = items.length > 0 ? items.reduce((m, p) => (p.priceIdr < m.priceIdr ? p : m), items[0]) : null;
+      if (min) rows.push({ game, product: min, price: min.priceIdr });
+    }
+    rows.sort((a, b) => a.price - b.price);
+    const cheap = rows.slice(0, 6).map((r) => `- **${r.game.name}** — ${prettyLabel(r.product, r.game)} · ${idr(r.price)}`);
+    return (
+      "### 💎 Paling worth it\n\n" +
+      cheap.join("\n") +
+      "\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮"
+    );
+  }
   return (
     "### 💎 Paling worth it (ada bonus ekstra)\n\n" +
     lines.filter(Boolean).join("\n") +

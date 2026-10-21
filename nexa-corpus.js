@@ -538,19 +538,30 @@ function buildCorpus(games, products, trainedAt, opts = {}) {
       `\n\nSemua ada **${games.length} game** — ketik \`daftar game\` buat lihat semuanya!`,
   });
 
-  const bonusProducts = products.filter((p) => (p.denomination ?? "").includes("+") && p.enabled !== false).slice(0, 10);
+  // v1.19.0: produk berbonus terdeteksi lewat field `bonus` ATAU tanda "+"
+  // di denominasi (dua format katalog) — sebelumnya selalu kosong.
+  const bonusProducts = products
+    .filter((p) => (p.bonus || String(p.denomination ?? "").includes("+")) && p.enabled !== false)
+    .slice(0, 10);
+  const valueLines =
+    bonusProducts.length > 0
+      ? bonusProducts
+          .map((p) => {
+            const g = games.find((x) => x.id === p.gameId);
+            return g ? `- **${g.name} ${p.denomination}${p.bonus ? ` (+${String(p.bonus).replace(/\s+/g, "")})` : ""}** — ${idr(p.priceIdr)}` : null;
+          })
+          .filter(Boolean)
+          .join("\n")
+      : cheapest
+          .slice(0, 6)
+          .map((c) => `- **${c.game.name}** — ${productLabel(c.product, c.game)} · ${idr(c.product.priceIdr)}`)
+          .join("\n");
   intents.push({
     intent: "rekomendasi.value",
     utterances: ["bonus paling besar", "paling worth it", "best value", "yang paling worth", "hemat bonus", "bonus terbanyak", "yang ada bonusnya", "paling untung", "worth it yang mana"],
     answer:
       "### 💎 Paling worth it (ada bonus ekstra)\n\n" +
-      bonusProducts
-        .map((p) => {
-          const g = games.find((x) => x.id === p.gameId);
-          return g ? `- **${g.name} ${p.denomination}** — ${idr(p.priceIdr)}` : null;
-        })
-        .filter(Boolean)
-        .join("\n") +
+      valueLines +
       "\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮",
   });
 

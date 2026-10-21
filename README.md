@@ -281,6 +281,18 @@ The current version is visible in the storefront footer and in
 
 ## 📋 Changelog
 
+### v1.19.1 — Fix bundel SDK + produk bonus (2026-10-21)
+- **📦 SDK ikut ter-bundle di `api/chat.js`** — `includeFiles` vercel.json
+  memastikan `z-ai-web-dev-sdk` tersedia di dalam Serverless Function
+  (sebelumnya dynamic import gagal di bundel @vercel/node → endpoint publik
+  diam-diam mundur ke NLP).
+- **💎 Deteksi produk bonus** — format katalog memakai field `bonus`
+  (33 produk), bukan tanda "+" di denominasi (0 produk) — jawaban
+  "rekomendasi value" yang sebelumnya selalu KOSONG kini menampilkan daftar
+  produk berbonus; fallback daftar termurah bila tidak ada bonus sama sekali.
+- **🔍 Diagnostik otak** — `GET /api/chat` kini melaporkan status otak LLM
+  (tersedia/tidak + sumber koneksi) tanpa membocorkan rahasia.
+
 ### v1.19.0 — Otak cerdas LLM untuk Nexa Bot (2026-10-21)
 - **🧠 Dua-otak: LLM + NLP** — pipeline chat baru: lapisan deterministik
   (keamanan → status pesanan → kalkulator → agent keranjang → resolver
