@@ -3,7 +3,8 @@
   "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_MESSAGE\" in store:*|chat:*|analytics:*|ops:*|media:*|bot-brain:*) exit 0;; *) exit 1;; esac",
   "functions": {
     "api/chat.js": {
-      "includeFiles": "node_modules/z-ai-web-dev-sdk/**"
+      "includeFiles": "node_modules/z-ai-web-dev-sdk/**",
+      "maxDuration": 30
     }
   }
 }

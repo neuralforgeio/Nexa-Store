@@ -33,7 +33,7 @@
 
 "use strict";
 
-const LLM_TIMEOUT_MS = 9000; // batas keras — serverless Vercel ~10 dtk
+const LLM_TIMEOUT_MS = 20000; // egress produksi (Vercel → API) lebih lambat dari sandbox
 const LLM_MAX_TOKENS = 1600; // penalaran + jawaban chat ≤ 800 karakter
 const LLM_TEMPERATURE = 0.6;
 
@@ -450,32 +450,31 @@ async function llmAnswer(p) {
   const attempt = () =>
     z.client.chat.completions.create({
       messages,
-      // Penalaran diaktifkan — bot dituntut bisa MENARIK KESIMPULAN
-      // (filter budget, min/maks, perbandingan) atas data katalog.
-      thinking: { type: "enabled" },
+      // Thinking dimatikan demi kecepatan — ketepatan angka dijamin lembar
+      // PRECOMPUTED FACTS (termurah/termahal/budget dihitung presisi di server).
+      thinking: { type: "disabled" },
       temperature: LLM_TEMPERATURE,
       max_tokens: LLM_MAX_TOKENS,
     });
   try {
     const t0 = Date.now();
     let guarded;
+    const raceTimeout = (budgetMs) =>
+      Promise.race([
+        attempt(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error("llm-timeout")), budgetMs);
+        }),
+      ]);
     try {
-      guarded = await Promise.race([
-        attempt(),
-        new Promise((_, reject) => {
-          timer = setTimeout(() => reject(new Error("llm-timeout")), LLM_TIMEOUT_MS);
-        }),
-      ]);
+      guarded = await raceTimeout(LLM_TIMEOUT_MS);
     } catch (first) {
-      // Kegagalan singkat (jaringan/gangguan sesaat) → satu kali ulang.
-      // Timeout panjang TIDAK diulang — tetap dalam anggaran waktu serverless.
-      if (String(first && first.message).includes("llm-timeout") || Date.now() - t0 > 3000) throw first;
-      guarded = await Promise.race([
-        attempt(),
-        new Promise((_, reject) => {
-          timer = setTimeout(() => reject(new Error("llm-timeout")), LLM_TIMEOUT_MS);
-        }),
-      ]);
+      // Kegagalan singkat (jaringan/gangguan sesaat) → satu kali ulang dengan
+      // sisa anggaran waktu. Timeout panjang TIDAK diulang.
+      const spent = Date.now() - t0;
+      if (String(first && first.message).includes("llm-timeout") || spent > 3000) throw first;
+      const remaining = Math.max(6000, LLM_TIMEOUT_MS - spent);
+      guarded = await raceTimeout(remaining);
     }
     const content = guarded && guarded.choices && guarded.choices[0] && guarded.choices[0].message
       ? guarded.choices[0].message.content

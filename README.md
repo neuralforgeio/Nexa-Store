@@ -281,6 +281,16 @@ The current version is visible in the storefront footer and in
 
 ## 📋 Changelog
 
+### v1.19.2 — Performa otak LLM di produksi (2026-10-21)
+- **⚡ Thinking mode dimatikan** — inferensi lebih cepat; ketepatan angka
+  (termurah/termahal/budget) tetap terjamin lembar PRECOMPUTED FACTS yang
+  dihitung presisi di server.
+- **⏱️ Timeout LLM 9s → 20s + maxDuration 30** — egress Vercel → API lebih
+  lambat daripada sandbox; budget waktu fungsi dinaikkan agar jawaban LLM
+  sempat tiba (sebelumnya diam-diam timeout → jatuh ke NLP cadangan).
+- **🔁 Ulang sekali dengan sisa anggaran** — kegagalan singkat (<3 dtk)
+  dicoba ulang memakai sisa waktu, tidak pernah melebihi batas fungsi.
+
 ### v1.19.1 — Fix bundel SDK + produk bonus (2026-10-21)
 - **📦 SDK ikut ter-bundle di `api/chat.js`** — `includeFiles` vercel.json
   memastikan `z-ai-web-dev-sdk` tersedia di dalam Serverless Function

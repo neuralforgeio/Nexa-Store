@@ -10,6 +10,7 @@ import type { ChatConversation, ChatMessage } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 /**
  * Public live-chat endpoint (v1.3.0).
