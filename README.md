@@ -281,6 +281,27 @@ The current version is visible in the storefront footer and in
 
 ## 📋 Changelog
 
+### v1.20.0 — Kalkulator budget presisi + arsitektur dua-otak final (2026-10-21)
+- **💸 nexa-budget.js — kalkulator budget** — "modal 50rb bisa top up apa?",
+  "budget 15 ribu di ml?" dijawab INSTAN dan presisi dari data live: produk
+  yang benar-benar muat (nominal terbesar per game), fokus otomatis ke game
+  yang disebut, saran termurah bila budget kurang. Pola nexa-math (deteksi
+  pola → hitung → render) — identik di sandbox & produksi, tanpa LLM.
+- **🧠 Arsitektur dua-otak final** — endpoint API LLM bersifat internal
+  (IP privat, hanya dari jaringan sandbox), maka: **sandbox** memakai otak
+  LLM penuh (pemahaman maksud, penalaran, memori obrolan); **produksi**
+  memakai lapisan deterministik + NLP terlatih ulang — semua instan. Env
+  `ZAI_*` dicabut dari Vercel (mencegah penalti 10 dtk koneksi gagal).
+- **🔍 Diagnostik mesin jawaban** — respons chat menyertakan `botEngine`
+  (llm/local/fast) + kategori kegagalan LLM (timeout/network/http) — tanpa
+  rahasia; `GET /api/chat` ikut melaporkan status otak.
+- **🐛 Fix**: deteksi game pada kalimat bertanda baca ("di ml?", "buat free
+  fire?") dan pemilihan nominal terbesar per game pada daftar budget.
+
+### v1.19.4 — Fix tipe BotReply.llmDebug (2026-10-21)
+
+### v1.19.3 — Diagnostik otak LLM pada respons chat (2026-10-21)
+
 ### v1.19.2 — Performa otak LLM di produksi (2026-10-21)
 - **⚡ Thinking mode dimatikan** — inferensi lebih cepat; ketepatan angka
   (termurah/termahal/budget) tetap terjamin lembar PRECOMPUTED FACTS yang

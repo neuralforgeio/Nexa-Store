@@ -340,6 +340,26 @@ async function answer(text, lexiconOverride, ctx = {}) {
     }
   }
 
+  // 1.7 KALKULATOR BUDGET (v1.20.0) — "modal 50rb bisa apa?" presisi dari
+  // leksikon live (pola nexa-math) — identik dengan engine situs.
+  try {
+    const { budgetMatch, renderBudgetAnswer } = require("./nexa-budget.js");
+    const budgetHit = budgetMatch(clean, lexicon.products || [], lexicon.games || []);
+    if (budgetHit) {
+      const prices = (lexicon.products || [])
+        .filter((p) => typeof p.priceIdr === "number" && p.priceIdr > 0)
+        .map((p) => p.priceIdr);
+      const overallCheapest = prices.length > 0 ? Math.min(...prices) : null;
+      return {
+        intent: budgetHit.gameName ? "budget.game" : "budget.all",
+        score: 1,
+        answer: sanitizeAnswer(renderBudgetAnswer(budgetHit, overallCheapest).slice(0, 780)),
+      };
+    }
+  } catch {
+    /* modul tak tersedia — lanjut pipeline */
+  }
+
   // 2. Resolver katalog.
   const hit = resolveCatalogQuery(clean, lexicon);
   if (hit) {

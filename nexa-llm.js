@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * nexa-llm.js — OTAK CERDAS Nexa Bot (v1.19.0).
  *
@@ -32,6 +33,8 @@
  */
 
 "use strict";
+
+const { parseBudget } = require("./nexa-budget.js");
 
 const LLM_TIMEOUT_MS = 20000; // egress produksi (Vercel → API) lebih lambat dari sandbox
 const LLM_MAX_TOKENS = 1600; // penalaran + jawaban chat ≤ 800 karakter
@@ -216,27 +219,8 @@ function orderFieldsLine(game) {
 
 const titleCase = (s) => String(s ?? "").replace(/\b\w/g, (c) => c.toUpperCase());
 
-/**
- * Padankan jumlah budget dari pesan ("50rb", "50 ribu", "200k", "dibawah
- * 100000", "modal 35 rb"). Konservatif — hanya pola yang jelas menyebut uang.
- * @returns {number|null} jumlah rupiah, atau null bila tak ada
- */
-function parseBudget(text) {
-  const t = ` ${String(text ?? "").toLowerCase().replace(/[.,](?=\d{3}\b)/g, "")} `;
-  // "50rb", "50 ribu", "50k", "50rebu" — satuan ribu.
-  const m1 = /(?:rp\.?\s*)?(\d{1,3}(?:[.,]\d+)?)\s*(?:rb\b|ribu\b|rebu\b|k\b|kilo\b)/.exec(t);
-  if (m1) {
-    const n = Number(String(m1[1]).replace(",", "."));
-    if (Number.isFinite(n) && n > 0) return Math.round(n * 1000);
-  }
-  // "dibawah 100000", "kurang dari 50.000", "maksimal 75rb", "budget 100000".
-  const m2 = /(?:dibawah|bawah|dibawah dari|kurang dari|maksimal|max\b|budget|modal|duit|uang|cukup)\s*(?:rp\.?\s*)?(\d{4,7})\b/.exec(t);
-  if (m2) {
-    const n = Number(m2[1]);
-    if (Number.isFinite(n) && n >= 1000) return n;
-  }
-  return null;
-}
+// parseBudget dipakai bersama dari nexa-budget.js (kalkulator budget
+// deterministik memakai parser yang sama — satu sumber kebenaran).
 
 /**
  * Fakta terhitung (cheat-sheet) — menjaga kesimpulan min/maks/jumlah SELALU

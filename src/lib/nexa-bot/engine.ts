@@ -7,6 +7,7 @@ import { buildOverlay, matchOverlay, personalize } from "../../../nexa-overlay.j
 import { renderIntentLive, renderOrderStatus, ORDER_ID_RE } from "../../../nexa-userctx.js";
 import { AGENT_TTL_MS, agentAddToCart, agentFillData, detectPurchaseIntent, extractAccountData } from "../../../nexa-agent.js";
 import { llmAnswer, llmStatus } from "../../../nexa-llm.js";
+import { budgetMatch, renderBudgetAnswer } from "../../../nexa-budget.js";
 import { getRepository } from "@/lib/catalog/repo";
 import type { Game, Product } from "@/lib/catalog/types";
 import { readFeature } from "@/lib/site-features/store";
@@ -719,6 +720,27 @@ async function nexaBotAnswerInner(
   // data akun ke item yang tertunda. Aksi bersifat ephemeral (respons POST).
   const agentReply = runAgentStep(clean, lexicon, live, userName, ctx.pendingProduct ?? null);
   if (agentReply) return agentReply;
+
+  // 1.7 KALKULATOR BUDGET (v1.20.0) — "modal 50rb bisa top up apa?" dijawab
+  // presisi dari data live: daftar produk yang benar-benar muat di budget
+  // (nominal terbesar per game), fokus ke game yang disebut bila ada.
+  // Pola nexa-math: deteksi pola → hitung → render — tanpa menunggu LLM,
+  // identik di sandbox maupun produksi.
+  const lexProducts = (lexicon.products ?? []) as Array<{
+    id: string; gameId: string; label?: string; priceIdr?: number; gameName?: string;
+  }>;
+  const lexGames = (lexicon.games ?? []) as Array<{ id: string; name: string; aliases?: string[] }>;
+  const budgetHit = budgetMatch(clean, lexProducts, lexGames);
+  if (budgetHit) {
+    const overallCheapest = lexProducts.length > 0
+      ? Math.min(...lexProducts.filter((p) => typeof p.priceIdr === "number" && p.priceIdr > 0).map((p) => p.priceIdr as number))
+      : null;
+    return {
+      intent: budgetHit.gameName ? "budget.game" : "budget.all",
+      score: 1,
+      answer: sanitizeAnswer(renderBudgetAnswer(budgetHit, overallCheapest).slice(0, MAX_ANSWER)),
+    };
+  }
 
   // 2. Resolver katalog deterministik (game + nominal).
   const hit = resolveCatalogQuery(clean, lexicon as never);
