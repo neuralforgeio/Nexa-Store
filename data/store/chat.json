@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_5e2b6dfcc78002129bd9c06a",
+      "name": "Dearly",
+      "createdAt": "2026-10-21T12:47:51.403Z",
+      "messages": [
+        {
+          "id": "m_mvi3xu97fxmw",
+          "from": "user",
+          "text": "game yang punya product paling murah apa, sebutin 1 saja",
+          "at": "2026-10-21T12:47:51.403Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T12:47:51.403Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_aa861052b2d1261efa8be1db",
       "name": "Dearly",
       "createdAt": "2026-10-21T11:26:38.147Z",
