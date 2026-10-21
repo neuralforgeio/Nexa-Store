@@ -1,52 +1,6 @@
 {
   "conversations": [
     {
-      "id": "c_b313a6bfdc7b8ad921196f21",
-      "name": "Dearly",
-      "createdAt": "2026-10-21T09:46:38.289Z",
-      "messages": [
-        {
-          "id": "m_mvhxgsi9hnhq",
-          "from": "user",
-          "text": "hai, siapa aku dan siapa kamu",
-          "at": "2026-10-21T09:46:38.289Z"
-        },
-        {
-          "id": "m_mvhxgu5bdb6s",
-          "from": "bot",
-          "text": "Kamu Dearly! 😄 Nama itu terpasang di identitas chat-mu — tekan \"Ubah\" di bawah kalau mau berganti nama. Aku selalu memanggilmu Dearly!",
-          "at": "2026-10-21T09:46:40.415Z"
-        },
-        {
-          "id": "m_mvhxh1zx6wzx",
-          "from": "user",
-          "text": "terus kamu siapa",
-          "at": "2026-10-21T09:46:50.589Z"
-        },
-        {
-          "id": "m_mvhxh3n0sma0",
-          "from": "bot",
-          "text": "Aku diciptakan oleh Dearly Febriano Irwansyah 👨‍💻 — seorang Software Engineer asal Surabaya, Indonesia. Kamu bisa lihat karya-karyanya di GitHub: github.com/neuralforgeio. Untuk urusan top up game, aku yang siap bantu!",
-          "at": "2026-10-21T09:46:52.716Z"
-        },
-        {
-          "id": "m_mvhxh87wd0dp",
-          "from": "user",
-          "text": "namamu",
-          "at": "2026-10-21T09:46:58.652Z"
-        },
-        {
-          "id": "m_mvhxh9ph56kx",
-          "from": "bot",
-          "text": "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE. Coba tanya: nama game (mis. \"free fire\"), \"berapa total game\", \"cara top up\", \"lacak pesanan\", atau \"rekomendasi termurah\".",
-          "at": "2026-10-21T09:47:00.581Z"
-        }
-      ],
-      "lastMessageAt": "2026-10-21T09:47:00.581Z",
-      "unreadByOwner": 3,
-      "ownerLastReadAt": null
-    },
-    {
       "id": "c_3ec5b34a2317f1ded74b5acd",
       "name": "Dearly",
       "createdAt": "2026-10-21T09:25:41.495Z",
