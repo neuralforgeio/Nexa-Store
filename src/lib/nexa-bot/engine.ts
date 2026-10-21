@@ -40,6 +40,8 @@ export type BotReply = {
   answer: string;
   /** v1.18.0: aksi agent (ephemeral — hanya lewat respons POST chat). */
   actions?: AgentAction[];
+  /** v1.19.0: diagnostik otak LLM (ephemeral — hanya metadata respons). */
+  llmDebug?: { ok: boolean; kind: string; ms: number };
 };
 
 /** Aksi keranjang dari agent — dieksekusi klien web, tidak pernah dipersist. */
