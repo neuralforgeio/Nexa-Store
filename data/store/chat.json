@@ -1,40 +1,6 @@
 {
   "conversations": [
     {
-      "id": "c_cf99f168b05e76cf01557f19",
-      "name": "Dearly",
-      "createdAt": "2026-10-21T13:04:17.765Z",
-      "messages": [
-        {
-          "id": "m_mvi4izc52vov",
-          "from": "user",
-          "text": "halo bro, lagi ada promo apa aja gak?",
-          "at": "2026-10-21T13:04:17.765Z"
-        },
-        {
-          "id": "m_mvi4j01s3e6w",
-          "from": "bot",
-          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
-          "at": "2026-10-21T13:04:18.688Z"
-        },
-        {
-          "id": "m_mvi4jz45wfb2",
-          "from": "user",
-          "text": "halo bro, lagi ada promo apa aja gak hari ini?",
-          "at": "2026-10-21T13:05:04.133Z"
-        },
-        {
-          "id": "m_mvi4jztmas57",
-          "from": "bot",
-          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
-          "at": "2026-10-21T13:05:05.050Z"
-        }
-      ],
-      "lastMessageAt": "2026-10-21T13:05:05.050Z",
-      "unreadByOwner": 2,
-      "ownerLastReadAt": null
-    },
-    {
       "id": "c_5e2b6dfcc78002129bd9c06a",
       "name": "Dearly",
       "createdAt": "2026-10-21T12:47:51.403Z",
@@ -86,16 +52,56 @@
           "from": "bot",
           "text": "### 💎 Paling worth it (ada bonus ekstra)\n\n- **Genshin Impact 300 (++30)** — Rp82.000\n- **Genshin Impact 980 (++110)** — Rp256.000\n- **Genshin Impact 1980 (++260)** — Rp485.000\n- **Genshin Impact 3280 (++600)** — Rp806.000\n- **Genshin Impact 6480 (++1600)** — Rp1.710.000\n- **Honkai: Star Rail 300 (++30)** — Rp82.000\n- **Honkai: Star Rail 980 (++110)** — Rp248.000\n- **Honkai: Star Rail 1980 (++260)** — Rp474.000\n- **Honkai: Star Rail 3280 (++600)** — Rp792.000\n- **Honkai: Star Rail 6480 (++1600)** — Rp1.607.000\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮",
           "at": "2026-10-21T13:01:07.987Z"
+        },
+        {
+          "id": "m_mvi4m7c7rnvu",
+          "from": "user",
+          "text": "kalau duit aku cuma 47 ribu, top up apa yang paling worth it buat free fire?",
+          "at": "2026-10-21T13:06:48.103Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T13:01:07.987Z",
-      "unreadByOwner": 4,
+      "lastMessageAt": "2026-10-21T13:06:48.103Z",
+      "unreadByOwner": 5,
       "ownerLastReadAt": null,
       "agent": {
         "productId": "free-fire-2000",
         "gameId": "free-fire",
         "at": "2026-10-21T12:48:25.169Z"
       }
+    },
+    {
+      "id": "c_cf99f168b05e76cf01557f19",
+      "name": "Dearly",
+      "createdAt": "2026-10-21T13:04:17.765Z",
+      "messages": [
+        {
+          "id": "m_mvi4izc52vov",
+          "from": "user",
+          "text": "halo bro, lagi ada promo apa aja gak?",
+          "at": "2026-10-21T13:04:17.765Z"
+        },
+        {
+          "id": "m_mvi4j01s3e6w",
+          "from": "bot",
+          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
+          "at": "2026-10-21T13:04:18.688Z"
+        },
+        {
+          "id": "m_mvi4jz45wfb2",
+          "from": "user",
+          "text": "halo bro, lagi ada promo apa aja gak hari ini?",
+          "at": "2026-10-21T13:05:04.133Z"
+        },
+        {
+          "id": "m_mvi4jztmas57",
+          "from": "bot",
+          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
+          "at": "2026-10-21T13:05:05.050Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T13:05:05.050Z",
+      "unreadByOwner": 2,
+      "ownerLastReadAt": null
     },
     {
       "id": "c_aa861052b2d1261efa8be1db",
