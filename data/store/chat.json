@@ -20,7 +20,12 @@
       ],
       "lastMessageAt": "2026-10-21T11:26:10.434Z",
       "unreadByOwner": 1,
-      "ownerLastReadAt": null
+      "ownerLastReadAt": null,
+      "agent": {
+        "productId": "mobile-legends-weekly",
+        "gameId": "mobile-legends",
+        "at": "2026-10-21T11:26:11.649Z"
+      }
     },
     {
       "id": "c_b313a6bfdc7b8ad921196f21",
