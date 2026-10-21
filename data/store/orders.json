@@ -1,6 +1,31 @@
 {
   "orders": [
     {
+      "id": "NEXA-261021-6XH4",
+      "source": "instant",
+      "summary": "FF MAX — 400 Diamonds",
+      "customerName": "dd",
+      "items": [
+        {
+          "gameName": "FF MAX",
+          "productName": "400 Diamonds",
+          "price": 52000
+        }
+      ],
+      "total": 52000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-10-21T05:47:15.006Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-10-21T05:47:15.006Z",
+          "reason": null
+        }
+      ]
+    },
+    {
       "id": "NEXA-261019-7GEZ",
       "source": "instant",
       "summary": "FF MAX — Member Bulanan",
