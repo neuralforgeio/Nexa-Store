@@ -14,8 +14,8 @@
       ],
       "total": 159000,
       "status": "processing",
-      "statusReason": null,
-      "statusUpdatedAt": "2026-10-21T08:25:05.433Z",
+      "statusReason": "Terimakasih sudah melakukan pemesanan via Nexa-Store, Kami sangat berterimakasih kepada anda soal ini😊",
+      "statusUpdatedAt": "2026-10-21T08:25:40.682Z",
       "createdAt": "2026-10-21T08:24:28.749Z",
       "history": [
         {
@@ -27,6 +27,11 @@
           "status": "processing",
           "at": "2026-10-21T08:25:05.433Z",
           "reason": null
+        },
+        {
+          "status": "processing",
+          "at": "2026-10-21T08:25:40.682Z",
+          "reason": "Terimakasih sudah melakukan pemesanan via Nexa-Store, Kami sangat berterimakasih kepada anda soal ini😊"
         }
       ]
     },
