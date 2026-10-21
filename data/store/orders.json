@@ -13,9 +13,9 @@
         }
       ],
       "total": 52000,
-      "status": "pending",
-      "statusReason": "halo>>??",
-      "statusUpdatedAt": "2026-10-21T05:49:01.480Z",
+      "status": "success",
+      "statusReason": null,
+      "statusUpdatedAt": "2026-10-21T05:49:22.005Z",
       "createdAt": "2026-10-21T05:47:15.006Z",
       "history": [
         {
@@ -27,6 +27,11 @@
           "status": "pending",
           "at": "2026-10-21T05:49:01.480Z",
           "reason": "halo>>??"
+        },
+        {
+          "status": "success",
+          "at": "2026-10-21T05:49:22.005Z",
+          "reason": null
         }
       ]
     },
