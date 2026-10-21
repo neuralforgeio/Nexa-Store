@@ -28,10 +28,16 @@
           "from": "bot",
           "text": "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE. Coba tanya: nama game (mis. \"free fire\"), \"cara top up\", \"lacak pesanan\", atau \"rekomendasi termurah\".",
           "at": "2026-10-21T08:04:53.188Z"
+        },
+        {
+          "id": "m_mvhtu5bxlrqv",
+          "from": "user",
+          "text": "total game ada berapa",
+          "at": "2026-10-21T08:05:02.973Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T08:04:53.188Z",
-      "unreadByOwner": 2,
+      "lastMessageAt": "2026-10-21T08:05:02.973Z",
+      "unreadByOwner": 3,
       "ownerLastReadAt": null
     }
   ]
