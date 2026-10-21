@@ -46,9 +46,15 @@
           "from": "user",
           "text": "mana gamasuk ke keranjang tuh, apa saja yang diperlukan data datanya",
           "at": "2026-10-21T08:21:48.410Z"
+        },
+        {
+          "id": "m_mvhufqj9wm6n",
+          "from": "bot",
+          "text": "Aku bisa bantu: 🎮 daftar harga 22 game (ketik nama game, mis. \"ml\" atau \"ff\") • 💸 rekomendasi top up termurah • 📋 cara top up & pembayaran • 📦 lacak pesanan • 🐞 lapor bug. Cukup ketik pertanyaanmu seputar NEXA STORE!",
+          "at": "2026-10-21T08:21:50.229Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T08:21:48.410Z",
+      "lastMessageAt": "2026-10-21T08:21:50.229Z",
       "unreadByOwner": 4,
       "ownerLastReadAt": null
     }
