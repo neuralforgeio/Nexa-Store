@@ -16,10 +16,16 @@
           "from": "bot",
           "text": "Kamu Dearly! 😄 Nama itu terpasang di identitas chat-mu — tekan \"Ubah\" di bawah kalau mau berganti nama. Aku selalu memanggilmu Dearly!",
           "at": "2026-10-21T09:46:40.415Z"
+        },
+        {
+          "id": "m_mvhxh1zx6wzx",
+          "from": "user",
+          "text": "terus kamu siapa",
+          "at": "2026-10-21T09:46:50.589Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T09:46:40.415Z",
-      "unreadByOwner": 1,
+      "lastMessageAt": "2026-10-21T09:46:50.589Z",
+      "unreadByOwner": 2,
       "ownerLastReadAt": null
     },
     {
