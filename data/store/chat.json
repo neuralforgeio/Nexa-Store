@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_671becdcb5979326b3899b68",
+      "name": "ProdTest",
+      "createdAt": "2026-10-21T11:19:15.901Z",
+      "messages": [
+        {
+          "id": "m_mvi0rwsd6x8z",
+          "from": "user",
+          "text": "pesan ini dong 2000 diamonds Rp246.000 ff",
+          "at": "2026-10-21T11:19:15.901Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T11:19:15.901Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_58ab836a015557a5ccb41369",
       "name": "Dearly",
       "createdAt": "2026-10-21T11:00:25.010Z",
