@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_3ec5b34a2317f1ded74b5acd",
+      "name": "Dearly",
+      "createdAt": "2026-10-21T09:25:41.495Z",
+      "messages": [
+        {
+          "id": "m_mvhwpurbtw0o",
+          "from": "user",
+          "text": "hai, apakah kamu mengenal saya",
+          "at": "2026-10-21T09:25:41.495Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T09:25:41.495Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_6b9b11551c7fe5c13a0c6e7a",
       "name": "Dearly",
       "createdAt": "2026-10-21T09:10:31.826Z",
