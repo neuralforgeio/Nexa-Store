@@ -101,11 +101,17 @@ async function readCustomBrainFromGithub() {
   const branch = process.env.GITHUB_BRANCH || "main";
   const token = process.env.GITHUB_TOKEN;
   if (!owner || !repo) return null;
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/store/bot-brain.json`;
+  // Pakai Contents API + media-type raw — pola yang terbukti jalan di produksi
+  // (identik src/lib/site-features/store.ts; JSON default menolak file >1MB).
+  const api = `https://api.github.com/repos/${owner}/${repo}/contents/data/store/bot-brain.json?ref=${encodeURIComponent(branch)}`;
   try {
-    const res = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}`, "User-Agent": "nexa-bot" } : { "User-Agent": "nexa-bot" },
-      signal: AbortSignal.timeout(8000),
+    const res = await fetch(api, {
+      headers: {
+        Accept: "application/vnd.github.raw",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "User-Agent": "nexa-bot",
+      },
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return null;
     const parsed = JSON.parse(await res.text());
@@ -119,20 +125,33 @@ async function readCustomBrainFromGithub() {
 async function loadCustomBrain() {
   if (customBrainState && Date.now() - customBrainState.at < BRAIN_TTL_MS) return customBrainState;
   let file = readCustomBrainFromFs();
+  const source = file ? "fs" : null;
   if (!file) file = await readCustomBrainFromGithub();
   if (!file) {
-    customBrainState = { key: "none", modelJson: null, customIntents: [], overlay: buildOverlay([]), at: Date.now() };
+    customBrainState = { key: "none", source: "bundled", modelJson: null, customIntents: [], overlay: buildOverlay([]), at: Date.now() };
     return customBrainState;
   }
   const modelJson = typeof file.modelJson === "string" && file.modelJson.length > 10 ? file.modelJson : null;
   customBrainState = {
     key: modelJson && file.trainedAt ? `custom-${file.trainedAt}` : "bundled",
+    source: source ?? "github",
     modelJson,
     customIntents: file.customIntents,
     overlay: buildOverlay(file.customIntents),
     at: Date.now(),
   };
   return customBrainState;
+}
+
+/** Diagnostik ringan untuk GET /api/chat — tanpa rahasia. */
+async function brainInfo() {
+  const s = await loadCustomBrain();
+  return {
+    source: s.source,
+    key: s.key,
+    customIntents: s.customIntents.length,
+    hasModel: Boolean(s.modelJson),
+  };
 }
 
 const nlpCache = new Map();
@@ -325,4 +344,4 @@ async function answer(text, lexiconOverride, ctx = {}) {
   return { intent: "None", score: (r && r.score) || 0, answer: FALLBACK };
 }
 
-module.exports = { answer, mergeLexicon, loadBrain, loadCustomBrain, renderOrderStatus, ORDER_ID_RE };
+module.exports = { answer, mergeLexicon, loadBrain, loadCustomBrain, brainInfo, renderOrderStatus, ORDER_ID_RE };

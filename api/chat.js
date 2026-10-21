@@ -32,13 +32,15 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === "GET") {
+    const info = await standalone.brainInfo().catch(() => null);
     res.status(200).json({
       ok: true,
       data: {
         bot: "Nexa Bot",
         by: "Dearly Febriano Irwansyah (github.com/neuralforgeio)",
         engine: "@nlpjs/basic — model lokal NEXA STORE",
-        usage: 'POST {"text":"harga free fire"}',
+        brain: info,
+        usage: 'POST {"text":"harga free fire","userName":"Dearly"}',
       },
     });
     return;
