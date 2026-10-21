@@ -495,6 +495,8 @@ export type AiDatasetIntent = { intent: string; utterances: string[]; answer: st
 export type AiBotStatus = {
   brain: {
     active: "bundled" | "custom";
+    /** v1.19.0: status otak cerdas LLM (pemahaman bahasa + penalaran). */
+    llm: { available: boolean; source: string };
     custom: {
       version: string | null;
       trainedAt: string | null;

@@ -75,7 +75,7 @@ async function main() {
   console.log(`• model.nlp ditulis (${(modelJson.length / 1024 / 1024).toFixed(2)} MB)`);
 
   const brain = {
-    version: "1.18.0",
+    version: "1.19.0",
     trainedAt: now.toISOString(),
     trainedAtLabel: trainedAt,
     persona: PERSONA,

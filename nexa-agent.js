@@ -202,12 +202,16 @@ function extractAccountData(text, orderFields) {
   }
 
   // Angka telanjang: field numerik wajib yang tersisa vs sisa angka di pesan.
+  // PENTING (v1.19.0): bila pesan berbau PERTANYAAN ("berapa", "harga", "?"),
+  // angka telanjang HARAM dipakai sebagai data — "kalo yang 5000 diamonds
+  // berapa?" adalah pertanyaan harga, bukan pengiriman data akun.
+  const asksPrice = /(berapa|harga|gmn|gimana|bagaimana|kenapa|kapan|\?)/.test(work);
   const leftovers = [];
   for (const m of work.matchAll(/(?:^|\s)(\d{4,16})(?=\s|$)/g)) leftovers.push(m[1]);
   const needNumbers = fieldsSafe.filter(
     (f) => f.required !== false && f.type === "number" && !fields[f.key]
   );
-  if (needNumbers.length > 0 && leftovers.length > 0) {
+  if (!asksPrice && needNumbers.length > 0 && leftovers.length > 0) {
     if (needNumbers.length === 1 && leftovers.length >= 1) {
       const f = needNumbers[0];
       const value = leftovers[0];

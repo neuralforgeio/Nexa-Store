@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
       catalog: catalogStats,
       engine: {
         mode: status.active,
-        pipeline: "guard → order-status → math → resolver → overlay-kustom → NLP → gate",
-        personalization: "ctx.userName (identitas chat / Telegram)",
+        pipeline: "guard → order-status → math → agent-keranjang → resolver → overlay-kustom → OTAK LLM → NLP (cadangan) → gate",
+        personalization: "ctx.userName + riwayat obrolan (identitas chat / Telegram)",
       },
     });
   } catch {

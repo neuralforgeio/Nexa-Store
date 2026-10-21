@@ -360,6 +360,49 @@ async function answer(text, lexiconOverride, ctx = {}) {
     }
   }
 
+  // 2.6 OTAK CERDAS LLM (v1.19.0) — bila SDK tersedia (sandbox/produksi),
+  // pertanyaan terbuka dijawab dengan pemahaman + penalaran atas data
+  // leksikon live. Jalur tanpa keranjang (Telegram/api): jawaban menautkan
+  // ke halaman game. Gagal/timeout/SDK absen → lanjut ke NLP lokal.
+  try {
+    const { llmAnswer } = require("./nexa-llm.js");
+    const llmGames = (lexicon.games || []).map((g) => ({
+      id: g.id,
+      name: g.name,
+      slug: g.slug || g.id,
+      orderFieldSchema: Array.isArray(g.orderFieldSchema) ? g.orderFieldSchema : [],
+    }));
+    const llmProducts = (lexicon.products || []).map((p) => ({
+      id: p.id,
+      gameId: p.gameId,
+      name: p.gameName || "",
+      denomination: p.denomFull || p.denom || "",
+      priceIdr: typeof p.priceIdr === "number" ? p.priceIdr : 0,
+      enabled: true,
+      label: p.label,
+    }));
+    const today = new Intl.DateTimeFormat("id-ID", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta",
+    }).format(new Date());
+    const out = await llmAnswer({
+      text: clean,
+      userName,
+      history: (ctx && ctx.history) || [],
+      games: llmGames,
+      products: llmProducts,
+      promos: [],
+      pendingProduct: null,
+      cartActions: false,
+      siteUrl: process.env.NEXA_SITE_URL || "https://nexastoregame.vercel.app",
+      today,
+    });
+    if (out && out.answer) {
+      return { intent: "llm.answer", score: 1, answer: sanitizeAnswer(out.answer.slice(0, 780)) };
+    }
+  } catch {
+    /* LLM tak tersedia di lingkungan ini — lanjut ke NLP lokal */
+  }
+
   // 3. NLP — jawaban positif hanya bila pesan dalam ranah (anti-hijack).
   const nlp = await getNlpFor(custom.key, custom.modelJson);
   const r = await nlp.process("en", clean);

@@ -168,7 +168,7 @@ function builtinIntents() {
     },
     {
       intent: "store.cheapest.overall",
-      utterances: ["nominal termurah", "produk termurah", "termurah berapa", "nominal paling murah berapa", "harga paling rendah", "termurah di toko ini", "nominal paling murah", "produk paling murah", "harga paling murah berapa", "yang paling murah berapa", "paling murah berapa", "murah berapa"],
+      utterances: ["nominal termurah", "produk termurah", "termurah berapa", "nominal paling murah berapa", "harga paling rendah", "termurah di toko ini", "nominal paling murah", "produk paling murah", "harga paling murah berapa", "yang paling murah berapa", "paling murah berapa", "murah berapa", "game yang punya product paling murah", "game yang punya produk paling murah", "game yang produknya paling murah", "game mana yang paling murah", "game termurah", "game paling murah", "game termurah apa", "game paling murah apa", "top up paling murah apa", "produk paling murah apa", "yang paling murah apa", "sebutin yang paling murah", "sebutin satu yang paling murah", "paling murah yang mana", "murah yang mana", "berapa modal minimal buat top up", "modal paling kecil buat top up", "top up termurah mulai dari berapa"],
       answer: `Top up termurah di ${PERSONA.store} mulai dari harga bumi! 💸 Ketik "rekomendasi termurah" buat lihat daftar lengkap per game.`,
     },
     {
@@ -517,7 +517,7 @@ function buildCorpus(games, products, trainedAt, opts = {}) {
 
   intents.push({
     intent: "rekomendasi.cheap",
-    utterances: ["rekomendasi termurah", "top up paling murah", "yang paling murah", "harga termurah", "top up murah", "budget tipis", "duit tipis", "murah banget apa", "paling hemat", "rekomendasi murah", "yang murah apa", "top up dibawah 20 ribu", "budget 10 ribu", "budget 20 ribu", "hemat duit", "yang paling murah apa", "top up kecil", "top up dibawah 15 ribu", "dibawah 20rb", "murah"],
+    utterances: ["rekomendasi termurah", "top up paling murah", "yang paling murah", "harga termurah", "top up murah", "budget tipis", "duit tipis", "murah banget apa", "paling hemat", "rekomendasi murah", "yang murah apa", "top up dibawah 20 ribu", "budget 10 ribu", "budget 20 ribu", "hemat duit", "yang paling murah apa", "top up kecil", "top up dibawah 15 ribu", "dibawah 20rb", "murah", "game yang punya product paling murah", "game yang produknya paling murah", "game termurah mana", "paling murah mana", "yang murah murah apa aja", "produk termurah di toko ini", "nominal paling murah berapa", "berapa modal minimal", "murahin dong", "yang paling murah sebutin 1", "sebutin 1 game yang paling murah", "modal 50 ribu bisa apa", "modal 30 ribu bisa top up apa", "budget 50 ribu bisa apa", "duit 50rb cukup beli apa", "yang hemat apa aja"],
     answer:
       "### 💸 Top up termurah di NEXA STORE\n\n" +
       cheapest.slice(0, 8).map((c) => `- **${c.game.name}** — ${productLabel(c.product, c.game)} · ${idr(c.product.priceIdr)}`).join("\n") +

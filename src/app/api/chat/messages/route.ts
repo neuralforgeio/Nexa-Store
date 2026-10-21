@@ -286,9 +286,15 @@ export async function POST(req: NextRequest) {
       // memasukkan produk ke keranjang, "id saya 123…" mengisi data akun.
       const conversation: ChatConversation = updated;
       try {
+        // v1.19.0: riwayat obrolan (tanpa pesan terkini) diikutkan — otak LLM
+        // mengingat konteks percakapan, menjawab lanjutan secara wajar.
+        const history = (conversation.messages ?? [])
+          .slice(-13, -1)
+          .map((m) => ({ from: m.from, text: m.text }));
         const reply = await nexaBotAnswer(text, {
           userName: conversation.name ?? null,
           pendingProduct: conversation.agent ?? null,
+          history,
         });
         if (reply?.answer) {
           botMessage = await appendBotMessage(conversationId, reply.answer);

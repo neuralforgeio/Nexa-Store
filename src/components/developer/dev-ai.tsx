@@ -281,7 +281,7 @@ export function DevAi() {
       </header>
 
       {/* ===== Status otak ===== */}
-      <section aria-label="Status otak" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section aria-label="Status otak" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Otak aktif</p>
           <div className="mt-2 flex items-center gap-2">
@@ -300,6 +300,24 @@ export function DevAi() {
               {brain.custom.intentsCount ?? "–"} intent • {brain.custom.utterancesCount?.toLocaleString("id-ID") ?? "–"} utterance
             </p>
           )}
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Otak cerdas LLM</p>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant={brain.llm?.available ? "default" : "secondary"} className={brain.llm?.available ? "bg-emerald-600 hover:bg-emerald-600" : ""}>
+              {brain.llm?.available ? "Aktif" : "Nonaktif"}
+            </Badge>
+            {brain.llm?.available && (
+              <span className="text-xs text-muted-foreground">
+                {brain.llm.source === "env" ? "env produksi" : "config lokal"}
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {brain.llm?.available
+              ? "Memahami maksud & menalar data live — pertanyaan terbuka, budget, perbandingan."
+              : "Tidak tersedia — bot memakai NLP lokal (cadangan) untuk semua pertanyaan."}
+          </p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Katalog live</p>

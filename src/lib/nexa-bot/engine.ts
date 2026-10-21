@@ -6,6 +6,7 @@ import { detectMath, solveMath } from "../../../nexa-math.js";
 import { buildOverlay, matchOverlay, personalize } from "../../../nexa-overlay.js";
 import { renderIntentLive, renderOrderStatus, ORDER_ID_RE } from "../../../nexa-userctx.js";
 import { AGENT_TTL_MS, agentAddToCart, agentFillData, detectPurchaseIntent, extractAccountData } from "../../../nexa-agent.js";
+import { llmAnswer, llmStatus } from "../../../nexa-llm.js";
 import { getRepository } from "@/lib/catalog/repo";
 import type { Game, Product } from "@/lib/catalog/types";
 import { readFeature } from "@/lib/site-features/store";
@@ -65,6 +66,8 @@ export type BotCtx = {
   userName?: string | null;
   /** v1.18.0: produk tertunda dari meta percakapan (agent transaksi). */
   pendingProduct?: PendingAgentProduct | null;
+  /** v1.19.0: riwayat obrolan terakhir (untuk memori otak LLM). */
+  history?: { from: "user" | "bot" | "owner"; text: string }[];
 };
 
 export type PendingAgentProduct = {
@@ -410,6 +413,22 @@ const LIVE_RENDERERS: Record<string, (live: { games: Game[]; products: Product[]
   "rekomendasi.value": renderLiveValue,
 };
 
+/** Promo aktif (data mentah — dipakai renderer & otak LLM, v1.19.0). */
+async function readActivePromos(): Promise<Array<{ title: string; percentOff: number; endsAt?: string | null }>> {
+  try {
+    const raw = await readFeature("promos");
+    const file = parsePromos(raw);
+    const now = new Date();
+    return activePromos(file.promos, now).slice(0, 6).map((p) => ({
+      title: p.title,
+      percentOff: p.percentOff,
+      ...(p.endsAt ? { endsAt: new Date(p.endsAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) } : {}),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Promo aktif (dirender dari data promo live, v1.17.0). */
 async function renderActivePromos(): Promise<string> {
   try {
@@ -429,6 +448,95 @@ async function renderActivePromos(): Promise<string> {
   } catch {
     return "";
   }
+}
+
+// ---------------------------------------------------------------------------
+// Otak cerdas LLM (v1.19.0) — memahami maksud, menalar data live, menyimpulkan
+// ---------------------------------------------------------------------------
+
+/**
+ * Tanya otak cerdas, validasi aksinya terhadap katalog LIVE, dan bentuk
+ * BotReply lengkap. Mengembalikan null bila LLM tak tersedia/gagal —
+ * pipeline lalu melanjutkan ke klasifikasi NLP lokal (cadangan).
+ */
+async function runLlmBrain(
+  clean: string,
+  live: LiveSnapshot,
+  userName: string | null,
+  ctx: BotCtx
+): Promise<BotReply | null> {
+  if (!live) return null;
+  const promos = await readActivePromos();
+  const out = await llmAnswer({
+    text: clean,
+    userName,
+    history: ctx.history ?? [],
+    games: live.games.filter((g) => g.enabled !== false),
+    products: live.products,
+    promos,
+    pendingProduct: ctx.pendingProduct ?? null,
+    cartActions: true,
+    siteUrl: process.env.NEXA_SITE_URL || "https://nexastoregame.vercel.app",
+    today: new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(new Date()),
+  });
+  if (!out) return null;
+
+  // Validasi aksi terhadap katalog LIVE — aksi tak dikenal dibuang diam-diam.
+  const actions: AgentAction[] = [];
+  if (out.action) {
+    if (out.action.type === "add_to_cart") {
+      const product = live.products.find((p) => p.id === out.action!.productId && p.enabled !== false);
+      const game = live.games.find((g) => g.id === product?.gameId);
+      if (product && game) {
+        actions.push({
+          type: "add_to_cart",
+          productId: product.id,
+          gameId: game.id,
+          label: prettyLabel(product, game),
+          gameName: game.name,
+          price: product.priceIdr,
+          requiredFields: (game.orderFieldSchema ?? []).map((f) => ({
+            key: f.key,
+            label: f.label ?? f.key,
+            required: f.required !== false,
+          })),
+        });
+      }
+    } else if (out.action.type === "fill_data") {
+      const product = live.products.find((p) => p.id === out.action!.productId);
+      const game = live.games.find((g) => g.id === product?.gameId);
+      if (product && game) {
+        const schema = game.orderFieldSchema ?? [];
+        const fields: Record<string, string> = {};
+        for (const f of schema) {
+          const v = out.action.fields?.[f.key];
+          if (typeof v === "string" && v.trim()) fields[f.key] = v.trim().slice(0, 80);
+        }
+        if (Object.keys(fields).length > 0) {
+          actions.push({
+            type: "fill_data",
+            productId: product.id,
+            gameId: game.id,
+            fields,
+            ...(out.action.customerName ? { customerName: out.action.customerName } : {}),
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    intent: "llm.answer",
+    score: 1,
+    answer: sanitizeAnswer(out.answer.slice(0, MAX_ANSWER)),
+    ...(actions.length > 0 ? { actions } : {}),
+  };
 }
 
 /** Cari pesanan berdasar ID Order yang tertanam di pesan (v1.17.0). */
@@ -607,6 +715,14 @@ export async function nexaBotAnswer(text: string, ctx: BotCtx = {}): Promise<Bot
     }
   }
 
+  // 2.6 OTAK CERDAS LLM (v1.19.0) — pertanyaan yang tidak tertangani lapisan
+  // di atasnya diserahkan ke LLM: memahami maksud dalam bahasa apa pun
+  // (typo/slang/campur ID-EN), menalar data katalog LIVE (termurah, budget,
+  // perbandingan, rekomendasi), lalu menyimpulkan dan menjawab Markdown rapi.
+  // Gagal/timeout/tak tersedia → lanjut ke NLP lokal (cadangan) tanpa henti.
+  const llmReply = await runLlmBrain(clean, live, userName, ctx);
+  if (llmReply) return llmReply;
+
   // 3. Klasifikasi NLP — jawaban positif hanya diterima bila pesan memang
   //    dalam ranah (gerbang mencegah teks acak diklasifikasi paksa).
   const nlp = await getNlpFor(state.key, state.modelJson);
@@ -652,10 +768,12 @@ export async function readAiModeFromStore(readBotState: () => Promise<unknown>):
 /** Metadata otak aktif — dipakai panel AI developer. */
 export async function brainStatus(): Promise<{
   active: "bundled" | "custom";
+  llm: { available: boolean; source: string };
   custom: { version: string | null; trainedAt: string | null; intentsCount: number | null; utterancesCount: number | null; customCount: number; hasModel: boolean } | null;
   bundled: { version: string; trainedAt: string; trainedAtLabel: string };
 }> {
   const state = await currentBrain().catch(() => null);
+  const llm = await llmStatus().catch(() => ({ available: false, source: "unavailable" }));
   let file: BotBrainFile | null = null;
   try {
     const parsed = botBrainFileSchema.safeParse(await readFeature("bot-brain"));
@@ -665,6 +783,7 @@ export async function brainStatus(): Promise<{
   }
   return {
     active: state?.modelJson ? "custom" : "bundled",
+    llm,
     custom: file
       ? {
           version: file.version ?? null,

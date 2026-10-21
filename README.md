@@ -49,6 +49,19 @@ private **Telegram bot** for full remote control from the developer's pocket.
 - **Web Push notifications (v1.6.0)** — visitors who opt in (bell toggle in
   the chat widget) get a browser notification when the store replies, even
   after the tab is closed. VAPID keys, service worker, consent-first.
+- **Nexa Bot — AI chat agent with a two-stage brain (v1.19.0)** — the
+  storefront chat is answered by **Nexa Bot** in seconds:
+  - *Smart brain (LLM)* — understands intent in any phrasing (typos, slang,
+    mixed ID/EN), reasons over the **live catalog** (cheapest, budget fit,
+    comparisons, recommendations), and replies in clean Markdown. Chat
+    history gives it memory; a precomputed facts sheet keeps every price
+    conclusion exact.
+  - *Local brain (NLP fallback)* — a trained @nlpjs/basic model answers
+    instantly whenever the LLM is unavailable (offline / degraded).
+  - *Transaction agent* — "pesan 2000 diamonds rp246.000 ff" adds the exact
+    product to the visitor's cart, guides checkout in **≤ 5 steps**, warns
+    which order fields are required, and auto-fills account data sent in
+    chat (`id saya 123456789`) into the cart item.
 - **Scroll-aware edge fades** — horizontal scrollers only dim the side where
   more content exists; the last card always renders at full strength.
 - Dark / light / system themes, scroll-reveal animations, `prefers-reduced-motion`
@@ -267,6 +280,41 @@ The current version is visible in the storefront footer and in
 `package.json` / `src/lib/version.ts`.
 
 ## 📋 Changelog
+
+### v1.19.0 — Otak cerdas LLM untuk Nexa Bot (2026-10-21)
+- **🧠 Dua-otak: LLM + NLP** — pipeline chat baru: lapisan deterministik
+  (keamanan → status pesanan → kalkulator → agent keranjang → resolver
+  katalog → overlay dataset kustom) → **OTAK LLM** (pemahaman maksud +
+  penalaran data live) → NLP lokal sebagai cadangan bila LLM tak tersedia.
+  Pertanyaan terbuka seperti "game yang punya product paling murah, sebutin
+  1 saja" kini dijawab dengan kesimpulan yang benar dari data sungguhan.
+- **🔍 Pemahaman semua bahasa** — LLM membalas dengan bahasa yang sama
+  dengan pengguna (default Indonesia gaul); typo, slang, singkatan, dan
+  campuran ID/EN dipahami. Riwayat obrolan (12 pesan terakhir) ikut
+  dikirim — bot punya memori percakapan.
+- **📊 Fakta terhitung (selalu akurat)** — konteks LLM memuat lembar fakta
+  terverifikasi: produk termurah/termahal, jumlah game/produk, termurah per
+  game, dan **analisis budget** ("modal 50rb bisa apa?" → daftar produk
+  yang muat dihitung presisi di server, LLM tinggal merangkai).
+- **🤖 Aksi agent dari LLM** — niat pesan yang lolos dari lapisan
+  deterministik tetap bisa memicu aksi `add_to_cart` / `fill_data` lewat
+  blok aksi ```action``` yang divalidasi terhadap katalog live (produk tak
+  dikenal dibuang diam-diam).
+- **🐛 Fix: angka telanjang menimpa data akun** — "kalo yang 5000 diamonds
+  berapa?" tidak lagi dianggap pengiriman data akun (sebelumnya menimpa
+  Player ID dengan `5000`); pertanyaan berbau "berapa/harga/?" kini
+  dijawab sebagai pertanyaan harga.
+- **📚 Korpus diperkaya + latih ulang** — 40+ varian kosakata nyata untuk
+  pertanyaan termurah/budget ("game yang punya product paling murah",
+  "modal 50 ribu bisa apa", …); model.nlp + nexa-brain.js dilatih ulang
+  (76/76 sanity + 9/9 guard lolos).
+- **📡 Sinkron lintas kanal** — otak LLM aktif di chat web (engine Next),
+  fungsi publik `api/chat.js`, dan bot Telegram (nexa-standalone) — tanpa
+  keranjang di kanal terakhir, jawaban menautkan halaman game. SDK
+  tersambung via `.z-ai-config` (sandbox) atau env `ZAI_*` (produksi
+  Vercel — terpasang, terenkripsi).
+- **🖥 Panel AI developer** — kartu status "Otak cerdas LLM" (aktif/nonaktif
+  + sumber koneksi) di panel AI Bot.
 
 ### v1.8.1 — Bersih dari temuan /debugging (2026-09-14)
 - **✅ 0 temuan** di pemindai `/debugging` (sebelumnya 2 medium): komentar
