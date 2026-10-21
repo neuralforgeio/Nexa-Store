@@ -155,7 +155,8 @@
       },
       "events": {
         "order_click": 1,
-        "wa_handoff": 1
+        "wa_handoff": 1,
+        "order_track": 2
       }
     }
   },
