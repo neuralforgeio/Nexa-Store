@@ -136,25 +136,26 @@
       "events": {}
     },
     "2026-10-21": {
-      "views": 10,
+      "views": 11,
       "uniques": 2,
       "byPath": {
         "/": 2,
         "/games": 4,
         "/games/roblox": 1,
         "/games/zenless-zone-zero": 1,
-        "/track": 1,
+        "/track": 2,
         "/games/ff-max": 1
       },
       "byReferrer": {
-        "langsung": 10
+        "langsung": 11
       },
       "byDevice": {
         "mobile": 6,
-        "desktop": 4
+        "desktop": 5
       },
       "events": {
-        "order_click": 1
+        "order_click": 1,
+        "wa_handoff": 1
       }
     }
   },
@@ -380,6 +381,7 @@
     1792561620701,
     1792561620701,
     1792561636128,
-    1792561636128
+    1792561636128,
+    1792561672830
   ]
 }
