@@ -80,6 +80,18 @@ export const chatConversationSchema = z.object({
   lastMessageAt: z.string().datetime(),
   unreadByOwner: z.number().int().min(0),
   ownerLastReadAt: z.string().datetime().nullable(),
+  // v1.18.0: produk tertunda agent (transaksi via chat). Optional — file
+  // lama tanpa field ini tetap valid.
+  agent: z
+    .object({
+      productId: z.string().min(1).max(120),
+      gameId: z.string().min(1).max(120),
+      at: z.string().datetime(),
+      filled: z.record(z.string(), z.string()).optional(),
+      customerName: z.string().max(80).optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 const dayStatSchema = z.object({

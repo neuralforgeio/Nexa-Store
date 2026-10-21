@@ -5,6 +5,13 @@ export type CatalogHit =
   | { type: "product"; productId: string; gameId: string; gameName: string }
   | { type: "game"; gameId: string; gameName: string };
 
+/** Hasil resolusi produk untuk niat PEMESANAN (v1.18.0). */
+export type OrderResolveHit = {
+  productId: string;
+  gameId: string;
+  via: "denom" | "bonus" | "price";
+};
+
 /** Kandidat produk hasil resolusi penyebutan lintas game (v1.15.0). */
 export interface ProductMention {
   id: string;
@@ -15,6 +22,11 @@ export interface ProductMention {
 }
 
 export function resolveCatalogQuery(text: string, lexicon: BrainLexicon): CatalogHit | null;
+export function resolveProductForOrder(text: string, lexicon: BrainLexicon): OrderResolveHit | null;
+export function findProduct(
+  norm: string,
+  products: BrainLexicon["products"]
+): BrainLexicon["products"][number] | null;
 export function resolveProductMention(text: string, lexicon: BrainLexicon): ProductMention[];
 export function withinDomain(text: string, lexicon: BrainLexicon): boolean;
 export function normalize(text: string): string;

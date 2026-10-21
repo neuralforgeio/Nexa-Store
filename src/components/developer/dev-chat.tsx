@@ -20,6 +20,7 @@ import { formatWib } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
 import { Bot, CheckCheck, MessagesSquare, Search, Send, Trash2, UserRound } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { MarkdownMessage } from "@/components/store/chat/markdown";
 
 /**
  * Konsol Obrolan (v1.6.0) — sisi pemilik live chat.
@@ -293,7 +294,12 @@ export function DevChat() {
                           Nexa Bot
                         </p>
                       ) : null}
-                      <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                      {/* v1.18.0: jawaban bot berformat markdown — dirender rapi. */}
+                      {m.from === "bot" ? (
+                        <MarkdownMessage text={m.text} />
+                      ) : (
+                        <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                      )}
                       <p
                         className={cn(
                           "mt-1 text-right text-[10px] tabular",

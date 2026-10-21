@@ -1,10 +1,11 @@
 import { Nlp } from "@nlpjs/basic";
 import brain from "../../../nexa-brain.js";
-import { resolveCatalogQuery, resolveProductMention, withinDomain } from "../../../nexa-resolve.js";
+import { resolveCatalogQuery, resolveProductForOrder, resolveProductMention, withinDomain } from "../../../nexa-resolve.js";
 import { containsLeakAttempt, sanitizeAnswer, GUARD_ANSWER } from "../../../nexa-guard.js";
 import { detectMath, solveMath } from "../../../nexa-math.js";
 import { buildOverlay, matchOverlay, personalize } from "../../../nexa-overlay.js";
 import { renderIntentLive, renderOrderStatus, ORDER_ID_RE } from "../../../nexa-userctx.js";
+import { AGENT_TTL_MS, agentAddToCart, agentFillData, detectPurchaseIntent, extractAccountData } from "../../../nexa-agent.js";
 import { getRepository } from "@/lib/catalog/repo";
 import type { Game, Product } from "@/lib/catalog/types";
 import { readFeature } from "@/lib/site-features/store";
@@ -36,11 +37,42 @@ export type BotReply = {
   intent: string;
   score: number;
   answer: string;
+  /** v1.18.0: aksi agent (ephemeral — hanya lewat respons POST chat). */
+  actions?: AgentAction[];
 };
+
+/** Aksi keranjang dari agent — dieksekusi klien web, tidak pernah dipersist. */
+export type AgentAction =
+  | {
+      type: "add_to_cart";
+      productId: string;
+      gameId: string;
+      label: string;
+      gameName: string;
+      price: number;
+      requiredFields: { key: string; label: string; required: boolean }[];
+    }
+  | {
+      type: "fill_data";
+      productId: string;
+      gameId: string;
+      fields: Record<string, string>;
+      customerName?: string;
+    };
 
 /** Konteks percakapan — nama pengguna dari identitas chat / Telegram. */
 export type BotCtx = {
   userName?: string | null;
+  /** v1.18.0: produk tertunda dari meta percakapan (agent transaksi). */
+  pendingProduct?: PendingAgentProduct | null;
+};
+
+export type PendingAgentProduct = {
+  productId: string;
+  gameId: string;
+  at: string;
+  filled?: Record<string, string>;
+  customerName?: string;
 };
 
 const MAX_ANSWER = 780; // chatFileSchema: text max 800 — beri ruang.
@@ -77,13 +109,18 @@ async function currentBrain(): Promise<BrainState> {
       return brainState;
     }
     const file: BotBrainFile = parsed.data;
-    const key = file.modelJson && file.trainedAt ? `custom-${file.trainedAt}` : "bundled";
+    // v1.18.0: model kustom hanya dipakai bila dilatih dari korpus yang
+    // SAMA versinya dengan bundel — model lama (korpus usang) otomatis
+    // mundur ke bundel agar jawaban markdown/korpus baru langsung aktif.
+    // Dataset kustom TETAP hidup lewat overlay TF-IDF apa pun versinya.
+    const modelCurrent = Boolean(file.modelJson) && file.version === brain.version;
+    const key = modelCurrent && file.trainedAt ? `custom-${file.trainedAt}` : "bundled";
     // Optimasi: hanya segarkan overlay saat dataset/trainedAt berubah.
     if (brainState && brainState.key === key && brainState.customIntents === file.customIntents) {
       brainState.at = Date.now();
       return brainState;
     }
-    brainState = emptyOverlayState(key, file.modelJson ?? null, file.customIntents);
+    brainState = emptyOverlayState(key, modelCurrent ? file.modelJson ?? null : null, file.customIntents);
     return brainState;
   } catch {
     brainState = emptyOverlayState("bundled", null, []);
@@ -152,31 +189,41 @@ function labelOf(p: Product, game: Game): string {
   return words.join(" ");
 }
 
+/** Label produk rapi untuk tampilan: "2000 Diamonds". */
+function prettyLabel(p: Product, game: Game): string {
+  return labelOf(p, game).replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function renderProduct(p: Product, game: Game): string {
-  const label = labelOf(p, game).replace(/\b\w/g, (c) => c.toUpperCase());
-  return `${label} ${game.name}: ${idr(p.priceIdr)} ⚡ Pesan di halaman ${game.name} — isi data akun, checkout via WhatsApp, langsung diproses.`;
+  const label = prettyLabel(p, game);
+  return (
+    `### ⚡ ${label} — ${game.name}\n\n` +
+    `💵 Harga: **${idr(p.priceIdr)}**\n\n` +
+    `Mau langsung pesan? Bilang saja \`pesan ${label.toLowerCase()} ${game.name.toLowerCase()}\` — otomatis kumasukkan ke keranjangmu!\n\n` +
+    `Atau buka halaman **${game.name}** → pilih nominal → checkout via WhatsApp.`
+  );
 }
 
 function renderGameList(game: Game, products: Product[]): string {
   const items = products
     .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((p) => `${labelOf(p, game)} ${idr(p.priceIdr)}`);
-  const head = `⚡ ${game.name} — harga per ${brain.trainedAtLabel}:\n`;
-  const tail = `\nSemua nominal + order ada di halaman game-nya 🎮`;
+    .map((p) => `- **${prettyLabel(p, game)}** — ${idr(p.priceIdr)}`);
+  const head = `### ⚡ ${game.name} — Daftar Harga\n\n`;
+  const tail = `\n💡 Bilang \`pesan 70 diamonds ${game.name.toLowerCase()}\` — langsung kumasukkan ke keranjang!`;
   const budget = 740 - head.length - tail.length;
   let used = 0;
   const out: string[] = [];
   for (const it of items) {
-    const add = (out.length ? " • " : "") + it;
+    const add = (out.length ? "\n" : "") + it;
     if (used + add.length > budget) {
-      out.push("…");
+      out.push("- …");
       break;
     }
     out.push(it);
     used += add.length;
   }
-  return head + out.join(" • ") + tail;
+  return head + out.join("\n") + tail;
 }
 
 type LiveSnapshot = { games: Game[]; products: Product[] } | null;
@@ -295,11 +342,11 @@ function renderLiveGameList(live: { games: Game[]; products: Product[] }): strin
   const names = live.games
     .filter((g) => live.products.some((p) => p.gameId === g.id && p.enabled))
     .map((g) => g.name);
-  const head = `Ada ${names.length} game di NEXA STORE! 🔥\n`;
-  const tail = `\nKetik nama game buat lihat harga!`;
+  const head = `### 🎮 Ada ${names.length} game di NEXA STORE!\n\n`;
+  const tail = `\n\n💡 Ketik nama game buat lihat harga — atau bilang \`pesan 2000 diamonds free fire\` biar kumasukkan ke keranjang!`;
   const budget = 740 - head.length - tail.length;
   const shown = names.slice(0, Math.max(2, Math.floor(budget / 18)));
-  const list = shown.join(", ") + (names.length > shown.length ? ", …" : "");
+  const list = "- " + shown.join("\n- ") + (names.length > shown.length ? "\n- …" : "");
   return head + list + tail;
 }
 
@@ -315,11 +362,11 @@ function renderLiveCheap(live: { games: Game[]; products: Product[] }): string {
   rows.sort((a, b) => a.price - b.price);
   const lines = rows
     .slice(0, 8)
-    .map((r) => `• ${r.game.name} — ${labelOf(r.product, r.game)} ${idr(r.price)}`);
+    .map((r) => `- **${r.game.name}** — ${prettyLabel(r.product, r.game)} · ${idr(r.price)}`);
   return (
-    "💸 Top up termurah di NEXA STORE:\n" +
+    "### 💸 Top up termurah di NEXA STORE\n\n" +
     lines.join("\n") +
-    "\nKetik nama game-nya buat lihat semua nominal!"
+    "\n\n💡 Ketik nama game-nya buat lihat semua nominal!"
   );
 }
 
@@ -330,12 +377,12 @@ function renderLivePopular(live: { games: Game[]; products: Product[] }): string
   const rest = live.games.filter((g) => !POPULAR_IDS.includes(g.id));
   const lines = popular
     .slice(0, 6)
-    .map((g) => `• ${g.name} — ketik "${g.name.toLowerCase()}" buat lihat harga`);
+    .map((g) => `- **${g.name}** — ketik \`${g.name.toLowerCase()}\` buat lihat harga`);
   const total = popular.length + rest.length;
   return (
-    "🔥 Paling laris di NEXA STORE:\n" +
+    "### 🔥 Paling laris di NEXA STORE\n\n" +
     lines.join("\n") +
-    `\nSemua ada ${total} game — ketik "daftar game" buat lihat semuanya!`
+    `\n\nSemua ada **${total} game** — ketik \`daftar game\` buat lihat semuanya!`
   );
 }
 
@@ -345,13 +392,13 @@ function renderLiveValue(live: { games: Game[]; products: Product[] }): string {
     .slice(0, 10);
   const lines = withBonus.map((p) => {
     const game = live.games.find((g) => g.id === p.gameId);
-    return game ? `• ${game.name} ${p.denomination} — ${idr(p.priceIdr)}` : null;
+    return game ? `- **${game.name} ${p.denomination}** — ${idr(p.priceIdr)}` : null;
   });
   if (lines.length === 0) return "";
   return (
-    "💎 Paling worth it (ada bonus ekstra):\n" +
+    "### 💎 Paling worth it (ada bonus ekstra)\n\n" +
     lines.filter(Boolean).join("\n") +
-    "\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮"
+    "\n\nBonus nominal besar biasanya lebih hemat per unit — worth it buat push rank! 🎮"
   );
 }
 
@@ -392,6 +439,85 @@ async function findOrderById(orderId: string): Promise<Record<string, unknown> |
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Agent transaksi (v1.18.0)
+// ---------------------------------------------------------------------------
+
+/**
+ * Langkah agent: mengisi data akun ke item tertunda, atau memasukkan produk
+ * ke keranjang pengguna. Mengembalikan BotReply lengkap dengan aksi, atau
+ * null bila pesan bukan urusan agent.
+ */
+function runAgentStep(
+  clean: string,
+  lexicon: Lexicon,
+  live: LiveSnapshot,
+  userName: string | null,
+  pending: PendingAgentProduct | null
+): BotReply | null {
+  if (!live) return null;
+
+  // (a) Pengisian data akun — hanya bila ada produk tertunda yang segar.
+  if (pending && Date.now() - Date.parse(pending.at) < AGENT_TTL_MS) {
+    const product = live.products.find((p) => p.id === pending.productId);
+    const game = live.games.find((g) => g.id === pending.gameId);
+    if (product && game) {
+      // Niat memesan produk BARU menang atas pengisian data (user ganti pikiran).
+      const switching =
+        detectPurchaseIntent(clean) && resolveProductForOrder(clean, lexicon as never) !== null;
+      if (!switching) {
+        const extracted = extractAccountData(clean, game.orderFieldSchema ?? []);
+        if (extracted) {
+          const merged = { ...(pending.filled ?? {}), ...extracted.fields };
+          const label = prettyLabel(product, game);
+          const built = agentFillData({
+            product,
+            game,
+            label,
+            price: product.priceIdr,
+            extracted: { fields: merged, hits: extracted.hits },
+            customerName: extracted.customerName ?? pending.customerName,
+          });
+          return {
+            intent: "agent.fill_data",
+            score: 1,
+            answer: sanitizeAnswer(built.answer.slice(0, MAX_ANSWER)),
+            actions: [built.action],
+          };
+        }
+      }
+    }
+  }
+
+  // (b) Niat memesan + produk resolvable → masukkan ke keranjang pengguna.
+  if (detectPurchaseIntent(clean)) {
+    const hit = resolveProductForOrder(clean, lexicon as never);
+    if (hit) {
+      const product = live.products.find((p) => p.id === hit.productId);
+      const game = live.games.find((g) => g.id === hit.gameId);
+      if (product && game) {
+        const label = prettyLabel(product, game);
+        const built = agentAddToCart({
+          product,
+          game,
+          label,
+          price: product.priceIdr,
+          userName,
+          withCartAction: true,
+        });
+        return {
+          intent: "agent.add_to_cart",
+          score: 1,
+          answer: sanitizeAnswer(built.answer.slice(0, MAX_ANSWER)),
+          ...(built.action ? { actions: [built.action] } : {}),
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -437,6 +563,12 @@ export async function nexaBotAnswer(text: string, ctx: BotCtx = {}): Promise<Bot
     // gagal resolve operand → lanjut ke pipeline biasa (mis. "ff dikali 2"
     // lebih baik dijawab daftar harga FF).
   }
+
+  // 1.5 AGENT TRANSAKSI (v1.18.0) — "pesan 2000 diamonds rp246.000 ff"
+  // memasukkan produk ke keranjang pengguna; "id saya 123456789" mengisikan
+  // data akun ke item yang tertunda. Aksi bersifat ephemeral (respons POST).
+  const agentReply = runAgentStep(clean, lexicon, live, userName, ctx.pendingProduct ?? null);
+  if (agentReply) return agentReply;
 
   // 2. Resolver katalog deterministik (game + nominal).
   const hit = resolveCatalogQuery(clean, lexicon as never);

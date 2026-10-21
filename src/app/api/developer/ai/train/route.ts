@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       await updateFeature("bot-brain", "bot-brain: save trained model", (currentRaw) => {
         const current = readCurrent(currentRaw);
         return {
-          version: "1.17.0",
+          version: "1.18.0",
           trainedAt: now.toISOString(),
           intentsCount: stats.intentCount,
           utterancesCount: stats.utteranceCount,

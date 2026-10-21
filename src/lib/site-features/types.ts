@@ -121,6 +121,15 @@ export type ChatConversation = {
   lastMessageAt: string;
   unreadByOwner: number;
   ownerLastReadAt: string | null;
+  /** v1.18.0: produk tertunda agent — dipakai bot untuk mengisi data akun
+   * yang dikirim lanjutan ("id saya 123…"). Optional: file lama valid. */
+  agent?: {
+    productId: string;
+    gameId: string;
+    at: string;
+    filled?: Record<string, string>;
+    customerName?: string;
+  } | null;
 };
 
 /** Ringkasan percakapan untuk daftar di panel/bot. */

@@ -206,10 +206,84 @@ function withinDomain(text, lexicon) {
   return false;
 }
 
+/**
+ * v1.18.0 — resolusi produk untuk Niat PEMESANAN (agent).
+ * Perbedaan dengan resolveCatalogQuery:
+ * - TIDAK memakai pengecualian META_WORDS ("pesan", "buat", "mau" dll justru
+ *   penanda niat pesan).
+ * - HANYA menerima bukti PREISI: pola bonus n+m, nominal angka tunggal yang
+ *   persis sama dengan denom, atau penyebutan harga (Rp…/…rb/…k). Cakupan
+ *   kata label (fuzzy) sengaja TIDAK dipakai — "pesan diamonds ff" tanpa
+ *   nominal tidak boleh salah menambahkan produk ke keranjang.
+ *
+ * @returns {{productId:string, gameId:string, via:"denom"|"bonus"|"price"}|null}
+ */
+function resolveProductForOrder(text, lexicon) {
+  const norm = normalize(text);
+  const hit = findGame(norm, lexicon);
+  if (!hit) return null;
+  const products = (lexicon.products || []).filter((p) => p.gameId === hit.game.id);
+  if (products.length === 0) return null;
+
+  // 1) Pola bonus "n+m" → denomFull persis.
+  const bonus = norm.match(/(\d{2,6})\s*\+\s*(\d{1,6})/);
+  if (bonus) {
+    const denomFull = `${bonus[1]}+${bonus[2]}`;
+    const exact = products.find((p) => p.denomFull === denomFull);
+    if (exact) return { productId: exact.id, gameId: hit.game.id, via: "bonus" };
+    const base = products.find((p) => p.denom === bonus[1] && p.bonus);
+    if (base) return { productId: base.id, gameId: hit.game.id, via: "bonus" };
+  }
+
+  // 2) Nominal angka tunggal (hindari angka harga: token Rp246000 sudah
+  //    melebur dengan "rp" via normalize → tidak cocok pola (^|\s)\d).
+  const nums = [];
+  for (const m of norm.matchAll(/(?:^|\s)(\d{2,6})(?=\s|$|\+)/g)) nums.push(m[1]);
+  const priceLike = priceMention(norm, products);
+  for (const n of nums) {
+    if (priceLike && n === String(priceLike)) continue; // itu harga, bukan nominal
+    const exact = products.find((p) => p.denom === n);
+    if (exact) return { productId: exact.id, gameId: hit.game.id, via: "denom" };
+  }
+
+  // 3) Penyebutan harga → produk dengan harga pas (toleransi ±500).
+  if (priceLike) {
+    const byPrice =
+      products.find((p) => p.priceIdr === priceLike) ??
+      products.find((p) => Math.abs((p.priceIdr ?? 0) - priceLike) <= 500);
+    if (byPrice) return { productId: byPrice.id, gameId: hit.game.id, via: "price" };
+  }
+
+  return null;
+}
+
+/**
+ * Deteksi penyebutan harga dalam Rupiah: "rp246000", "246.000", "246k",
+ * "246rb", "246ribu". Hanya angka >= 1000 diterima (bukan nominal kecil).
+ * @returns {number|null}
+ */
+function priceMention(norm, products) {
+  const m =
+    norm.match(/rp\s*\.?\s*(\d{3,9})/) ??
+    norm.match(/(?:^|\s)(\d{2,9}(?:[.,]\d{3})+)(?=\s|$)/) ??
+    norm.match(/(?:^|\s)(\d{1,9})\s*(?:rb|k|ribu)\b/);
+  if (!m) return null;
+  let value = Number(String(m[1]).replace(/[.,]/g, ""));
+  if (!Number.isFinite(value)) return null;
+  // "246k"/"246rb"/"246ribu" → 246000 (kali dulu, baru validasi minimal).
+  if (/rb|k|ribu/.test(m[0])) value *= 1000;
+  if (value < 1000) return null;
+  // Harga nyata di game ini saja — mencegah "1000" (nominal) dikira harga.
+  return products.some((p) => Math.abs((p.priceIdr ?? 0) - value) <= 1000) ? value : null;
+}
+
 module.exports = {
   resolveCatalogQuery,
+  resolveCatalogOrder: resolveProductForOrder,
+  resolveProductForOrder,
   resolveProductMention,
   withinDomain,
   normalize,
   findGame,
+  findProduct,
 };

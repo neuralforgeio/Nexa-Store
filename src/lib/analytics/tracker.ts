@@ -19,7 +19,10 @@ export type TrackType =
   | "order_click"
   | "wa_handoff"
   | "report_submit"
-  | "order_track";
+  | "order_track"
+  | "chat_agent_add_to_cart"
+  | "chat_agent_fill_data"
+  | "chat_agent_open_cart";
 type QueuedEvent = { type: TrackType; path: string; referrer?: string; device?: "mobile" | "desktop" };
 
 let queue: QueuedEvent[] = [];

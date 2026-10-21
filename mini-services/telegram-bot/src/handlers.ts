@@ -1217,6 +1217,7 @@ async function answerWithNexaBot(chatId: number, s: Session, text: string, userN
       ) => Promise<{ answer: string; intent: string; score: number }>;
       loadBrain: () => Promise<{ lexicon: unknown }>;
       mergeLexicon: (base: never, games: unknown[], products: unknown[]) => unknown;
+      markdownToHtml: (text: string) => string;
     };
     const brain = await standalone.loadBrain();
     let lexicon: unknown;
@@ -1231,7 +1232,13 @@ async function answerWithNexaBot(chatId: number, s: Session, text: string, userN
       // katalog tak terbaca → leksikon terlatih (tetap benar, mungkin basi)
     }
     const reply = await standalone.answer(text, lexicon ?? undefined, { userName });
-    await tg.sendMessage(chatId, ["🤖 <b>NEXA BOT</b>", "", tg.esc(reply.answer)].join("\n"));
+    // v1.18.0: jawaban bot berformat markdown — dirender ke HTML Telegram
+    // (escape internal + **tebal** → <b>, `kode` → <code>, ### → heading).
+    const replyHtml =
+      typeof standalone.markdownToHtml === "function"
+        ? standalone.markdownToHtml(reply.answer)
+        : tg.esc(reply.answer);
+    await tg.sendMessage(chatId, ["🤖 <b>NEXA BOT</b>", "", replyHtml].join("\n"));
   } catch (e) {
     log("nexa bot gagal:", (e as Error).message);
     await tg.sendMessage(

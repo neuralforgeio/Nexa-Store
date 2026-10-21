@@ -5,7 +5,7 @@ import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-f
 import { parseChat } from "@/lib/site-features/schema";
 import { chatBridgeEnabled, notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
 import { sendOwnerChatNotification } from "@/lib/telegram-notify";
-import { nexaBotAnswer, readAiModeFromStore } from "@/lib/nexa-bot/engine";
+import { nexaBotAnswer, readAiModeFromStore, type AgentAction } from "@/lib/nexa-bot/engine";
 import type { ChatConversation, ChatMessage } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +54,28 @@ const sendSchema = z.object({
   name: z.string().trim().min(1).max(40).optional(),
 });
 
+/** v1.18.0: bentuk aksi agent yang dikirim ke klien (ephemeral, tervalidasi). */
+const agentActionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("add_to_cart"),
+    productId: z.string().min(1).max(120),
+    gameId: z.string().min(1).max(120),
+    label: z.string().min(1).max(120),
+    gameName: z.string().min(1).max(80),
+    price: z.number().int().min(0).max(100_000_000),
+    requiredFields: z
+      .array(z.object({ key: z.string().min(1).max(60), label: z.string().min(1).max(80), required: z.boolean() }))
+      .max(10),
+  }),
+  z.object({
+    type: z.literal("fill_data"),
+    productId: z.string().min(1).max(120),
+    gameId: z.string().min(1).max(120),
+    fields: z.record(z.string(), z.string()),
+    customerName: z.string().max(80).optional(),
+  }),
+]);
+
 const MAX_CONVERSATIONS = 50;
 const MAX_MESSAGES = 200;
 
@@ -92,6 +114,56 @@ async function appendBotMessage(conversationId: string, text: string): Promise<C
     return { conversations: prune(conversations) };
   });
   return appended;
+}
+
+/** v1.18.0: simpan meta agent (produk tertunda + data akun terkumpul) di
+ * percakapan — memori bot antar-pesan untuk alur pesan → kirim data → checkout. */
+async function persistAgentMeta(
+  conversationId: string,
+  addToCart: Extract<AgentAction, { type: "add_to_cart" }> | null,
+  fillData: Extract<AgentAction, { type: "fill_data" }> | null
+): Promise<void> {
+  try {
+    await updateFeature("chat", "chat: agent order context", (currentRaw) => {
+      const file = parseChat(currentRaw);
+      const conversations = [...file.conversations];
+      const index = conversations.findIndex((c) => c.id === conversationId);
+      if (index === -1) return { conversations: prune(conversations) };
+      const prev = conversations[index];
+      if (addToCart) {
+        conversations[index] = {
+          ...prev,
+          agent: {
+            productId: addToCart.productId,
+            gameId: addToCart.gameId,
+            at: new Date().toISOString(),
+          },
+        };
+      } else if (fillData) {
+        const prevAgent = prev.agent;
+        conversations[index] = {
+          ...prev,
+          agent: prevAgent
+            ? {
+                ...prevAgent,
+                filled: { ...(prevAgent.filled ?? {}), ...fillData.fields },
+                ...(fillData.customerName ? { customerName: fillData.customerName } : {}),
+              }
+            : {
+                productId: fillData.productId,
+                gameId: fillData.gameId,
+                at: new Date().toISOString(),
+                filled: fillData.fields,
+                ...(fillData.customerName ? { customerName: fillData.customerName } : {}),
+              },
+        };
+      }
+      return { conversations: prune(conversations) };
+    });
+  } catch {
+    // meta agent gagal tersimpan — aksi tetap dieksekusi klien, hanya
+    // ingatan antar-pesan yang hilang (tidak boleh menggagalkan balasan).
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -204,23 +276,39 @@ export async function POST(req: NextRequest) {
     // v1.14.0: Nexa Bot menjawab otomatis (mode AI aktif). Kegagalan bot
     // TIDAK pernah menggagalkan pesan pengunjung.
     let botMessage: ChatMessage | null = null;
+    const botActions: AgentAction[] = [];
     const botState = await readFeature("bot-state").catch(() => null);
     const aiAutoReply = await readAiModeFromStore(async () => botState);
     if (aiAutoReply && updated) {
       // v1.17.0: identitas pengunjung (nama) diikutkan — bot menyapa personal
       // dan menjawab "kamu mengenal saya?" dengan nama yang benar.
+      // v1.18.0: meta agent (produk tertunda) diikutkan — "pesan 2000 dm ff"
+      // memasukkan produk ke keranjang, "id saya 123…" mengisi data akun.
       const conversation: ChatConversation = updated;
       try {
-        const reply = await nexaBotAnswer(text, { userName: conversation.name ?? null });
+        const reply = await nexaBotAnswer(text, {
+          userName: conversation.name ?? null,
+          pendingProduct: conversation.agent ?? null,
+        });
         if (reply?.answer) {
           botMessage = await appendBotMessage(conversationId, reply.answer);
+
+          const addToCart = reply.actions?.find((a) => a.type === "add_to_cart");
+          const fillData = reply.actions?.find((a) => a.type === "fill_data");
+          if (addToCart || fillData) {
+            await persistAgentMeta(conversationId, addToCart ?? null, fillData ?? null);
+          }
+          for (const action of reply.actions ?? []) {
+            const parsed = agentActionSchema.safeParse(action);
+            if (parsed.success) botActions.push(parsed.data);
+          }
         }
       } catch {
         // bot gagal — pengunjung tetap terkirim, admin tetap dapat notifikasi
       }
     }
 
-    return jsonOk({ sent: true, message, botMessage, aiAutoReply });
+    return jsonOk({ sent: true, message, botMessage, aiAutoReply, botActions });
   } catch {
     return jsonError(502, "chat.send-failed", "Pesan gagal terkirim. Coba lagi.");
   }

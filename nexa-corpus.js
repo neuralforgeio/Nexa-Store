@@ -29,9 +29,9 @@ const PERSONA = {
   github: "github.com/neuralforgeio",
   engine: "NLP.js — model bahasa yang dilatih lokal dari data katalog NEXA STORE",
   fallback:
-    "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE. Coba tanya: nama game (mis. \"free fire\"), \"berapa total game\", \"cara top up\", \"lacak pesanan\", atau \"rekomendasi termurah\".",
+    "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE.\n\nCoba tanya:\n- 💰 nama game (mis. \`free fire\`)\n- 🛒 \`pesan 2000 diamonds free fire\` — langsung masuk keranjang\n- 📦 \`lacak pesanan\`\n- 💸 \`rekomendasi termurah\`",
   offContext:
-    "Maaf, di luar wewenangku 😅 Aku Nexa Bot — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu. Tanya aku soal harga game, cara top up, atau lacak pesanan ya!",
+    "Maaf, di luar wewenangku 😅 Aku **Nexa Bot** — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu.\n\nTanya aku soal **harga game**, **cara top up**, atau **lacak pesanan** ya!",
   guardRefusal:
     "Aku tidak bisa membagikan informasi internal itu 🔒 Aku Nexa Bot — asisten NEXA STORE untuk soal harga game, cara top up, dan lacak pesanan. Ada yang bisa kubantu soal top up?",
 };
@@ -82,19 +82,19 @@ function builtinIntents() {
       ],
       // Jawaban statis = cadangan; engine menimpa dengan sapaan personal
       // (menyebut nama pengguna) saat ctx tersedia.
-      answer: `Halo! 👋 Aku ${PERSONA.name}, asisten ${PERSONA.store} ⚡ Ketik nama game buat lihat daftar harga (mis. "free fire"), atau tanya "berapa total game", "cara top up", "lacak pesanan", dan "rekomendasi termurah".`,
+      answer: `### Halo! 👋\n\nAku **${PERSONA.name}**, asisten AI ${PERSONA.store} ⚡\n\n- 💰 Daftar harga — ketik nama game (mis. \`free fire\`)\n- 🛒 Langsung pesan — \`pesan 2000 diamonds free fire\`\n- 📦 Lacak pesanan — tempel ID Order-mu\n- 💸 Rekomendasi — \`rekomendasi termurah\``,
     },
     {
       intent: "bot.identity",
       utterances: ["siapa kamu", "kamu siapa", "siapa namamu", "nama kamu siapa", "siapa nama kamu", "kamu bot apa", "kamu apa", "kenalan dulu dong", "perkenalkan dirimu", "kenalan yuk", "who are you", "kamu manusia atau bot", "kamu robot ya", "ini bot ya", "kamu ai ya", "kamu ini siapa", "itu siapa yang jawab", "yang jawab ini siapa", "kamu orang beneran gak"],
-      answer: `Aku ${PERSONA.name} ⚡ — asisten AI ${PERSONA.store}, toko top up game favoritmu. Otakku dilatih dari data katalog store ini dan diproses sepenuhnya secara lokal. Mau lihat harga? Ketik saja nama game-nya!`,
+      answer: `Aku **${PERSONA.name}** ⚡ — asisten AI ${PERSONA.store}, toko top up game favoritmu. Otakku dilatih dari data katalog store ini dan diproses sepenuhnya secara lokal. Mau lihat harga? Ketik saja nama game-nya!`,
     },
     {
       intent: "bot.creator",
       utterances: [
         "siapa penciptamu", "siapa pencipta kamu", "penciptamu siapa", "pencipta kamu siapa", "siapa pembuatmu", "siapa pembuat kamu", "pembuatmu siapa", "siapa yang membuat kamu", "siapa yang menciptakan kamu", "siapa yang bikin kamu", "siapa yang buat kamu", "kamu dibuat oleh siapa", "kamu dibangun oleh siapa", "kamu diciptakan oleh siapa", "diciptakan siapa", "kamu buatan siapa", "buatan siapa", "karya siapa ini", "siapa developernya", "siapa developer kamu", "developer kamu siapa", "siapa pembuat nexa bot", "siapa pembuat bot ini", "siapa pemilik nexa store", "siapa pemilik toko ini", "siapa owner nexa store", "owner kamu siapa", "siapa ownernya", "siapa ceo nexa store", "siapa yang mengembangkan kamu", "kamu ini karya siapa", "pencipta nexa bot siapa", "who created you", "who made you", "who is your creator", "siapa majikanmu", "siapa bos kamu", "kamu ciptaan siapa", "ciptaan siapa",
       ],
-      answer: `Aku diciptakan oleh ${PERSONA.creator} 👨‍💻 — seorang ${PERSONA.creatorRole}. Kamu bisa lihat karya-karyanya di GitHub: ${PERSONA.github}. Untuk urusan top up game, aku yang siap bantu!`,
+      answer: `Aku diciptakan oleh **${PERSONA.creator}** 👨‍💻 — seorang ${PERSONA.creatorRole}. Karya-karyanya ada di GitHub: \`${PERSONA.github}\`. Untuk urusan top up game, aku yang siap bantu!`,
     },
     {
       intent: "security.probe",
@@ -111,7 +111,7 @@ function builtinIntents() {
     {
       intent: "bot.capabilities",
       utterances: ["apa yang bisa kamu lakukan", "kamu bisa apa", "bisa bantu apa", "fitur kamu apa aja", "apa fungsi kamu", "bantuan", "menu", "help", "apa saja yang bisa ditanyakan", "list pertanyaan", "kamu ngerti apa aja", "bantuin aku dong", "menu apa aja", "apa aja yang bisa kamu jawab", "bisa nanya apa aja ke kamu", "pertanyaan apa aja yang bisa dijawab"],
-      answer: `Aku bisa bantu: 🎮 daftar harga semua game (ketik nama game, mis. "ml" atau "ff") • 🔢 statistik toko ("berapa total game") • 💸 rekomendasi termurah • 📋 cara top up & pembayaran • 📦 lacak pesanan (tempel ID Order-nya) • 🐞 lapor bug. Cukup ketik pertanyaanmu seputar ${PERSONA.store}!`,
+      answer: `### Yang bisa kubantu 🤖\n\n- 🎮 **Daftar harga** — ketik nama game (mis. \`ml\`, \`ff\`)\n- 🛒 **Langsung pesan** — \`pesan 2000 diamonds free fire\` → masuk keranjang otomatis\n- 🔢 **Statistik toko** — \`berapa total game\`\n- 💸 **Rekomendasi** — \`rekomendasi termurah\`\n- 📋 **Cara top up & pembayaran**\n- 📦 **Lacak pesanan** — tempel ID Order-mu\n- 🐞 **Lapor bug**\n\nCukup ketik pertanyaanmu seputar ${PERSONA.store}!`,
     },
     {
       intent: "bot.thanks",
@@ -193,12 +193,12 @@ function builtinIntents() {
     {
       intent: "howto.refund",
       utterances: ["kalau diamond gak masuk gimana", "kalau diamond nggak masuk gimana", "diamond gak masuk", "diamond nggak masuk", "diamond belum masuk", "pesanan gagal gimana", "pesanan gagal", "uang kembali gak", "uang balik gak", "refund dong", "refund gimana", "kalau nggak diproses gimana", "kalau tidak diproses bagaimana", "pesanan gak diproses", "pesanan nggak diproses", "kalau barang gak datang", "kenapa diamond saya belum masuk", "diamond saya belum masuk", "kalau top up gagal", "gagal top up gimana", "salah isi id gimana", "kenapa pesanan saya pending", "pesanan pending kenapa"],
-      answer: `Tenang, semua pesanan tercatat dengan ID Order 📦 Kalau pesanan gagal/diproses terlalu lama, statusnya kelihatan di halaman Lacak Pesanan — dan uang kembali 100% kalau pesanan batal atau nggak bisa diproses. Kamu juga bisa chat admin lewat WhatsApp untuk dituntaskan hari itu juga 🤝`,
+      answer: `Tenang — semua pesanan tercatat dengan **ID Order** 📦\n\n- Status pesanan kelihatan di halaman **Lacak Pesanan**\n- Uang kembali **100%** kalau pesanan batal / nggak bisa diproses\n- Chat admin lewat WhatsApp buat dituntaskan hari itu juga 🤝`,
     },
     {
       intent: "howto.data",
       utterances: ["user id itu apa", "player id apa", "apa itu user id", "apa itu player id", "data akun apa aja", "butuh data apa buat top up", "syarat top up apa", "perlu apa buat top up", "cara isi user id", "cara cari user id", "gimana cari user id", "dimana cari user id", "user id dimana", "id kucing apa maksudnya", "nickname perlu gak", "harus isi apa ya", "form nya isi apa aja", "kolomnya isi apa"],
-      answer: `Setiap game butuh data akun beda — umumnya User ID/Player ID (angka di profil akun game-mu), kadang plus Server/Zone ID. Di halaman game ada panduan gambar + contoh cara menemukannya. Nggak perlu password/kata sandi — JANGAN pernah bagikan password ke siapa pun! 🔒`,
+      answer: `Setiap game butuh data akun beda — umumnya **User ID/Player ID** (angka di profil akun game-mu), kadang plus **Server/Zone ID**. Di halaman game ada panduan gambar + contoh caranya.\n\n> 🔒 Nggak perlu password — **JANGAN pernah** bagikan password ke siapa pun!`,
     },
 
     // ===== v1.17.0: PROMO AKTIF (dirender LIVE dari data promo) =====
@@ -214,7 +214,7 @@ function builtinIntents() {
       utterances: [
         "cek pesanan saya", "cek pesananku", "status pesanan saya", "status pesananku", "pesanan saya sudah masuk belum", "pesanan saya udah diproses belum", "order saya diproses belum", "cek order saya", "status order saya", "resi pesanan saya", "cek resi", "pesanan saya sampai belum", "order saya mana", "pesanan saya gimana", "sudah selesai belum pesanan saya", "tolong cek pesanan saya", "cek status",
       ],
-      answer: `Tempel ID Order kamu di sini (formatnya NEXA-TANGGAL-KODE, contoh NEXA-260914-A7KP) — nanti kucek statusnya langsung 📦 ID Order otomatis dikirim ke chat WhatsApp saat kamu order. Atau buka halaman Lacak Pesanan untuk resi lengkap.`,
+      answer: `Tempel ID Order kamu di sini ya — formatnya \`NEXA-TANGGAL-KODE\`, contoh \`NEXA-260914-A7KP\` — nanti kucek statusnya langsung 📦\n\nID Order otomatis dikirim ke chat WhatsApp saat kamu order. Atau buka halaman **Lacak Pesanan** untuk resi lengkap.`,
     },
 
     // ===== v1.17.0: CHITCHAT BOT (tetap dalam ranah asisten toko) =====
@@ -252,7 +252,7 @@ function builtinIntents() {
     {
       intent: "store.about",
       utterances: ["nexa store apa", "toko ini apa", "tentang nexa store", "nexa store itu apa", "profil toko", "ini toko apa", "nexa store apaan sih", "kenalan sama nexa store", "nexa store itu toko apa", "cerita nexa store"],
-      answer: `${PERSONA.store} adalah toko top up game — isi diamond, UC, VP, dan item game favoritmu dengan harga bersahabat. Order langsung lewat situs ini, checkout via WhatsApp, pesanan bisa dilacak real-time lewat ID Order. Aku ${PERSONA.name}, siap bantu 24 jam ⚡`,
+      answer: `### Tentang ${PERSONA.store}\n\nToko top up game — isi diamond, UC, VP, dan item game favoritmu dengan harga bersahabat.\n\n- 🌐 Order langsung lewat situs ini\n- 💬 Checkout via WhatsApp\n- 📦 Pesanan bisa dilacak real-time lewat ID Order\n\nAku ${PERSONA.name}, siap bantu 24 jam ⚡`,
     },
     {
       intent: "store.list",
@@ -262,32 +262,32 @@ function builtinIntents() {
     {
       intent: "howto.order",
       utterances: ["cara top up", "gimana cara top up", "cara beli", "cara pesan", "cara order", "mau beli gimana caranya", "cara pembelian", "langkah langkah top up", "cara isi diamond", "gimana belinya", "cara beli diamond", "cara beli uc", "mau order dong", "cara transaksi", "gimana cara pesannya", "cara order gimana", "saya mau beli", "aku mau beli", "mau top up dong", "pengen top up"],
-      answer: `Cara top up di ${PERSONA.store} gampang banget: 1️⃣ Buka menu Game → pilih game-mu 2️⃣ Pilih nominal & isi data akun (User ID/Player ID) 3️⃣ Checkout — pesanan otomatis terkirim ke WhatsApp admin 4️⃣ Selesaikan pembayaran, lalu diamond masuk! 🎮 ID Order kamu muncul di chat WhatsApp untuk lacak status.`,
+      answer: `### 🛒 Cara top up di ${PERSONA.store}\n\n1. Buka menu **Game** → pilih game-mu\n2. Pilih nominal & isi data akun (**User ID/Player ID**)\n3. Tekan **Checkout via WhatsApp** — pesanan otomatis terkirim ke admin\n4. Selesaikan pembayaran → diamond langsung masuk!\n\n> 💡 Cara tercepat: bilang saja \`pesan 2000 diamonds free fire\` di chat ini — kumasukkan langsung ke keranjangmu! ID Order muncul di chat WhatsApp buat lacak status.`,
     },
     {
       intent: "howto.pay",
       utterances: ["pembayaran gimana", "metode pembayaran", "bayar pakai apa", "bisa bayar dana", "bisa qris", "bayar lewat apa", "bisa ovo", "bisa gopay", "bisa shopeepay", "transfer bank bisa", "bayarnya gimana", "cara bayar", "metode bayar apa aja", "qris bisa gak", "dana bisa gak", "bisa transfer", "pembayarannya bisa apa aja"],
-      answer: "Pembayaran diatur langsung lewat chat WhatsApp saat kamu order 💬 Nominal + rekening/QR akan dikirim admin setelah pesanan masuk (QRIS dan e-wallet umum tersedia). Checkout cepat, proses langsung!",
+      answer: `Pembayaran diatur langsung lewat chat WhatsApp saat kamu order 💬\n\n- QRIS ✅\n- E-wallet umum (DANA, OVO, GoPay, ShopeePay) ✅\n\nNominal + rekening/QR dikirim admin setelah pesanan masuk. Checkout cepat, proses langsung!`,
     },
     {
       intent: "howto.track",
       utterances: ["lacak pesanan", "cara lacak", "cek pesanan", "cek status order", "pesanan aku dimana", "lacak order", "cek order", "status pesanan", "orderku sudah masuk belum", "cek status pesanan", "pesanku udah diproses belum", "cara cek pesanan", "order aku mana", "diamond ku udah masuk belum", "pesanan belum masuk", "cara melacak pesanan", "gimana cara lacak pesanan", "lacak gimana caranya", "lacak pesananku", "lacak orderku", "cek orderku", "lacak pesanan saya", "mau lacak pesanan", "mau lacak order"],
-      answer: "Buka menu Lacak Pesanan 📦 tempel ID Order kamu (formatnya NEXA-TANGGAL-KODE, contoh NEXA-260914-A7KP — otomatis dikirim ke chat WhatsApp saat order). Status, catatan admin, dan riwayat lengkap langsung tercetak dalam satu resi. Atau ketik ID Order-nya langsung di sini — kucek buat kamu!",
+      answer: `Buka menu **Lacak Pesanan** 📦 → tempel ID Order kamu (format \`NEXA-TANGGAL-KODE\`, contoh \`NEXA-260914-A7KP\` — otomatis dikirim ke chat WhatsApp saat order).\n\nStatus, catatan admin, dan riwayat lengkap langsung tercetak dalam satu resi. Atau ketik ID Order-nya langsung di sini — kucek buat kamu!`,
     },
     {
       intent: "howto.hours",
       utterances: ["jam operasional", "buka jam berapa", "admin online kapan", "proses berapa lama", "tutup jam berapa", "open jam berapa", "24 jam gak", "buka terus gak", "biasanya diproses berapa lama", "lama gak prosesnya", "prosesnya cepat gak", "berapa lama sampai"],
-      answer: `${PERSONA.store} buka 24 jam ⏰ Order kapan pun — otomatis masuk ke admin lewat WhatsApp. Mayoritas pesanan diproses cepat setelah pembayaran dikonfirmasi; kalau ada antrean, statusnya kelihatan di halaman Lacak Pesanan.`,
+      answer: `${PERSONA.store} buka **24 jam** ⏰ Order kapan pun — otomatis masuk ke admin lewat WhatsApp.\n\nMayoritas pesanan diproses cepat setelah pembayaran dikonfirmasi; kalau ada antrean, statusnya kelihatan di halaman **Lacak Pesanan**.`,
     },
     {
       intent: "howto.contact",
       utterances: ["hubungi admin", "kontak admin", "nomor whatsapp", "wa admin", "chat admin", "cara kontak admin", "butuh bantuan manusia", "ngobrol sama admin", "admin bisa dihubungi dimana", "live chat admin", "nomor wa nya berapa", "mau chat admin", "bicara sama orang saja", "adminnya ada gak", "adminnya online gak", "ada admin gak"],
-      answer: "Kamu bisa chat admin lewat WhatsApp — link-nya ada di situs (menu Bantuan) dan otomatis terbuka saat checkout 💬 Kalau butuh jawab cepat soal harga/caranya, tanya aku dulu — aku online 24 jam ⚡",
+      answer: `Kamu bisa chat admin lewat **WhatsApp** — link-nya ada di situs (menu **Bantuan**) dan otomatis terbuka saat checkout 💬\n\n> Kalau butuh jawab cepat soal harga/caranya, tanya aku dulu — aku online 24 jam ⚡`,
     },
     {
       intent: "howto.report",
       utterances: ["lapor bug", "cara lapor bug", "kirim laporan", "ada fitur yang error", "saran fitur", "laporkan masalah", "website error", "ada yang rusak", "bug di situs", "mau saran fitur", "ada bug nih", "ini kenapa error"],
-      answer: "Ada menu Laporan di situs 🐞 — kirim laporan bug, saran fitur, bahkan lampiran screenshot/video. Laporanmu langsung sampai ke pengembang dan ditindaklanjuti.",
+      answer: `Ada menu **Laporan** di situs 🐞 — kirim laporan bug, saran fitur, bahkan lampiran screenshot/video.\n\nLaporanmu langsung sampai ke pengembang dan ditindaklanjuti.`,
     },
     {
       intent: "howto.promo",

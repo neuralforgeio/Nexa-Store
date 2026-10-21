@@ -28,11 +28,12 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { Nlp } = require("@nlpjs/basic");
-const { resolveCatalogQuery, resolveProductMention, withinDomain } = require("./nexa-resolve.js");
+const { resolveCatalogQuery, resolveProductForOrder, resolveProductMention, withinDomain } = require("./nexa-resolve.js");
 const { containsLeakAttempt, sanitizeAnswer, GUARD_ANSWER } = require("./nexa-guard.js");
 const { detectMath, solveMath } = require("./nexa-math.js");
 const { buildOverlay, matchOverlay, personalize } = require("./nexa-overlay.js");
 const { renderIntentLive, renderOrderStatus, ORDER_ID_RE } = require("./nexa-userctx.js");
+const { agentAddToCart, detectPurchaseIntent, markdownToHtml, stripMarkdown } = require("./nexa-agent.js");
 
 // ---------------------------------------------------------------------------
 // Otak: model.nlp (canonical) + fallback bundel nexa-brain.js
@@ -136,10 +137,14 @@ async function loadCustomBrain() {
     return customBrainState;
   }
   const modelJson = typeof file.modelJson === "string" && file.modelJson.length > 10 ? file.modelJson : null;
+  // v1.18.0: model kustom hanya dipakai bila versinya sama dengan bundel —
+  // model korpus lama otomatis mundur agar jawaban markdown baru aktif.
+  const bundledVersion = require("./nexa-brain.js").version;
+  const modelCurrent = Boolean(modelJson) && file.version === bundledVersion;
   customBrainState = {
-    key: modelJson && file.trainedAt ? `custom-${file.trainedAt}` : "bundled",
+    key: modelCurrent && file.trainedAt ? `custom-${file.trainedAt}` : "bundled",
     source: source ?? "fs",
-    modelJson,
+    modelJson: modelCurrent ? modelJson : null,
     customIntents: file.customIntents,
     overlay: buildOverlay(file.customIntents),
     at: Date.now(),
@@ -241,6 +246,9 @@ function mergeLexicon(base, games, products) {
       ],
       units: trained ? trained.units : [],
       productCount: liveProducts.filter((p) => p.gameId === g.id).length,
+      // v1.18.0: skema field order ikut — dipakai agent transaksi. Katalog
+      // publik mengeja "orderFields", repo internal "orderFieldSchema".
+      orderFieldSchema: g.orderFieldSchema ?? g.orderFields ?? (trained ? trained.orderFieldSchema : null),
     };
   });
 
@@ -300,6 +308,30 @@ async function answer(text, lexiconOverride, ctx = {}) {
     if (mathAnswer) return { intent: "math", score: 1, answer: sanitizeAnswer(mathAnswer) };
   }
 
+  // 1.5 AGENT TRANSAKSI (v1.18.0) — jalur tanpa keranjang (Telegram/api):
+  // jawaban menautkan langsung ke halaman game + langkah transaksinya.
+  if (detectPurchaseIntent(clean)) {
+    const orderHit = resolveProductForOrder(clean, lexicon);
+    if (orderHit) {
+      const game = (lexicon.games || []).find((g) => g.id === orderHit.gameId);
+      const product = (lexicon.products || []).find((p) => p.id === orderHit.productId);
+      if (game && product) {
+        const label = String(product.label || (product.tokens || []).join(" ") || product.id)
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        const built = agentAddToCart({
+          product,
+          game,
+          label,
+          price: typeof product.priceIdr === "number" ? product.priceIdr : 0,
+          userName,
+          withCartAction: false,
+          siteUrl: process.env.NEXA_SITE_URL || "https://nexastoregame.vercel.app",
+        });
+        return { intent: "agent.order_link", score: 1, answer: sanitizeAnswer(built.answer) };
+      }
+    }
+  }
+
   // 2. Resolver katalog.
   const hit = resolveCatalogQuery(clean, lexicon);
   if (hit) {
@@ -348,4 +380,4 @@ async function answer(text, lexiconOverride, ctx = {}) {
   return { intent: "None", score: (r && r.score) || 0, answer: FALLBACK };
 }
 
-module.exports = { answer, mergeLexicon, loadBrain, loadCustomBrain, brainInfo, renderOrderStatus, ORDER_ID_RE };
+module.exports = { answer, mergeLexicon, loadBrain, loadCustomBrain, brainInfo, renderOrderStatus, ORDER_ID_RE, markdownToHtml, stripMarkdown };
