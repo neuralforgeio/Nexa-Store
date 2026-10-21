@@ -28,10 +28,16 @@
           "from": "bot",
           "text": "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE.\n\nCoba tanya:\n- 💰 nama game (mis. `free fire`)\n- 🛒 `pesan 2000 diamonds free fire` — langsung masuk keranjang\n- 📦 `lacak pesanan`\n- 💸 `rekomendasi termurah`",
           "at": "2026-10-21T11:19:58.441Z"
+        },
+        {
+          "id": "m_mvi0t12ogfjf",
+          "from": "user",
+          "text": "product paling murah",
+          "at": "2026-10-21T11:20:08.112Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T11:19:58.441Z",
-      "unreadByOwner": 2,
+      "lastMessageAt": "2026-10-21T11:20:08.112Z",
+      "unreadByOwner": 3,
       "ownerLastReadAt": null
     },
     {
