@@ -14,14 +14,19 @@
       ],
       "total": 52000,
       "status": "pending",
-      "statusReason": null,
-      "statusUpdatedAt": null,
+      "statusReason": "halo>>??",
+      "statusUpdatedAt": "2026-10-21T05:49:01.480Z",
       "createdAt": "2026-10-21T05:47:15.006Z",
       "history": [
         {
           "status": "pending",
           "at": "2026-10-21T05:47:15.006Z",
           "reason": null
+        },
+        {
+          "status": "pending",
+          "at": "2026-10-21T05:49:01.480Z",
+          "reason": "halo>>??"
         }
       ]
     },
