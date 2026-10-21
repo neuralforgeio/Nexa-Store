@@ -278,6 +278,8 @@ export async function POST(req: NextRequest) {
     // TIDAK pernah menggagalkan pesan pengunjung.
     let botMessage: ChatMessage | null = null;
     const botActions: AgentAction[] = [];
+    let botEngineKind: string | null = null;
+    let llmDebug: { ok: boolean; kind: string; ms: number } | null = null;
     const botState = await readFeature("bot-state").catch(() => null);
     const aiAutoReply = await readAiModeFromStore(async () => botState);
     if (aiAutoReply && updated) {
@@ -299,6 +301,8 @@ export async function POST(req: NextRequest) {
         });
         if (reply?.answer) {
           botMessage = await appendBotMessage(conversationId, reply.answer);
+          if (reply.intent === "llm.answer") botEngineKind = "llm";
+          if (reply.llmDebug) llmDebug = reply.llmDebug;
 
           const addToCart = reply.actions?.find((a) => a.type === "add_to_cart");
           const fillData = reply.actions?.find((a) => a.type === "fill_data");
@@ -315,7 +319,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return jsonOk({ sent: true, message, botMessage, aiAutoReply, botActions });
+    return jsonOk({
+      sent: true,
+      message,
+      botMessage,
+      aiAutoReply,
+      botActions,
+      /** v1.19.0: diagnostik ephemeral — mesin mana yang menjawab + kegagalan LLM (kategori saja). */
+      botEngine: botMessage ? (botEngineKind ?? "local") : "off",
+      llmDebug: llmDebug ?? null,
+    });
   } catch {
     return jsonError(502, "chat.send-failed", "Pesan gagal terkirim. Coba lagi.");
   }

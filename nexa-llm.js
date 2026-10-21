@@ -88,7 +88,28 @@ function getZai() {
 /** Status otak LLM — dipakai panel AI developer. */
 async function llmStatus() {
   const z = await getZai();
-  return { available: Boolean(z), source: z ? z.source : "unavailable" };
+  return {
+    available: Boolean(z),
+    source: z ? z.source : "unavailable",
+    ...(lastCall ? { lastCall } : {}),
+  };
+}
+
+/**
+ * Diagnostik panggilan terakhir — HANYA kategori + durasi (tanpa URL/token).
+ * Dipakai untuk membedakan timeout vs error HTTP vs jaringan di produksi.
+ */
+let lastCall = null; // { ok, kind, ms, at }
+function recordCall(ok, kind, ms) {
+  lastCall = { ok, kind, ms, at: new Date().toISOString() };
+}
+function errorKind(e) {
+  const msg = String((e && e.message) || "");
+  if (msg.includes("llm-timeout")) return "timeout";
+  if (/status 4\d\d/.test(msg)) return "http-4xx";
+  if (/status 5\d\d/.test(msg)) return "http-5xx";
+  if (/fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|network/i.test(msg)) return "network";
+  return "error";
 }
 
 // ---------------------------------------------------------------------------
@@ -472,17 +493,32 @@ async function llmAnswer(p) {
       // Kegagalan singkat (jaringan/gangguan sesaat) → satu kali ulang dengan
       // sisa anggaran waktu. Timeout panjang TIDAK diulang.
       const spent = Date.now() - t0;
-      if (String(first && first.message).includes("llm-timeout") || spent > 3000) throw first;
+      if (String(first && first.message).includes("llm-timeout") || spent > 3000) {
+        recordCall(false, errorKind(first), Date.now() - t0);
+        throw first;
+      }
       const remaining = Math.max(6000, LLM_TIMEOUT_MS - spent);
-      guarded = await raceTimeout(remaining);
+      try {
+        guarded = await raceTimeout(remaining);
+      } catch (second) {
+        recordCall(false, errorKind(second), Date.now() - t0);
+        throw second;
+      }
     }
     const content = guarded && guarded.choices && guarded.choices[0] && guarded.choices[0].message
       ? guarded.choices[0].message.content
       : null;
-    if (!content || !String(content).trim()) return null;
+    if (!content || !String(content).trim()) {
+      recordCall(false, "empty", Date.now() - t0);
+      return null;
+    }
     const { answer, action } = parseLlmReply(content);
-    if (!answer) return null;
-    return { answer: answer.slice(0, 1200), action };
+    if (!answer) {
+      recordCall(false, "no-answer", Date.now() - t0);
+      return null;
+    }
+    recordCall(true, "ok", Date.now() - t0);
+    return { answer: answer.slice(0, 1200), action, ms: Date.now() - t0 };
   } catch {
     return null; // gagal/timeout — pipeline turun ke NLP lokal
   } finally {

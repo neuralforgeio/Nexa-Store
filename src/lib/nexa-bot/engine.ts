@@ -482,7 +482,8 @@ async function runLlmBrain(
   clean: string,
   live: LiveSnapshot,
   userName: string | null,
-  ctx: BotCtx
+  ctx: BotCtx,
+  ctxRef: { llmDebug?: { ok: boolean; kind: string; ms: number } }
 ): Promise<BotReply | null> {
   if (!live) return null;
   const promos = await readActivePromos();
@@ -504,7 +505,13 @@ async function runLlmBrain(
       timeZone: "Asia/Jakarta",
     }).format(new Date()),
   });
-  if (!out) return null;
+  if (!out) {
+    // Diagnostik ephemeral: kategori kegagalan (timeout/http/network) — tanpa rahasia.
+    const diag = await llmStatus().catch(() => null);
+    const last = diag && diag.lastCall ? diag.lastCall : null;
+    if (last) ctxRef.llmDebug = { ok: false, kind: String(last.kind), ms: Number(last.ms) || 0 };
+    return null;
+  }
 
   // Validasi aksi terhadap katalog LIVE — aksi tak dikenal dibuang diam-diam.
   const actions: AgentAction[] = [];
@@ -555,6 +562,7 @@ async function runLlmBrain(
     score: 1,
     answer: sanitizeAnswer(out.answer.slice(0, MAX_ANSWER)),
     ...(actions.length > 0 ? { actions } : {}),
+    llmDebug: { ok: true, kind: "ok", ms: Number(out.ms) || 0 },
   };
 }
 
@@ -653,6 +661,18 @@ function runAgentStep(
 // ---------------------------------------------------------------------------
 
 export async function nexaBotAnswer(text: string, ctx: BotCtx = {}): Promise<BotReply> {
+  // v1.19.0: pembungkus diagnostik — bila otak LLM dicoba dan gagal,
+  // kategori kegalannya ikut pada respons (ephemeral, tanpa rahasia).
+  const debugRef: { llmDebug?: { ok: boolean; kind: string; ms: number } } = {};
+  const reply = await nexaBotAnswerInner(text, ctx, debugRef);
+  return debugRef.llmDebug && !reply.llmDebug ? { ...reply, llmDebug: debugRef.llmDebug } : reply;
+}
+
+async function nexaBotAnswerInner(
+  text: string,
+  ctx: BotCtx,
+  llmDebugRef: { llmDebug?: { ok: boolean; kind: string; ms: number } }
+): Promise<BotReply> {
   const clean = (text ?? "").trim().slice(0, 800);
   if (!clean) {
     return { intent: "None", score: 0, answer: brain.persona.fallback };
@@ -739,8 +759,10 @@ export async function nexaBotAnswer(text: string, ctx: BotCtx = {}): Promise<Bot
   // (typo/slang/campur ID-EN), menalar data katalog LIVE (termurah, budget,
   // perbandingan, rekomendasi), lalu menyimpulkan dan menjawab Markdown rapi.
   // Gagal/timeout/tak tersedia → lanjut ke NLP lokal (cadangan) tanpa henti.
-  const llmReply = await runLlmBrain(clean, live, userName, ctx);
+  const llmCtxRef: { llmDebug?: { ok: boolean; kind: string; ms: number } } = {};
+  const llmReply = await runLlmBrain(clean, live, userName, ctx, llmCtxRef);
   if (llmReply) return llmReply;
+  if (llmCtxRef.llmDebug) llmDebugRef.llmDebug = llmCtxRef.llmDebug;
 
   // 3. Klasifikasi NLP — jawaban positif hanya diterima bila pesan memang
   //    dalam ranah (gerbang mencegah teks acak diklasifikasi paksa).

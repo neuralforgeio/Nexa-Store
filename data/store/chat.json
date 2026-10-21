@@ -1,6 +1,40 @@
 {
   "conversations": [
     {
+      "id": "c_cf99f168b05e76cf01557f19",
+      "name": "Dearly",
+      "createdAt": "2026-10-21T13:04:17.765Z",
+      "messages": [
+        {
+          "id": "m_mvi4izc52vov",
+          "from": "user",
+          "text": "halo bro, lagi ada promo apa aja gak?",
+          "at": "2026-10-21T13:04:17.765Z"
+        },
+        {
+          "id": "m_mvi4j01s3e6w",
+          "from": "bot",
+          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
+          "at": "2026-10-21T13:04:18.688Z"
+        },
+        {
+          "id": "m_mvi4jz45wfb2",
+          "from": "user",
+          "text": "halo bro, lagi ada promo apa aja gak hari ini?",
+          "at": "2026-10-21T13:05:04.133Z"
+        },
+        {
+          "id": "m_mvi4jztmas57",
+          "from": "bot",
+          "text": "### 💍 Promo saat ini\nTidak ada promo aktif di NEXA STORE saat ini. Cek lagi nanti ya, bisa-kadang ada penawaran spesial!",
+          "at": "2026-10-21T13:05:05.050Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-21T13:05:05.050Z",
+      "unreadByOwner": 2,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_5e2b6dfcc78002129bd9c06a",
       "name": "Dearly",
       "createdAt": "2026-10-21T12:47:51.403Z",
