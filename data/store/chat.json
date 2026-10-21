@@ -34,9 +34,15 @@
           "from": "user",
           "text": "namamu",
           "at": "2026-10-21T09:46:58.652Z"
+        },
+        {
+          "id": "m_mvhxh9ph56kx",
+          "from": "bot",
+          "text": "Hmm, aku belum paham yang kamu tanya 😅 Aku Nexa Bot — asisten khusus NEXA STORE. Coba tanya: nama game (mis. \"free fire\"), \"berapa total game\", \"cara top up\", \"lacak pesanan\", atau \"rekomendasi termurah\".",
+          "at": "2026-10-21T09:47:00.581Z"
         }
       ],
-      "lastMessageAt": "2026-10-21T09:46:58.652Z",
+      "lastMessageAt": "2026-10-21T09:47:00.581Z",
       "unreadByOwner": 3,
       "ownerLastReadAt": null
     },
