@@ -124,9 +124,13 @@ async function readCustomBrainFromGithub() {
 
 async function loadCustomBrain() {
   if (customBrainState && Date.now() - customBrainState.at < BRAIN_TTL_MS) return customBrainState;
-  let file = readCustomBrainFromFs();
-  const source = file ? "fs" : null;
-  if (!file) file = await readCustomBrainFromGithub();
+  // Prioritas GITHUB dulu bila env tersedia (produksi Vercel: FS hanya salinan
+  // build-time yang bisa basi — commit "bot-brain:" sengaja tidak memicu
+  // rebuild). Sandbox (tanpa env GITHUB_*) otomatis memakai FS yang selalu
+  // segar karena berbagi direktori repo dengan layanan panel.
+  let file = await readCustomBrainFromGithub();
+  const source = file ? "github" : null;
+  if (!file) file = readCustomBrainFromFs();
   if (!file) {
     customBrainState = { key: "none", source: "bundled", modelJson: null, customIntents: [], overlay: buildOverlay([]), at: Date.now() };
     return customBrainState;
@@ -134,7 +138,7 @@ async function loadCustomBrain() {
   const modelJson = typeof file.modelJson === "string" && file.modelJson.length > 10 ? file.modelJson : null;
   customBrainState = {
     key: modelJson && file.trainedAt ? `custom-${file.trainedAt}` : "bundled",
-    source: source ?? "github",
+    source: source ?? "fs",
     modelJson,
     customIntents: file.customIntents,
     overlay: buildOverlay(file.customIntents),
