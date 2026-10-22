@@ -137,18 +137,18 @@
       }
     },
     "2026-10-22": {
-      "views": 7,
+      "views": 10,
       "uniques": 3,
       "byPath": {
-        "/": 3,
-        "/games/free-fire": 4
+        "/": 5,
+        "/games/free-fire": 5
       },
       "byReferrer": {
-        "langsung": 6,
+        "langsung": 9,
         "github.com": 1
       },
       "byDevice": {
-        "mobile": 7
+        "mobile": 10
       },
       "events": {
         "chat_open": 1
@@ -382,6 +382,9 @@
     1792670185296,
     1792670185296,
     1792670658487,
-    1792670658487
+    1792670658487,
+    1792670755978,
+    1792670755978,
+    1792670755978
   ]
 }
