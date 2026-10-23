@@ -10,9 +10,15 @@
           "from": "user",
           "text": "Ryu jembot😹",
           "at": "2026-10-23T13:29:03.987Z"
+        },
+        {
+          "id": "m_mvl0almve8hn",
+          "from": "bot",
+          "text": "Maaf, di luar wewenangku 😅 Aku **Nexa Bot** — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu.\n\nTanya aku soal **harga game**, **cara top up**, atau **lacak pesanan** ya!",
+          "at": "2026-10-23T13:29:06.823Z"
         }
       ],
-      "lastMessageAt": "2026-10-23T13:29:03.987Z",
+      "lastMessageAt": "2026-10-23T13:29:06.823Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": null
     },
