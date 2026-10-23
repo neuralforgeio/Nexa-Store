@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_b313a6bfdc7b8ad921196f21",
+      "name": "Dearly",
+      "createdAt": "2026-10-23T09:20:01.318Z",
+      "messages": [
+        {
+          "id": "m_mvkre9lyp479",
+          "from": "user",
+          "text": "budget saya 10k, bisa topup apa disini",
+          "at": "2026-10-23T09:20:01.318Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-23T09:20:01.318Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_e8e49ea81a83132c29ffe11a",
       "name": "Kevin",
       "createdAt": "2026-10-22T11:52:14.827Z",
