@@ -3,7 +3,7 @@
   "whatsappNumber": "+62 888-6567-888",
   "currency": "IDR",
   "locale": "id-ID",
-  "maintenanceMode": true,
+  "maintenanceMode": false,
   "maintenanceMessage": "Store sedang tutup\nBuka kembali pada tanggal  26/10/2026",
   "supportNote": "Pesanan diproses melalui WhatsApp pada jam operasional. Setelah pesan terkirim, tim store akan mengonfirmasi ketersediaan dan pembayaran."
 }
