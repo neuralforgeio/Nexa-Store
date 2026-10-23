@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_b313a6bfdc7b8ad921196f21",
+      "name": "Jembot",
+      "createdAt": "2026-10-23T13:29:03.987Z",
+      "messages": [
+        {
+          "id": "m_mvl0ajg3odcl",
+          "from": "user",
+          "text": "Ryu jembot😹",
+          "at": "2026-10-23T13:29:03.987Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-23T13:29:03.987Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_66d1db8651216139f1fd5bfe",
       "name": null,
       "createdAt": "2026-10-23T09:57:54.060Z",
