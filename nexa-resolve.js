@@ -257,13 +257,17 @@ function resolveProductForOrder(text, lexicon) {
   // 4) Cakupan label kata-penuh — untuk nominal non-angka ("member mingguan",
   //    "weekly diamond pass"). Wajib: SEMUA token label hadir + hasil UNIK
   //    (ambigu → tolak, jangan salah menambah produk ke keranjang).
+  //    v1.21.0: token bonus "+N" dikecualikan — "pesan 30 delta coins" tetap
+  //    cocok dengan produk "30 delta coins +36" tanpa harus mengetik bonusnya.
   const words = new Set(norm.trim().split(" "));
   const gameNameTokens = new Set(
     String(hit.game.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean)
   );
   const labelMatches = new Set();
   for (const p of products) {
-    const toks = (p.tokens || []).filter((t) => t && t.length > 1 && !gameNameTokens.has(t));
+    const toks = (p.tokens || []).filter(
+      (t) => t && t.length > 1 && !t.startsWith("+") && !gameNameTokens.has(t)
+    );
     if (toks.length === 0) continue;
     if (toks.every((t) => words.has(t))) labelMatches.add(p.id);
   }

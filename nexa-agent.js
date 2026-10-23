@@ -53,6 +53,24 @@ const QUESTION_BLOCKS = [
   "dimana", "kemana", "sampai", "kirimin", "kirim foto", "foto",
 ];
 
+/**
+ * v1.21.0 — pola KERANJANG: kata kerja aksi dan kata "keranjang" boleh
+ * TERPISAH ("masukin yang point blank itu ke keranjang dong") — dulu kata
+ * pemicu harus contiguous ("masukin keranjang") sehingga pesan seperti ini
+ * lolos ke resolver katalog dan user disuruh mengetik ulang perintah panjang.
+ */
+const CART_NOUN_RE = /\b(?:keranjang\w*|kerenjang\w*|krnj|cart|chart)\b/;
+const CART_VERB_RE =
+  /\b(?:masuk\w*|taruh|taro|taroin|simpan\w*|pindah\w*|bikin\w*|jadiin|add|input|insert)\b/;
+
+/**
+ * v1.21.0 — pola RUJUKAN pilihan: "yang point blank itu", "yang 1200 aja",
+ * "point blank aja deh" — user memilih dari daftar yang barusan bot tampilkan.
+ * Hanya untuk pesan pendek tanpa kata tanya.
+ */
+const REFERENCE_RE =
+  /\byang\b[\s\S]{0,48}\b(?:aja|saja|itu|tadi|tersebut|dong|deh|yuk|banget)\b|\b(?:aja|saja)\s*(?:deh|dong|ya|lah)?\s*[.!]?\s*$/;
+
 function normalizeLite(text) {
   return ` ${String(text ?? "").toLowerCase().replace(/\s+/g, " ").trim()} `;
 }
@@ -64,7 +82,13 @@ function detectPurchaseIntent(text) {
   for (const w of QUESTION_BLOCKS) {
     if (norm.includes(` ${w} `)) return false;
   }
-  return ORDER_TRIGGERS.some((w) => norm.includes(` ${w} `));
+  if (ORDER_TRIGGERS.some((w) => norm.includes(` ${w} `))) return true;
+  // Pola keranjang terpisah: "masukin yang X itu ke keranjang".
+  if (CART_NOUN_RE.test(norm) && CART_VERB_RE.test(norm)) return true;
+  // Rujukan pilihan pendek: "yang point blank itu", "yang 1200 aja".
+  const short = norm.trim();
+  if (short.length <= 80 && REFERENCE_RE.test(short)) return true;
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -261,10 +285,12 @@ function requiredList(orderFields) {
 
 /**
  * Jawaban + aksi ketika produk berhasil dimasukkan ke keranjang.
- * @param {{product:{id:string},game:{id:string,slug?:string,name:string,orderFieldSchema?:Array<object>},label:string,price:number,userName?:string|null,withCartAction?:boolean,siteUrl?:string}} p
+ * @param {{product:{id:string},game:{id:string,slug?:string,name:string,orderFieldSchema?:Array<object>},label:string,price:number,userName?:string|null,withCartAction?:boolean,siteUrl?:string,contextNote?:string}} p
+ * contextNote (v1.21.0): alasan singkat pilihan — "Sesuai budget kamu tadi",
+ * "Pilihan no. 2", "Yang termurah" — membuat ack agent terasa paham konteks.
  */
 function agentAddToCart(p) {
-  const { product, game, label, price, userName, withCartAction, siteUrl } = p;
+  const { product, game, label, price, userName, withCartAction, siteUrl, contextNote } = p;
   const orderFields = game.orderFieldSchema ?? [];
   const req = requiredList(orderFields);
   const reqText = req.length > 0 ? req.join(", ") : "cukup **nama kamu**";
@@ -288,8 +314,11 @@ function agentAddToCart(p) {
       ? `Kamu perlu isi: ${req.join(", ")}. Boleh langsung kirim di chat ini — contoh \`id saya 123456789\` — otomatis kuisikan ke keranjangmu 🤖`
       : `Cukup isi **nama kamu** saat checkout — atau kirim di sini lewat \`nama saya …\` 🤖`;
 
+  const note = contextNote ? `*${String(contextNote).slice(0, 60)}*\n\n` : "";
+
   const answer =
     `### ✅ Masuk keranjang${callName ? `, ${callName}` : ""}!\n\n` +
+    note +
     `**${label}** — ${game.name}\n💵 **${idr(price)}** · bayar via WhatsApp\n\n` +
     `### Langkah transaksi\n` +
     `1. Buka **Keranjang** (pojok kanan atas)\n` +
@@ -313,6 +342,35 @@ function agentAddToCart(p) {
     })),
   };
   return { answer, action };
+}
+
+/**
+ * v1.21.0 — Pertanyaan PILIHAN bernomor saat produk belum bisa dipastikan.
+ * User tinggal balas "1" / "2" / "yang kedua" — lapisan pick (nexa-pick.js)
+ * langsung mengeksekusi add_to_cart. Mengembalikan {answer, options} —
+ * options dipersist oleh engine agar balasan berikutnya terresolusi.
+ * @param {{gameName?:string|null, reason?:"budget"|"ambiguous"|"list", options:Array<{label:string,price:number}>, userName?:string|null}} p
+ */
+function agentAskChoice(p) {
+  const { gameName, reason, options, userName } = p;
+  const list = (options || []).slice(0, 6);
+  const callName = String(userName ?? "").trim().split(" ")[0];
+  const lines = list.map((o, i) => `${i + 1}. **${o.label}** — ${idr(o.price)}`);
+  const head = gameName
+    ? `### 🛒 ${gameName} — pilih nominalnya${callName ? `, ${callName}` : ""}!`
+    : `### 🛒 Pilih salah satunya${callName ? `, ${callName}` : ""}!`;
+  const why =
+    reason === "budget"
+      ? "Yang muat di budget kamu ada beberapa nih:"
+      : reason === "ambiguous"
+        ? "Maksudmu yang mana?"
+        : "Ini pilihannya:";
+  return {
+    answer:
+      `${head}\n\n${why}\n\n${lines.join("\n")}\n\n` +
+      `Balas **angkanya** saja (contoh: \`1\`) — langsung kumasukkan ke keranjang! 🤖`,
+    options: list,
+  };
 }
 
 /**
@@ -396,6 +454,7 @@ module.exports = {
   detectPurchaseIntent,
   extractAccountData,
   agentAddToCart,
+  agentAskChoice,
   agentFillData,
   stripMarkdown,
   markdownToHtml,

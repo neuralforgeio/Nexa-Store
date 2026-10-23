@@ -132,6 +132,7 @@ When the user clearly wants to ORDER/BUY a product that exists in STORE DATA ("p
 {"type":"add_to_cart","productId":"<exact productId>"}
 \`\`\`
 3. In the answer text: confirm the item is ALREADY ADDED to their cart (it happens automatically via the action block — never ask them to press anything to add it). Then give the remaining steps (MAX 5 numbered steps): buka **Keranjang** → isi data akun (list the required ORDER FIELDS) → **Checkout via WhatsApp** → bayar sesuai instruksi admin → simpan **ID Order** untuk lacak.
+CONTEXT REFERENCES (v1.21.0): when the user refers to something from the conversation or the SUGGESTED PICKS list ("yang point blank itu", "yang termurah", "ambil yang kedua", "masukin yang tadi") and it maps to EXACTLY ONE product in SUGGESTED PICKS or the last list you showed in RECENT CHAT — act on it directly with an add_to_cart action block, and acknowledge the reference naturally (e.g. "Yang Point Blank sesuai budget kamu tadi — sudah kumasukkan!"). If it maps to several, ask ONE short numbered question (they can reply "1"/"2"). NEVER tell the user to retype a long command like "pesan <label> <game>" — short replies are handled by the system.
 When the user sends account data ("id saya 123456789", "server 2345", "nick Dearly") AND a PENDING ITEM exists:
 - Map values to that game's ORDER FIELDS keys and end with EXACTLY:
 \`\`\`action
@@ -346,6 +347,19 @@ function buildDataContext(p) {
         `${g ? g.name : pending.gameId}${prod ? ` · ${idr(prod.priceIdr)}` : ""}; ` +
         `data terisi: ${filledText}`
     );
+  }
+
+  // v1.21.0: opsi pilihan aktif — daftar yang barusan bot tampilkan. Rujukan
+  // user ("yang point blank itu", "yang termurah") harus dipetakan ke sini.
+  const opts = pending && Array.isArray(pending.options) ? pending.options : [];
+  if (opts.length > 0) {
+    lines.push(
+      `SUGGESTED PICKS (the list I just showed the user — map their references like "yang point blank itu"/"yang termurah" to these):`
+    );
+    for (const o of opts.slice(0, 8)) {
+      const og = nameOf.get(o.gameId);
+      lines.push(`  ${o.productId} | ${og ? og.name : o.gameId} | ${o.label} | ${idr(o.price)}`);
+    }
   }
 
   if (history.length > 0) {

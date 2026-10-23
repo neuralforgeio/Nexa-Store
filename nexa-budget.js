@@ -86,6 +86,7 @@ function budgetMatch(text, products, games) {
   }
 
   const row = (p) => ({
+    gameId: String(p.gameId ?? ""),
     gameName: String(p.gameName ?? ""),
     label: titleCase(String(p.label ?? p.id ?? "")),
     price: p.priceIdr,
@@ -124,8 +125,11 @@ function budgetMatch(text, products, games) {
 
 /**
  * Render jawaban budget (Markdown, ≤ ~780 karakter).
+ * v1.21.0: baris DINOMORI (1. 2. 3. …) supaya user tinggal balas angka /
+ * "yang termurah" / "masukin yang point blank" — lapisan pick (nexa-pick.js)
+ * langsung mengeksekusi add_to_cart tanpa mengetik perintah panjang.
  * @param {{budget:number, gameName:string|null, cheapest:number|null,
- *   rows:Array<{gameName:string,label:string,price:number}>}} hit hasil budgetMatch
+ *   rows:Array<{gameId:string,gameName:string,label:string,price:number}>}} hit hasil budgetMatch
  * @param {number|null} overallCheapest termurah se-toko (untuk kasus kosong)
  */
 function renderBudgetAnswer(hit, overallCheapest) {
@@ -137,17 +141,19 @@ function renderBudgetAnswer(hit, overallCheapest) {
     return `${head}\n\nBelum ada nominal yang muat di budget itu 😅${tail}\n\n> Naikkan dikit budgetnya, atau tanya \`rekomendasi termurah\` buat lihat daftar termurah per game!`;
   }
 
-  const lines = hit.rows.map((r) => `- **${hit.gameName ? r.label : `${r.gameName} — ${r.label}`}** · ${idr(r.price)}`);
+  const lines = hit.rows.map(
+    (r, i) => `${i + 1}. **${hit.gameName ? r.label : `${r.gameName} — ${r.label}`}** · ${idr(r.price)}`
+  );
   const hint = hit.gameName
-    ? `\n\n💡 Mau langsung? Bilang \`pesan ${hit.rows[0].label.toLowerCase()} ${hit.gameName.toLowerCase()}\` — kumasukkan ke keranjang!`
-    : `\n\n💡 Ketik nama game-nya buat lihat semua pilihan nominalnya!`;
+    ? `\n\n💡 Balas **angkanya** (\`1\`, \`2\`) — langsung kumasukkan ke keranjang!`
+    : `\n\n💡 Bilang aja \`masukin yang point blank\` / \`yang termurah\` — otomatis kumasukkan ke keranjang sesuai budgetmu!`;
   const budget = 740 - head.length - hint.length;
   const out = [];
   let used = 0;
   for (const l of lines) {
     const add = (out.length ? "\n" : "") + l;
     if (used + add.length > budget) {
-      out.push("- …");
+      out.push("…");
       break;
     }
     out.push(l);

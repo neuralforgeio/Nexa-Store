@@ -82,13 +82,28 @@ export const chatConversationSchema = z.object({
   ownerLastReadAt: z.string().datetime().nullable(),
   // v1.18.0: produk tertunda agent (transaksi via chat). Optional — file
   // lama tanpa field ini tetap valid.
+  // v1.21.0: productId/gameId kini nullable (entri bisa berupa OPsi pilihan
+  // saja — daftar budget/harga yang barusan bot tampilkan), + options/
+  // optionsAt untuk memori pilihan ("1"/"yang termurah" dieksekusi pick).
   agent: z
     .object({
-      productId: z.string().min(1).max(120),
-      gameId: z.string().min(1).max(120),
+      productId: z.string().min(1).max(120).nullable().optional(),
+      gameId: z.string().min(1).max(120).nullable().optional(),
       at: z.string().datetime(),
       filled: z.record(z.string(), z.string()).optional(),
       customerName: z.string().max(80).optional(),
+      options: z
+        .array(
+          z.object({
+            productId: z.string().min(1).max(120),
+            gameId: z.string().min(1).max(120),
+            label: z.string().min(1).max(120),
+            price: z.number().int().min(0).max(100_000_000),
+          })
+        )
+        .max(8)
+        .optional(),
+      optionsAt: z.string().datetime().optional(),
     })
     .nullable()
     .optional(),

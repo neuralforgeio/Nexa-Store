@@ -122,13 +122,19 @@ export type ChatConversation = {
   unreadByOwner: number;
   ownerLastReadAt: string | null;
   /** v1.18.0: produk tertunda agent — dipakai bot untuk mengisi data akun
-   * yang dikirim lanjutan ("id saya 123…"). Optional: file lama valid. */
+   * yang dikirim lanjutan ("id saya 123…"). Optional: file lama valid.
+   * v1.21.0: productId/gameId nullable (entri bisa berupa opsi pilihan saja)
+   * + options/optionsAt — memori daftar yang barusan bot tampilkan, supaya
+   * balasan "1" / "yang termurah" / "masukin yang point blank itu" langsung
+   * dieksekusi add_to_cart oleh lapisan pick (nexa-pick.js). */
   agent?: {
-    productId: string;
-    gameId: string;
+    productId?: string | null;
+    gameId?: string | null;
     at: string;
     filled?: Record<string, string>;
     customerName?: string;
+    options?: { productId: string; gameId: string; label: string; price: number }[];
+    optionsAt?: string;
   } | null;
 };
 

@@ -5,7 +5,7 @@ import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-f
 import { parseChat } from "@/lib/site-features/schema";
 import { chatBridgeEnabled, notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
 import { sendOwnerChatNotification } from "@/lib/telegram-notify";
-import { nexaBotAnswer, readAiModeFromStore, type AgentAction } from "@/lib/nexa-bot/engine";
+import { nexaBotAnswer, readAiModeFromStore, type AgentAction, type AgentOption } from "@/lib/nexa-bot/engine";
 import type { ChatConversation, ChatMessage } from "@/lib/site-features/types";
 
 export const dynamic = "force-dynamic";
@@ -118,7 +118,9 @@ async function appendBotMessage(conversationId: string, text: string): Promise<C
 }
 
 /** v1.18.0: simpan meta agent (produk tertunda + data akun terkumpul) di
- * percakapan — memori bot antar-pesan untuk alur pesan → kirim data → checkout. */
+ * percakapan — memori bot antar-pesan untuk alur pesan → kirim data → checkout.
+ * v1.21.0: add_to_cart kini MENGHAPUS opsi pilihan (pilihan sudah dieksekusi —
+ * mencegah angka selanjutnya salah ditafsir sebagai pick). */
 async function persistAgentMeta(
   conversationId: string,
   addToCart: Extract<AgentAction, { type: "add_to_cart" }> | null,
@@ -131,6 +133,7 @@ async function persistAgentMeta(
       const index = conversations.findIndex((c) => c.id === conversationId);
       if (index === -1) return { conversations: prune(conversations) };
       const prev = conversations[index];
+      const prevAgent = prev.agent;
       if (addToCart) {
         conversations[index] = {
           ...prev,
@@ -138,10 +141,12 @@ async function persistAgentMeta(
             productId: addToCart.productId,
             gameId: addToCart.gameId,
             at: new Date().toISOString(),
+            ...(prevAgent?.filled ? { filled: prevAgent.filled } : {}),
+            ...(prevAgent?.customerName ? { customerName: prevAgent.customerName } : {}),
+            // opsi DIHAPUS — pilihan sudah dieksekusi.
           },
         };
       } else if (fillData) {
-        const prevAgent = prev.agent;
         conversations[index] = {
           ...prev,
           agent: prevAgent
@@ -149,6 +154,7 @@ async function persistAgentMeta(
                 ...prevAgent,
                 filled: { ...(prevAgent.filled ?? {}), ...fillData.fields },
                 ...(fillData.customerName ? { customerName: fillData.customerName } : {}),
+                at: new Date().toISOString(),
               }
             : {
                 productId: fillData.productId,
@@ -164,6 +170,42 @@ async function persistAgentMeta(
   } catch {
     // meta agent gagal tersimpan — aksi tetap dieksekusi klien, hanya
     // ingatan antar-pesan yang hilang (tidak boleh menggagalkan balasan).
+  }
+}
+
+/** v1.21.0: simpan OPsi pilihan aktif (daftar yang barusan bot tampilkan —
+ * budget / harga game / rekomendasi). Pesan berikutnya berupa "1", "yang
+ * kedua", "1200", "yang termurah", atau "masukin yang point blank itu"
+ * langsung dieksekusi add_to_cart oleh lapisan pick di engine. */
+async function persistAgentOptions(conversationId: string, options: AgentOption[]): Promise<void> {
+  if (!options.length) return;
+  try {
+    await updateFeature("chat", "chat: agent options", (currentRaw) => {
+      const file = parseChat(currentRaw);
+      const conversations = [...file.conversations];
+      const index = conversations.findIndex((c) => c.id === conversationId);
+      if (index === -1) return { conversations: prune(conversations) };
+      const prev = conversations[index];
+      const prevAgent = prev.agent;
+      const now = new Date().toISOString();
+      conversations[index] = {
+        ...prev,
+        agent: {
+          ...(prevAgent ?? {}),
+          productId: prevAgent?.productId ?? null,
+          gameId: prevAgent?.gameId ?? null,
+          at: now,
+          ...(prevAgent?.filled ? { filled: prevAgent.filled } : {}),
+          ...(prevAgent?.customerName ? { customerName: prevAgent.customerName } : {}),
+          options: options.slice(0, 8),
+          optionsAt: now,
+        },
+      };
+      return { conversations: prune(conversations) };
+    });
+  } catch {
+    // gagal menyimpan opsi — pick tidak akan aktif pada pesan berikutnya
+    // (jawaban saat ini tetap utuh; tidak boleh menggagalkan balasan).
   }
 }
 
@@ -308,6 +350,12 @@ export async function POST(req: NextRequest) {
           const fillData = reply.actions?.find((a) => a.type === "fill_data");
           if (addToCart || fillData) {
             await persistAgentMeta(conversationId, addToCart ?? null, fillData ?? null);
+          }
+          // v1.21.0: daftar yang barusan bot tampilkan menjadi opsi pilihan
+          // aktif — kecuali aksi add_to_cart barusan menggantinya (pilihan
+          // sudah dieksekusi, opsi lama tidak boleh memicu pick nyasar).
+          if (!addToCart && !fillData && reply.agentOptions?.length) {
+            await persistAgentOptions(conversationId, reply.agentOptions);
           }
           for (const action of reply.actions ?? []) {
             const parsed = agentActionSchema.safeParse(action);

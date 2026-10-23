@@ -1022,7 +1022,9 @@ function BotTypedMarkdown({
   useEffect(() => {
     if (!shouldAnimate || startedRef.current) return;
     startedRef.current = true;
-    const perWord = Math.min(65, Math.max(14, 1700 / Math.max(words.length, 1)));
+    // v1.21.0: total ~1.2 detik (dulu ~1.7) — jawaban panjang 5 langkah
+    // terasa terpotong saat screenshot di tengah animasi.
+    const perWord = Math.min(40, Math.max(10, 1200 / Math.max(words.length, 1)));
     let i = 0;
     const timer = setInterval(() => {
       i += 1;
