@@ -44,7 +44,12 @@
       ],
       "lastMessageAt": "2026-10-23T09:20:37.464Z",
       "unreadByOwner": 3,
-      "ownerLastReadAt": null
+      "ownerLastReadAt": null,
+      "agent": {
+        "productId": "point-blank-1200",
+        "gameId": "point-blank",
+        "at": "2026-10-23T09:20:38.164Z"
+      }
     },
     {
       "id": "c_e8e49ea81a83132c29ffe11a",
