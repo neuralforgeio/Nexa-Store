@@ -22,9 +22,15 @@
           "from": "user",
           "text": "masukin yang point blank itu ke keranjang dong",
           "at": "2026-10-23T09:20:15.713Z"
+        },
+        {
+          "id": "m_mvkremjmbjcl",
+          "from": "bot",
+          "text": "### ⚡ Point Blank — Daftar Harga\n\n- **1200 Pb Cash** — Rp10.000\n- **2400 Pb Cash** — Rp20.000\n- **6000 Pb Cash** — Rp50.000\n- **12000 Pb Cash** — Rp96.000\n- **24000 Pb Cash** — Rp190.000\n- **36000 Pb Cash** — Rp283.000\n💡 Bilang `pesan 1200 pb cash point blank` — langsung kumasukkan ke keranjang!",
+          "at": "2026-10-23T09:20:18.082Z"
         }
       ],
-      "lastMessageAt": "2026-10-23T09:20:15.713Z",
+      "lastMessageAt": "2026-10-23T09:20:18.082Z",
       "unreadByOwner": 2,
       "ownerLastReadAt": null
     },
