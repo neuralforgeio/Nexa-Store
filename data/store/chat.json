@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_66d1db8651216139f1fd5bfe",
+      "name": null,
+      "createdAt": "2026-10-23T09:57:54.060Z",
+      "messages": [
+        {
+          "id": "m_mvksqz9o49m9",
+          "from": "user",
+          "text": "rekomendasi termurah",
+          "at": "2026-10-23T09:57:54.060Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-23T09:57:54.060Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_b313a6bfdc7b8ad921196f21",
       "name": "Dearly",
       "createdAt": "2026-10-23T09:23:53.748Z",
