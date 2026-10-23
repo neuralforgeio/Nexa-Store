@@ -60,7 +60,10 @@
       "agent": {
         "productId": "point-blank-1200",
         "gameId": "point-blank",
-        "at": "2026-10-23T09:20:38.164Z"
+        "at": "2026-10-23T09:20:38.164Z",
+        "filled": {
+          "playerId": "1200"
+        }
       }
     },
     {
