@@ -40,10 +40,16 @@
           "from": "bot",
           "text": "### ✅ Masuk keranjang, Dearly!\n\n**1200 Pb Cash** — Point Blank\n💵 **Rp10.000** · bayar via WhatsApp\n\n### Langkah transaksi\n1. Buka **Keranjang** (pojok kanan atas)\n2. Isi data akun — perlu: **Player ID**\n3. Tekan **Checkout via WhatsApp**\n4. Bayar sesuai instruksi admin → pesanan langsung diproses\n5. Catat **ID Order** untuk melacak status pesanan\n\n> Maksimal **5 item** per checkout. Kamu perlu isi: **Player ID**. Boleh langsung kirim di chat ini — contoh `id saya 123456789` — otomatis kuisikan ke keranjangmu 🤖",
           "at": "2026-10-23T09:20:37.464Z"
+        },
+        {
+          "id": "m_mvkrhepx4vdl",
+          "from": "user",
+          "text": "hapus 1200 pb dari keranjang",
+          "at": "2026-10-23T09:22:27.909Z"
         }
       ],
-      "lastMessageAt": "2026-10-23T09:20:37.464Z",
-      "unreadByOwner": 3,
+      "lastMessageAt": "2026-10-23T09:22:27.909Z",
+      "unreadByOwner": 4,
       "ownerLastReadAt": null,
       "agent": {
         "productId": "point-blank-1200",
