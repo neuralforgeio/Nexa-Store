@@ -10,9 +10,15 @@
           "from": "user",
           "text": "siapa nama saya",
           "at": "2026-10-23T09:23:53.748Z"
+        },
+        {
+          "id": "m_mvkrjah5aiv8",
+          "from": "bot",
+          "text": "Kamu **Dearly**! 😄 Nama itu terpasang di identitas chat-mu — tekan \"Ubah\" di bawah kalau mau berganti nama. Aku selalu memanggilmu Dearly!",
+          "at": "2026-10-23T09:23:55.721Z"
         }
       ],
-      "lastMessageAt": "2026-10-23T09:23:53.748Z",
+      "lastMessageAt": "2026-10-23T09:23:55.721Z",
       "unreadByOwner": 1,
       "ownerLastReadAt": null
     },
