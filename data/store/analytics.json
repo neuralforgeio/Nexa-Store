@@ -194,10 +194,10 @@
       "events": {}
     },
     "2026-10-25": {
-      "views": 6,
+      "views": 7,
       "uniques": 1,
       "byPath": {
-        "/": 1,
+        "/": 2,
         "/track": 1,
         "/reports": 1,
         "/help": 1,
@@ -205,13 +205,14 @@
         "/games/mobile-legends": 1
       },
       "byReferrer": {
-        "github.com": 6
+        "github.com": 7
       },
       "byDevice": {
-        "desktop": 6
+        "desktop": 7
       },
       "events": {
-        "order_click": 1
+        "order_click": 1,
+        "wa_handoff": 2
       }
     }
   },
@@ -470,6 +471,7 @@
     1792879417062,
     1792879417062,
     1792879417062,
-    1792879417062
+    1792879417062,
+    1792879494364
   ]
 }
