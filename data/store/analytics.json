@@ -194,10 +194,10 @@
       "events": {}
     },
     "2026-10-25": {
-      "views": 11,
+      "views": 12,
       "uniques": 2,
       "byPath": {
-        "/": 4,
+        "/": 5,
         "/track": 1,
         "/reports": 1,
         "/help": 1,
@@ -206,15 +206,16 @@
         "/games/free-fire": 1
       },
       "byReferrer": {
-        "github.com": 11
+        "github.com": 12
       },
       "byDevice": {
         "desktop": 7,
-        "mobile": 4
+        "mobile": 5
       },
       "events": {
         "order_click": 1,
-        "wa_handoff": 2
+        "wa_handoff": 2,
+        "chat_open": 1
       }
     }
   },
@@ -479,6 +480,7 @@
     1792911017173,
     1792911017173,
     1792911029867,
-    1792911029867
+    1792911029867,
+    1792911055557
   ]
 }
