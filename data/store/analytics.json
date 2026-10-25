@@ -194,25 +194,27 @@
       "events": {}
     },
     "2026-10-25": {
-      "views": 14,
+      "views": 18,
       "uniques": 3,
       "byPath": {
-        "/": 6,
+        "/": 8,
         "/track": 1,
         "/reports": 1,
         "/help": 1,
         "/games": 2,
         "/games/mobile-legends": 1,
         "/games/free-fire": 1,
-        "/games/modern-warships": 1
+        "/games/modern-warships": 1,
+        "/games/azur-lane": 1,
+        "/games/blockman-go": 1
       },
       "byReferrer": {
         "github.com": 12,
-        "langsung": 2
+        "langsung": 6
       },
       "byDevice": {
         "desktop": 7,
-        "mobile": 7
+        "mobile": 11
       },
       "events": {
         "order_click": 1,
@@ -486,6 +488,10 @@
     1792911029867,
     1792911055557,
     1792930192655,
-    1792930192655
+    1792930192655,
+    1792930224347,
+    1792930224347,
+    1792930224347,
+    1792930224347
   ]
 }
