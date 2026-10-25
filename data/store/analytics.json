@@ -194,22 +194,23 @@
       "events": {}
     },
     "2026-10-25": {
-      "views": 9,
+      "views": 11,
       "uniques": 2,
       "byPath": {
-        "/": 3,
+        "/": 4,
         "/track": 1,
         "/reports": 1,
         "/help": 1,
         "/games": 2,
-        "/games/mobile-legends": 1
+        "/games/mobile-legends": 1,
+        "/games/free-fire": 1
       },
       "byReferrer": {
-        "github.com": 9
+        "github.com": 11
       },
       "byDevice": {
         "desktop": 7,
-        "mobile": 2
+        "mobile": 4
       },
       "events": {
         "order_click": 1,
@@ -476,6 +477,8 @@
     1792879417062,
     1792879494364,
     1792911017173,
-    1792911017173
+    1792911017173,
+    1792911029867,
+    1792911029867
   ]
 }
