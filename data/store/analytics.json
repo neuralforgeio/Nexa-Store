@@ -194,23 +194,25 @@
       "events": {}
     },
     "2026-10-25": {
-      "views": 12,
-      "uniques": 2,
+      "views": 14,
+      "uniques": 3,
       "byPath": {
-        "/": 5,
+        "/": 6,
         "/track": 1,
         "/reports": 1,
         "/help": 1,
         "/games": 2,
         "/games/mobile-legends": 1,
-        "/games/free-fire": 1
+        "/games/free-fire": 1,
+        "/games/modern-warships": 1
       },
       "byReferrer": {
-        "github.com": 12
+        "github.com": 12,
+        "langsung": 2
       },
       "byDevice": {
         "desktop": 7,
-        "mobile": 5
+        "mobile": 7
       },
       "events": {
         "order_click": 1,
@@ -251,7 +253,8 @@
     "8541de99f2cf776b5de80add": "2026-10-24",
     "43710358d0a3f45b6f606760": "2026-10-24",
     "c1147a3151d44f756f9f551f": "2026-10-25",
-    "4d3c7e04befa808ae390610c": "2026-10-25"
+    "4d3c7e04befa808ae390610c": "2026-10-25",
+    "e7fe38837a4b42788266c6a7": "2026-10-25"
   },
   "recent": [
     1789319955843,
@@ -481,6 +484,8 @@
     1792911017173,
     1792911029867,
     1792911029867,
-    1792911055557
+    1792911055557,
+    1792930192655,
+    1792930192655
   ]
 }
