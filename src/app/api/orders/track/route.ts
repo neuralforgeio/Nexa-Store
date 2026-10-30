@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api/http";
+import { clientIp, jsonError, jsonOk } from "@/lib/api/http";
+import { rateLimit } from "@/lib/api/rate-limit";
 import { readFeature } from "@/lib/site-features/store";
 import type { OrderRecord } from "../route";
 
@@ -18,6 +19,14 @@ const querySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // v1.22.0: rate limit — endpoint publik baca store; enumeration/DoS
+  // dikurangi (60 permintaan / 5 menit per IP cukup untuk pemilik resi).
+  const ip = clientIp(req);
+  const rl = rateLimit(`track:${ip}`, 60, 5 * 60_000);
+  if (!rl.ok) {
+    return jsonError(429, "rate-limited", "Terlalu banyak permintaan. Tunggu sebentar.");
+  }
+
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const parsed = querySchema.safeParse({ id });
   if (!parsed.success) {

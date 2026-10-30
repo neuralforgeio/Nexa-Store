@@ -75,6 +75,8 @@ const nextConfig: NextConfig = {
           // asal-usul sama; mikrofon dan lokasi tetap dikunci total.
           { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=()" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          // v1.22.0: plugin waras (Flash/PDF bawaan peramban) dimatikan total.
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
         ],
       },
     ];

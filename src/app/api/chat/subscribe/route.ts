@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api/http";
+import { clientIp, jsonError, jsonOk } from "@/lib/api/http";
+import { rateLimit } from "@/lib/api/rate-limit";
 import { conversationIdForToken, updateFeature } from "@/lib/site-features/store";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,14 @@ const unsubSchema = z.object({
 const schema = z.discriminatedUnion("action", [subSchema, unsubSchema]);
 
 export async function POST(req: NextRequest) {
+  // v1.22.0: rate limit — endpoint ini menulis ke data store; tanpa batas,
+  // spam bisa menulis push-subs tanpa henti.
+  const ip = clientIp(req);
+  const rl = rateLimit(`push-sub:${ip}`, 30, 5 * 60_000);
+  if (!rl.ok) {
+    return jsonError(429, "rate-limited", "Terlalu banyak permintaan. Tunggu sebentar.");
+  }
+
   let body: unknown;
   try {
     body = await req.json();
