@@ -1,5 +1,5 @@
 {
   "template": "Halo {storeName}, saya ingin melakukan pemesanan.\n\nProduk: {productName}\nGame: {gameName}\nHarga: {price}\n\nNama: {customerName}\n{orderDetails}\nTanggal Pemesanan: {timestamp}\n\nCatatan:\n{note}",
-  "updatedAt": "2026-10-23T13:06:16.572Z",
+  "updatedAt": "2026-10-30T11:46:21.088Z",
   "updatedBy": "admin@adminnexa.id"
 }
