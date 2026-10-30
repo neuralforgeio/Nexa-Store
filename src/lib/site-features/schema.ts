@@ -124,6 +124,42 @@ export const analyticsFileSchema = z.object({
   recent: z.array(z.number().int().min(0)),
 });
 
+/**
+ * Testimoni customer (v1.23.0) — data/store/testimonials.json.
+ * Gambar = data URI (di-kompresi klien) atau URL http(s); SVG data URI
+ * DITOLAK karena bisa membawa script (permukaan XSS tersimpan).
+ */
+export const testimonialImageSchema = z
+  .string()
+  .min(8)
+  .max(320_000)
+  .refine(
+    (v) =>
+      /^https?:\/\//i.test(v) ||
+      /^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(v),
+    { message: "Gambar harus PNG/JPEG/WebP (data URI atau URL http)." }
+  );
+
+export const testimonialRecordSchema = z.object({
+  id: z.string().regex(/^tst_[a-z0-9]+$/),
+  title: z.string().trim().min(3).max(80),
+  description: z.string().trim().min(3).max(600),
+  customerName: z.string().trim().min(1).max(40).nullable(),
+  rating: z.number().int().min(1).max(5),
+  images: z.array(testimonialImageSchema).min(1).max(6),
+  thumbnailIndex: z.number().int().min(0),
+  customThumbnail: testimonialImageSchema.max(200_000).nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  createdBy: z.string().min(1),
+});
+
+export const testimonialsFileSchema = z.object({
+  testimonials: z.array(testimonialRecordSchema).max(24),
+});
+
+export type TestimonialsFile = z.infer<typeof testimonialsFileSchema>;
+
 export const promosFileSchema = z.object({ promos: z.array(promoEventSchema) });
 export const bannersFileSchema = z.object({ banners: z.array(bannerRecordSchema) });
 export const schedulesFileSchema = z.object({ tasks: z.array(scheduleTaskSchema) });
@@ -253,6 +289,7 @@ export const pushSubsFileSchema = z.object({ subs: z.record(z.string(), pushSubS
 // ---------------------------------------------------------------------------
 
 export const EMPTY_PROMOS: PromosFile = { promos: [] };
+export const EMPTY_TESTIMONIALS: TestimonialsFile = { testimonials: [] };
 export const EMPTY_BANNERS: BannersFile = { banners: [] };
 export const EMPTY_SCHEDULES: SchedulesFile = { tasks: [] };
 export const EMPTY_CHAT: ChatFile = { conversations: [] };
@@ -270,6 +307,10 @@ export function parsePromos(raw: unknown): PromosFile {
 export function parseBanners(raw: unknown): BannersFile {
   const parsed = bannersFileSchema.safeParse(raw);
   return parsed.success ? parsed.data : EMPTY_BANNERS;
+}
+export function parseTestimonials(raw: unknown): TestimonialsFile {
+  const parsed = testimonialsFileSchema.safeParse(raw);
+  return parsed.success ? parsed.data : EMPTY_TESTIMONIALS;
 }
 export function parseSchedules(raw: unknown): SchedulesFile {
   const parsed = schedulesFileSchema.safeParse(raw);

@@ -29,6 +29,7 @@ export type Capability =
   | "access.manage"
   | "promos.manage"
   | "banners.manage"
+  | "testimonials.manage"
   | "schedules.manage"
   | "chat.manage"
   | "reports.manage"
@@ -52,6 +53,7 @@ const ADMIN_CAPABILITIES = new Set<Capability>([
   "gitSync.viewLimited",
   "promos.manage",
   "banners.manage",
+  "testimonials.manage",
   "chat.manage",
   "reports.manage",
   "orders.manage",
@@ -69,6 +71,7 @@ const DEVELOPER_CAPABILITIES = new Set<Capability>([
   "access.manage",
   "promos.manage",
   "banners.manage",
+  "testimonials.manage",
   "schedules.manage",
   "chat.manage",
   "analytics.read",

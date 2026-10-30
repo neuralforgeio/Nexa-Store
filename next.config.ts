@@ -91,6 +91,7 @@ const nextConfig: NextConfig = {
         { source: "/help", destination: "/" },
         { source: "/track", destination: "/" },
         { source: "/reports", destination: "/" },
+        { source: "/testimoni", destination: "/" },
         { source: "/login", destination: "/" },
         { source: "/admin", destination: "/" },
         { source: "/admin/:section", destination: "/" },

@@ -15,6 +15,7 @@ export type Route =
   | { view: "help" }
   | { view: "track" }
   | { view: "reports" }
+  | { view: "testimoni" }
   | { view: "login" }
   | { view: "admin"; section: AdminSection }
   | { view: "developer"; section: DeveloperSection }
@@ -30,6 +31,7 @@ export type AdminSection =
   | "checkout"
   | "promo"
   | "banner"
+  | "testimoni"
   | "chat"
   | "reports";
 
@@ -44,17 +46,19 @@ export type DeveloperSection =
   | "chat"
   | "promo"
   | "banner"
+  | "testimoni"
   | "analytics"
   | "schedule"
   | "ai";
 
-const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "orders", "settings", "checkout", "promo", "banner", "chat", "reports"];
+const ADMIN_SECTIONS: AdminSection[] = ["dashboard", "games", "categories", "products", "orders", "settings", "checkout", "promo", "banner", "testimoni", "chat", "reports"];
 const DEVELOPER_SECTIONS: DeveloperSection[] = [
   "dashboard",
   "access",
   "control",
   "promo",
   "banner",
+  "testimoni",
   "chat",
   "analytics",
   "schedule",
@@ -81,6 +85,8 @@ export function parsePath(rawPath: string): Route {
       return { view: "track" };
     case "reports":
       return { view: "reports" };
+    case "testimoni":
+      return { view: "testimoni" };
     case "login":
       return { view: "login" };
     case "admin": {
@@ -114,6 +120,8 @@ export function routeToPath(route: Route): string {
       return "/track";
     case "reports":
       return "/reports";
+    case "testimoni":
+      return "/testimoni";
     case "login":
       return "/login";
     case "admin":

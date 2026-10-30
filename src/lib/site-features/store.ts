@@ -14,11 +14,13 @@ import {
   EMPTY_PUSH_SUBS,
   EMPTY_REPORTS,
   EMPTY_SCHEDULES,
+  EMPTY_TESTIMONIALS,
   parseAnalytics,
   parseBanners,
   parseChat,
   parsePromos,
   parseSchedules,
+  parseTestimonials,
   analyticsFileSchema,
   bannersFileSchema,
   botBrainFileSchema,
@@ -29,6 +31,7 @@ import {
   pushSubsFileSchema,
   reportsFileSchema,
   schedulesFileSchema,
+  testimonialsFileSchema,
 } from "./schema";
 import type { AnalyticsFile } from "./types";
 import type { BannersFile, ChatFile, PromosFile, SchedulesFile } from "./schema";
@@ -55,7 +58,8 @@ export type FeatureKey =
   | "reports"
   | "orders"
   | "push-subs"
-  | "bot-brain";
+  | "bot-brain"
+  | "testimonials";
 
 const FILES: Record<FeatureKey, string> = {
   promos: "data/store/promos.json",
@@ -68,6 +72,7 @@ const FILES: Record<FeatureKey, string> = {
   orders: "data/store/orders.json",
   "push-subs": "data/store/push-subs.json",
   "bot-brain": "data/store/bot-brain.json",
+  testimonials: "data/store/testimonials.json",
 };
 
 /**
@@ -255,7 +260,9 @@ function validate(key: FeatureKey, raw: string): void {
                     ? pushSubsFileSchema.safeParse(data)
                     : key === "bot-brain"
                       ? botBrainFileSchema.safeParse(data)
-                      : analyticsFileSchema.safeParse(data);
+                      : key === "testimonials"
+                        ? testimonialsFileSchema.safeParse(data)
+                        : analyticsFileSchema.safeParse(data);
   if (!check.success) {
     const issue = check.error?.issues?.[0];
     throw new FeatureStoreError(
@@ -319,6 +326,8 @@ function defaultFor(key: FeatureKey): unknown {
       return EMPTY_PUSH_SUBS;
     case "bot-brain":
       return EMPTY_BOT_BRAIN;
+    case "testimonials":
+      return EMPTY_TESTIMONIALS;
   }
 }
 

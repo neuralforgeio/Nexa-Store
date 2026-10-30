@@ -151,6 +151,75 @@ export type ConversationSummary = {
 };
 
 // ---------------------------------------------------------------------------
+// Testimoni customer (v1.23.0) — bukti ulasan berfoto, diunggah admin/dev.
+// Gambar tersimpan sebagai data URI di data/store/testimonials.json (dual-mode
+// FS/GitHub) — permanen di penyimpanan toko, aman walau file di HP dihapus.
+// ---------------------------------------------------------------------------
+
+export type TestimonialRecord = {
+  id: string;
+  title: string;
+  description: string;
+  /** Nama customer pemberi testimoni (null = tampil sebagai customer toko). */
+  customerName: string | null;
+  /** Bintang 1–5. */
+  rating: number;
+  /** Foto bukti (1–6): data URI hasil kompresi klien atau URL http(s). */
+  images: string[];
+  /** Indeks foto yang dijadikan thumbnail (0 = foto pertama, otomatis). */
+  thumbnailIndex: number;
+  /** Thumbnail khusus hasil unggahan terpisah — menimpa thumbnailIndex. */
+  customThumbnail: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+};
+
+/** Kartu testimoni untuk daftar publik (tanpa array foto penuh — hemat kuota). */
+export type PublicTestimonialSummary = {
+  id: string;
+  title: string;
+  description: string;
+  customerName: string | null;
+  rating: number;
+  thumbnail: string;
+  imageCount: number;
+  createdAt: string;
+};
+
+/** Detail testimoni untuk dialog galeri (semua foto ikut). */
+export type PublicTestimonialDetail = PublicTestimonialSummary & {
+  images: string[];
+};
+
+/** Resolusi thumbnail: unggahan khusus → foto terpilih → foto pertama. */
+export function effectiveThumbnail(t: TestimonialRecord): string {
+  return (
+    t.customThumbnail ??
+    t.images[t.thumbnailIndex] ??
+    t.images[0] ??
+    ""
+  );
+}
+
+export function toPublicTestimonialSummary(t: TestimonialRecord): PublicTestimonialSummary {
+  return {
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    customerName: t.customerName,
+    rating: t.rating,
+    thumbnail: effectiveThumbnail(t),
+    imageCount: t.images.length,
+    createdAt: t.createdAt,
+  };
+}
+
+export function toPublicTestimonialDetail(t: TestimonialRecord): PublicTestimonialDetail {
+  return { ...toPublicTestimonialSummary(t), images: t.images };
+}
+
+// ---------------------------------------------------------------------------
 // Analytics
 // ---------------------------------------------------------------------------
 

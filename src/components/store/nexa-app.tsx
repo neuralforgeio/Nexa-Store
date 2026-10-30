@@ -14,6 +14,7 @@ import { GameDetailView } from "./game-detail-view";
 import { HelpView } from "./help-view";
 import { TrackView } from "./track-view";
 import { ReportsView } from "./reports-view";
+import { TestimonialsView } from "./testimonials-view";
 import { LoginView } from "./login-view";
 import { LoadingState, ErrorState } from "@/components/shared/state-views";
 import { RouteLink } from "@/components/shared/route-link";
@@ -40,6 +41,7 @@ import { DevDeployment } from "@/components/developer/dev-deployment";
 import { DevChat } from "@/components/developer/dev-chat";
 import { DevPromo } from "@/components/developer/dev-promo";
 import { DevBanner } from "@/components/developer/dev-banner";
+import { DevTestimonials } from "@/components/developer/dev-testimonials";
 import { DevReports } from "@/components/developer/dev-reports";
 import { DevAnalytics } from "@/components/developer/dev-analytics";
 import { DevSchedule } from "@/components/developer/dev-schedule";
@@ -93,7 +95,8 @@ function AppFrame() {
     route.view === "game" ||
     route.view === "help" ||
     route.view === "track" ||
-    route.view === "reports";
+    route.view === "reports" ||
+    route.view === "testimoni";
 
   // Scroll to top on view change.
   useEffect(() => {
@@ -198,6 +201,7 @@ function AppFrame() {
     if (route.view === "help") return <HelpView />;
     if (route.view === "track") return <TrackView />;
     if (route.view === "reports") return <ReportsView />;
+    if (route.view === "testimoni") return <TestimonialsView />;
 
     if (route.view === "not-found") {
       return <NotFoundView />;
@@ -373,6 +377,14 @@ function AdminSectionView({
           <DevBanner />
         </SectionBoundary>
       );
+    // Testimoni (v1.23.0) — bukti ulasan berfoto; izin dikontrol capability
+    // testimonials.manage (Admin + Developer).
+    case "testimoni":
+      return (
+        <SectionBoundary name="admin:testimoni">
+          <DevTestimonials />
+        </SectionBoundary>
+      );
     // Obrolan (v1.5.0) — Admin juga boleh membalas pengunjung, bukan hanya
     // Developer; izin dikontrol capability chat.manage.
     case "chat":
@@ -421,6 +433,12 @@ function DeveloperSectionView({ section, onNavigate }: { section: DeveloperSecti
       return (
         <SectionBoundary name="dev:banner">
           <DevBanner />
+        </SectionBoundary>
+      );
+    case "testimoni":
+      return (
+        <SectionBoundary name="dev:testimoni">
+          <DevTestimonials />
         </SectionBoundary>
       );
     case "chat":

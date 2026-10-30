@@ -16,7 +16,7 @@ import { useAppRoute, type Route } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Flag, Gamepad2, Heart, LifeBuoy, Menu, PackageSearch, ScanBarcode, ShoppingCart, X } from "lucide-react";
+import { ChevronRight, Flag, Gamepad2, Heart, LifeBuoy, Menu, PackageSearch, Quote, ScanBarcode, ShoppingCart, X } from "lucide-react";
 
 /**
  * Storefront navigation with the cart entry point. The cart stays visible on
@@ -32,6 +32,7 @@ import { ChevronRight, Flag, Gamepad2, Heart, LifeBuoy, Menu, PackageSearch, Sca
 const NAV_LINKS = [
   { href: "/games", label: "Game", Icon: Gamepad2 },
   { href: "/track", label: "Lacak Pesanan", Icon: PackageSearch },
+  { href: "/testimoni", label: "Testimoni", Icon: Quote },
   { href: "/reports", label: "Laporan", Icon: Flag },
   { href: "/help", label: "Bantuan", Icon: LifeBuoy },
 ] as const;
@@ -44,6 +45,8 @@ function activeNavHref(view: Route["view"]): (typeof NAV_LINKS)[number]["href"] 
       return "/games";
     case "track":
       return "/track";
+    case "testimoni":
+      return "/testimoni";
     case "reports":
       return "/reports";
     case "help":

@@ -16,8 +16,11 @@ import type {
 import type {
   PublicBanner,
   PublicPromo,
+  PublicTestimonialDetail,
+  PublicTestimonialSummary,
   AnalyticsSummary,
   BannerRecord,
+  TestimonialRecord,
   ConversationSummary,
   PromoEvent,
   ScheduleTask,
@@ -577,6 +580,69 @@ export function useAiResetMutation() {
       api.del<{ reset: boolean; dataset: AiDatasetIntent[] }>("/api/developer/ai/brain", input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ai-bot"] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Testimoni (v1.23.0) — bukti ulasan berfoto, diunggah Admin/Developer.
+// ---------------------------------------------------------------------------
+
+/** Daftar ringkas publik (kartu /testimoni) — tanpa array foto penuh. */
+export function usePublicTestimonials(enabled: boolean) {
+  return useQuery({
+    queryKey: ["public-testimonials"],
+    queryFn: () =>
+      api.get<{ testimonials: PublicTestimonialSummary[] }>("/api/testimonials"),
+    enabled,
+  });
+}
+
+/** Detail galeri on-demand saat kartu diklik. */
+export function usePublicTestimonialDetail(id: string | null) {
+  return useQuery({
+    queryKey: ["public-testimonial", id],
+    queryFn: () =>
+      api.get<{ testimonial: PublicTestimonialDetail }>(
+        `/api/testimonials/${encodeURIComponent(id as string)}`
+      ),
+    enabled: Boolean(id),
+    staleTime: 60_000,
+  });
+}
+
+export type TestimonialMutationInput =
+  | { action: "create"; body: Record<string, unknown> }
+  | { action: "patch"; body: Record<string, unknown> }
+  | { action: "delete"; id: string };
+
+/** CRUD testimoni panel (Admin + Developer). */
+export function useTestimonials(enabled: boolean) {
+  return useQuery({
+    queryKey: ["dev-testimonials"],
+    queryFn: () =>
+      api.get<{ testimonials: TestimonialRecord[]; thumbnails: Record<string, string> }>(
+        "/api/developer/testimonials"
+      ),
+    enabled,
+  });
+}
+
+export function useTestimonialMutation() {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, TestimonialMutationInput>({
+    mutationFn: (input: TestimonialMutationInput) =>
+      input.action === "create"
+        ? api.post<{ testimonial: TestimonialRecord }>("/api/developer/testimonials", input.body)
+        : input.action === "patch"
+          ? api.patch<{ ok: boolean }>("/api/developer/testimonials", input.body)
+          : api.delete<{ ok: boolean }>(
+              `/api/developer/testimonials?id=${encodeURIComponent(input.id)}`
+            ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dev-testimonials"] });
+      qc.invalidateQueries({ queryKey: ["public-testimonials"] });
+      qc.invalidateQueries({ queryKey: ["public-testimonial"] });
     },
   });
 }
