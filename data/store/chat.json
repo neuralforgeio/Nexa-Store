@@ -40,10 +40,16 @@
           "from": "owner",
           "text": "ada yang bisa kami bantu kak?",
           "at": "2026-10-30T11:50:25.733Z"
+        },
+        {
+          "id": "m_mvux4w89mepq",
+          "from": "user",
+          "text": "Aowkwkw",
+          "at": "2026-10-30T11:58:23.529Z"
         }
       ],
-      "lastMessageAt": "2026-10-30T11:50:25.733Z",
-      "unreadByOwner": 0,
+      "lastMessageAt": "2026-10-30T11:58:23.529Z",
+      "unreadByOwner": 1,
       "ownerLastReadAt": "2026-10-30T11:50:06.925Z"
     },
     {
