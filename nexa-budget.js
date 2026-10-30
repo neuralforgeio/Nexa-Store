@@ -53,7 +53,7 @@ const BUDGET_SIGNAL = /(?:dibawah|di bawah|kurang dari|maksimal|budget|modal|dui
  * @param {Array<{id:string,gameId:string,label?:string,priceIdr?:number,gameName?:string}>} products leksikon produk live
  * @param {Array<{id:string,name:string,aliases?:string[]}>} games leksikon game live
  * @returns {null|{budget:number, gameName:string|null, cheapest:number|null,
- *   rows:Array<{gameName:string,label:string,price:number,productId:string}>}}
+ *   rows:Array<{gameId:string,gameName:string,label:string,price:number,productId:string}>}}
  */
 function budgetMatch(text, products, games) {
   const t = ` ${String(text ?? "").toLowerCase().replace(/\s+/g, " ").trim()} `;

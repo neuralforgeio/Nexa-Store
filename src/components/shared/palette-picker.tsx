@@ -21,25 +21,25 @@ export type PaletteId = (typeof PALETTE_IDS)[number];
 
 const STORAGE_KEY = "nexa-palette";
 
-const PALETTES: Array<{ id: PaletteId; label: string; swatch: string }> = [
+const SWATCHES: Record<PaletteId, string> = {
+  amber: "oklch(0.78 0.15 70)",
+  emerald: "oklch(0.72 0.14 163)",
+  violet: "oklch(0.65 0.16 300)",
+  rose: "oklch(0.7 0.16 15)",
+  sunset: "oklch(0.75 0.16 45)",
+};
+
+const PALETTE_META: Array<{ id: PaletteId; label: string }> = [
   { id: "amber", label: "Amber" },
   { id: "emerald", label: "Emerald" },
   { id: "violet", label: "Violet" },
   { id: "rose", label: "Rose" },
   { id: "sunset", label: "Sunset" },
-].map((p) => ({
-  ...p,
-  swatch:
-    p.id === "amber"
-      ? "oklch(0.78 0.15 70)"
-      : p.id === "emerald"
-        ? "oklch(0.72 0.14 163)"
-        : p.id === "violet"
-          ? "oklch(0.65 0.16 300)"
-          : p.id === "rose"
-            ? "oklch(0.7 0.16 15)"
-            : "oklch(0.75 0.16 45)",
-}));
+];
+
+const PALETTES: Array<{ id: PaletteId; label: string; swatch: string }> = PALETTE_META.map(
+  (p) => ({ ...p, swatch: SWATCHES[p.id] })
+);
 
 function isPaletteId(v: string | null): v is PaletteId {
   return v !== null && (PALETTE_IDS as readonly string[]).includes(v);

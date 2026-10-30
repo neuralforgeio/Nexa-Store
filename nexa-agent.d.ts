@@ -76,5 +76,17 @@ export function agentFillData(p: {
   customerName?: string;
 }): { answer: string; action: FillDataAction };
 
+/** Opsi pilihan bernomor (v1.21.0) — balas "1"/"2" → lapisan pick
+ *  mengeksekusi add_to_cart. options dipersist engine per percakapan. */
+export function agentAskChoice(p: {
+  gameName?: string | null;
+  reason?: "budget" | "ambiguous" | "list";
+  options: Array<{ label: string; price: number }>;
+  userName?: string | null;
+}): { answer: string; options: Array<{ label: string; price: number }> };
+
 /** Markdown → teks polos (jalur Telegram). */
 export function stripMarkdown(text: string): string;
+
+/** Markdown ringan bot → HTML aman untuk Telegram (parse_mode HTML). */
+export function markdownToHtml(text: string): string;

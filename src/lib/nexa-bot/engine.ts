@@ -687,7 +687,7 @@ function cartReply(
  * akun. Mengembalikan produk tujuan switch, atau null.
  */
 function nominalInGame(clean: string, game: Game | null, live: LiveSnapshot): Product | null {
-  if (!game) return null;
+  if (!game || !live) return null;
   const t = ` ${clean.toLowerCase().replace(/\s+/g, " ")} `;
   const nums: string[] = [];
   for (const m of t.matchAll(/(?:^|\s)(\d{2,6})(?=\s|$|\+)/g)) nums.push(m[1]);
@@ -776,7 +776,7 @@ function runAgentStep(
   }
 
   // (a) Pengisian data akun — hanya bila ada produk tertunda yang segar.
-  if (pendingGame && pendingProduct) {
+  if (pendingFresh && pendingGame && pendingProduct) {
     // Niat memesan produk BARU menang atas pengisian data (user ganti pikiran):
     // resolusi presisi ATAU nominal yang cocok produk game pending.
     const switching =
@@ -785,7 +785,7 @@ function runAgentStep(
     if (!switching) {
       const extracted = extractAccountData(clean, pendingGame.orderFieldSchema ?? []);
       if (extracted) {
-        const merged = { ...(pending.filled ?? {}), ...extracted.fields };
+        const merged = { ...(pendingFresh.filled ?? {}), ...extracted.fields };
         const label = prettyLabel(pendingProduct, pendingGame);
         const built = agentFillData({
           product: pendingProduct,
@@ -793,7 +793,7 @@ function runAgentStep(
           label,
           price: pendingProduct.priceIdr,
           extracted: { fields: merged, hits: extracted.hits },
-          customerName: extracted.customerName ?? pending.customerName,
+          customerName: extracted.customerName ?? pendingFresh.customerName,
         });
         return {
           intent: "agent.fill_data",

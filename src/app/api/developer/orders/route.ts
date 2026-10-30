@@ -98,12 +98,13 @@ export async function PATCH(req: NextRequest) {
   // (best-effort; pesanan tanpa conversationId dilewati diam-diam).
   // Berlaku untuk admin panel, developer, dan tombol status Telegram bot
   // (semua lewat endpoint ini).
-  if (updated?.conversationId) {
-    const conversationId = updated.conversationId;
+  const updatedOrder = updated as OrderRecord | null;
+  if (updatedOrder?.conversationId) {
+    const conversationId = updatedOrder.conversationId;
     const pushPayload = {
-      id: updated.id,
-      status: updated.status,
-      reason: updated.statusReason,
+      id: updatedOrder.id,
+      status: updatedOrder.status,
+      reason: updatedOrder.statusReason,
     };
     after(() => sendOrderStatusPush(conversationId, pushPayload));
   }
