@@ -191,25 +191,26 @@
       }
     },
     "2026-10-30": {
-      "views": 9,
+      "views": 10,
       "uniques": 5,
       "byPath": {
         "/": 6,
         "/games/ff-max": 1,
         "/login": 1,
-        "/games": 1
+        "/games": 1,
+        "/games/mobile-legends": 1
       },
       "byReferrer": {
-        "langsung": 8,
+        "langsung": 9,
         "m.facebook.com": 1
       },
       "byDevice": {
-        "mobile": 8,
+        "mobile": 9,
         "desktop": 1
       },
       "events": {
         "chat_open": 1,
-        "order_click": 2,
+        "order_click": 3,
         "wa_handoff": 1
       }
     }
@@ -495,6 +496,7 @@
     1793360946698,
     1793360946698,
     1793361090554,
-    1793361090554
+    1793361090554,
+    1793361398124
   ]
 }
