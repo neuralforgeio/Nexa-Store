@@ -23,7 +23,9 @@ import { formatIdr } from "@/lib/format/idr";
 import { track } from "@/lib/analytics/tracker";
 import { useCatalog } from "@/lib/queries";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
+import { enablePushNotifications, pushFlagOn, readOrCreateChatToken } from "@/lib/push/client";
 import {
+  BellRing,
   Check,
   CheckCheck,
   Copy,
@@ -221,6 +223,57 @@ function WaybillTicket({
   const timeline = useMemo(() => [...order.history].reverse(), [order.history]);
   const updatedAt = order.statusUpdatedAt ?? order.createdAt;
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifOn, setNotifOn] = useState(
+    () =>
+      pushFlagOn() &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+  );
+
+  /** v1.21.0: aktifkan notifikasi device ini + tautkan pesanan lama ke
+   *  percakapan push (first-claim-wins di server). */
+  async function enableNotifications() {
+    if (notifBusy || notifOn) return;
+    setNotifBusy(true);
+    try {
+      const result = await enablePushNotifications();
+      if (result === "granted") {
+        const chatToken = readOrCreateChatToken();
+        let linked = false;
+        if (chatToken) {
+          try {
+            const res = await fetch("/api/orders/link", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ id: order.id, chatToken }),
+            });
+            linked = res.ok;
+          } catch {
+            // best-effort — langganan tetap aktif untuk pesanan berikutnya
+          }
+        }
+        setNotifOn(true);
+        toast.success("Notifikasi pesanan aktif", {
+          description: linked
+            ? "Perangkat ini akan diberi tahu saat status pesanan berubah."
+            : "Langganan aktif — namun pesanan ini sudah tertaut ke perangkat lain.",
+        });
+      } else if (result === "denied") {
+        toast.error("Izin notifikasi ditolak", {
+          description: "Aktifkan ulang dari pengaturan notifikasi browser.",
+        });
+      } else if (result === "unconfigured") {
+        toast.error("Notifikasi belum dikonfigurasi di server.");
+      } else if (result === "unsupported") {
+        toast.error("Browser ini tidak mendukung notifikasi.");
+      } else {
+        toast.error("Gagal mengaktifkan notifikasi", { description: "Coba lagi sebentar." });
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  }
 
   async function downloadBarcode() {
     try {
@@ -312,6 +365,21 @@ function WaybillTicket({
           >
             <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
             Tautan
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => void enableNotifications()}
+            disabled={notifBusy || notifOn}
+            aria-label={
+              notifOn
+                ? "Notifikasi status pesanan aktif"
+                : "Aktifkan notifikasi status pesanan"
+            }
+          >
+            <BellRing aria-hidden="true" className="h-3.5 w-3.5" />
+            {notifOn ? "Notifikasi aktif" : notifBusy ? "Mengaktifkan…" : "Notifikasikan"}
           </Button>
         </div>
       </div>

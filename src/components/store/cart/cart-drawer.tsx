@@ -33,11 +33,13 @@ import { displayPhone } from "@/lib/format/phone";
 import { formatJakartaDateTime } from "@/lib/format/date";
 import { formatIdr } from "@/lib/format/idr";
 import { track } from "@/lib/analytics/tracker";
+import { enablePushNotifications, pushFlagOn, readOrCreateChatToken } from "@/lib/push/client";
 import { MAX_CART_ITEMS, type LocalOrderRecord } from "@/lib/cart/types";
 import { CartItemCard } from "./cart-item-card";
 import {
   ArrowLeft,
   ArrowRight,
+  BellRing,
   Check,
   CheckCheck,
   Copy,
@@ -124,6 +126,13 @@ function CartDrawerInner({
   const [showErrors, setShowErrors] = useState(false);
   const [snapshot, setSnapshot] = useState<CheckoutSnapshot | null>(null);
   const [sentRef, setSentRef] = useState<string | null>(null);
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifOn, setNotifOn] = useState(
+    () =>
+      pushFlagOn() &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const resolution = useMemo(
@@ -155,6 +164,33 @@ function CartDrawerInner({
       toast.success("Pesan disalin", { description: "Tempel di chat WhatsApp store." });
     } catch {
       toast.error("Gagal menyalin", { description: "Buka pratinjau pesan lalu salin manual." });
+    }
+  }
+
+  /** v1.21.0: aktifkan notifikasi status pesanan untuk perangkat ini. */
+  async function enableOrderNotifications() {
+    if (notifBusy || notifOn) return;
+    setNotifBusy(true);
+    try {
+      const result = await enablePushNotifications();
+      if (result === "granted") {
+        setNotifOn(true);
+        toast.success("Notifikasi pesanan aktif", {
+          description: "Kamu akan diberi tahu saat status pesanan ini berubah.",
+        });
+      } else if (result === "denied") {
+        toast.error("Izin notifikasi ditolak", {
+          description: "Aktifkan ulang dari pengaturan notifikasi browser.",
+        });
+      } else if (result === "unconfigured") {
+        toast.error("Notifikasi belum dikonfigurasi di server.");
+      } else if (result === "unsupported") {
+        toast.error("Browser ini tidak mendukung notifikasi.");
+      } else {
+        toast.error("Gagal mengaktifkan notifikasi", { description: "Coba lagi sebentar." });
+      }
+    } finally {
+      setNotifBusy(false);
     }
   }
 
@@ -244,6 +280,7 @@ function CartDrawerInner({
           body: JSON.stringify({
             reference: snapshot.reference,
             source: "cart",
+            chatToken: readOrCreateChatToken() ?? undefined,
             summary: `${snapshot.items.length} item — keranjang`,
             items: snapshot.items.map((it) => ({
               gameName: it.gameName,
@@ -353,7 +390,13 @@ function CartDrawerInner({
         ) : step === "confirm" ? (
           <CartConfirmView snapshot={snapshot} storePhone={data?.store.whatsappNumber ?? ""} storeName={storeName} />
         ) : (
-          <CartSuccessView snapshotRef={sentRef} orders={orders} />
+          <CartSuccessView
+            snapshotRef={sentRef}
+            orders={orders}
+            notifOn={notifOn}
+            notifBusy={notifBusy}
+            onEnableNotifications={() => void enableOrderNotifications()}
+          />
         )}
       </div>
 
@@ -621,9 +664,15 @@ function ConfirmRow({ label, value }: { label: string; value: string }) {
 function CartSuccessView({
   snapshotRef,
   orders,
+  notifOn,
+  notifBusy,
+  onEnableNotifications,
 }: {
   snapshotRef: string | null;
   orders: LocalOrderRecord[];
+  notifOn: boolean;
+  notifBusy: boolean;
+  onEnableNotifications: () => void;
 }) {
   const latest = snapshotRef ? orders.find((o) => o.reference === snapshotRef) : null;
 
@@ -695,6 +744,26 @@ function CartSuccessView({
                 <Download aria-hidden="true" className="h-3.5 w-3.5" />
                 Unduh barcode
               </Button>
+            </div>
+            <div className="mt-2">
+              {notifOn ? (
+                <p className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-primary">
+                  <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                  Notifikasi status pesanan aktif di perangkat ini
+                </p>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={onEnableNotifications}
+                  disabled={notifBusy}
+                >
+                  <BellRing aria-hidden="true" className="h-3.5 w-3.5" />
+                  {notifBusy ? "Mengaktifkan…" : "Aktifkan notifikasi status"}
+                </Button>
+              )}
             </div>
           </div>
 

@@ -44,7 +44,8 @@ import { useSiteFeatures } from "@/lib/queries";
 import { effectivePriceForGame } from "@/lib/promo/pricing";
 import { track } from "@/lib/analytics/tracker";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, CheckCheck, Copy, Download, MessageCircle, TimerReset } from "lucide-react";
+import { enablePushNotifications, pushFlagOn, readOrCreateChatToken } from "@/lib/push/client";
+import { ArrowLeft, ArrowRight, BellRing, Check, CheckCheck, Copy, Download, MessageCircle, TimerReset } from "lucide-react";
 
 type OrderGame = PublicCatalog["games"][number];
 type Step = "form" | "review" | "success";
@@ -166,6 +167,13 @@ function OrderSheetBody({
   const [step, setStep] = useState<Step>("form");
   const [successId, setSuccessId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string>("");
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifOn, setNotifOn] = useState(
+    () =>
+      pushFlagOn() &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+  );
   const isMobile = useIsMobile();
   const schema = useMemo(() => buildSchema(game), [game]);
   const domainGame = useMemo(() => asDomainGame(game), [game]);
@@ -193,7 +201,6 @@ function OrderSheetBody({
 
   // RHF watch() is incompatible with React Compiler memoization by design.
   // Live preview requires reactive form state. Safe: re-render on change.
-  // eslint-disable-next-line react-hooks/incompatible-library
   const values = watch();
 
   const message = useMemo(() => {
@@ -285,6 +292,7 @@ function OrderSheetBody({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           source: "instant",
+          chatToken: readOrCreateChatToken() ?? undefined,
           summary: `${domainGame.name} — ${productTitle(product)}`,
           customerName: (data.customerName ?? "").trim() || undefined,
           items: [
@@ -329,6 +337,33 @@ function OrderSheetBody({
       toast.error("Gagal membuat barcode", {
         description: "Coba lagi — atau cukup simpan kodenya di atas.",
       });
+    }
+  }
+
+  /** v1.21.0: aktifkan notifikasi status pesanan untuk perangkat ini. */
+  async function enableOrderNotifications() {
+    if (notifBusy || notifOn) return;
+    setNotifBusy(true);
+    try {
+      const result = await enablePushNotifications();
+      if (result === "granted") {
+        setNotifOn(true);
+        toast.success("Notifikasi pesanan aktif", {
+          description: "Kamu akan diberi tahu saat status pesanan ini berubah.",
+        });
+      } else if (result === "denied") {
+        toast.error("Izin notifikasi ditolak", {
+          description: "Aktifkan ulang dari pengaturan notifikasi browser.",
+        });
+      } else if (result === "unconfigured") {
+        toast.error("Notifikasi belum dikonfigurasi di server.");
+      } else if (result === "unsupported") {
+        toast.error("Browser ini tidak mendukung notifikasi.");
+      } else {
+        toast.error("Gagal mengaktifkan notifikasi", { description: "Coba lagi sebentar." });
+      }
+    } finally {
+      setNotifBusy(false);
     }
   }
 
@@ -512,6 +547,9 @@ function OrderSheetBody({
                   onCopyCode={() =>
                     successId ? void copyMessage(successId) : undefined
                   }
+                  notifOn={notifOn}
+                  notifBusy={notifBusy}
+                  onEnableNotifications={() => void enableOrderNotifications()}
                 />
               </motion.div>
             )}
@@ -541,10 +579,16 @@ function OrderSuccessBlock({
   orderId,
   onDownload,
   onCopyCode,
+  notifOn,
+  notifBusy,
+  onEnableNotifications,
 }: {
   orderId: string | null;
   onDownload: () => void;
   onCopyCode: () => void;
+  notifOn: boolean;
+  notifBusy: boolean;
+  onEnableNotifications: () => void;
 }) {
   if (!orderId) return null;
   return (
@@ -581,6 +625,26 @@ function OrderSuccessBlock({
             <Download aria-hidden="true" className="h-3.5 w-3.5" />
             Unduh barcode
           </Button>
+        </div>
+        <div className="mt-2">
+          {notifOn ? (
+            <p className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-primary">
+              <Check aria-hidden="true" className="h-3.5 w-3.5" />
+              Notifikasi status pesanan aktif di perangkat ini
+            </p>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full gap-2"
+              onClick={onEnableNotifications}
+              disabled={notifBusy}
+            >
+              <BellRing aria-hidden="true" className="h-3.5 w-3.5" />
+              {notifBusy ? "Mengaktifkan…" : "Aktifkan notifikasi status"}
+            </Button>
+          )}
         </div>
       </div>
       <p className="max-w-[42ch] text-[11px] leading-relaxed text-muted-foreground/80">

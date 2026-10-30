@@ -42,6 +42,20 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     type: "website",
   },
+  // v1.21.0: PWA — manifest (installable + syarat push iOS 16.4+) dan ikon.
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/logo.png", sizes: "256x256", type: "image/png" },
+    ],
+    apple: [{ url: "/logo.png", sizes: "256x256", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: APP_NAME,
+  },
 };
 
 export const viewport: Viewport = {
@@ -52,6 +66,10 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#1a1b1f" },
   ],
 };
+
+/** v1.21.0: pasang palet warna tersimpan SEBELUM paint pertama (anti-flash).
+ *  Amber (bawaan) tidak memasang atribut apa pun — desain dasar tak berubah. */
+const PALETTE_BOOT = `(function(){try{var p=localStorage.getItem("nexa-palette");if(p==="emerald"||p==="violet"||p==="rose"||p==="sunset")document.documentElement.setAttribute("data-palette",p)}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -64,6 +82,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} font-sans antialiased bg-background text-foreground`}
         data-app-version={APP_VERSION}
       >
+        <script dangerouslySetInnerHTML={{ __html: PALETTE_BOOT }} />
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
           <Toaster position="top-center" richColors />

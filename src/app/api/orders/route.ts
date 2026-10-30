@@ -2,6 +2,7 @@ import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { clientIp, jsonError, jsonOk } from "@/lib/api/http";
 import { updateFeature } from "@/lib/site-features/store";
+import { conversationIdForToken } from "@/lib/site-features/store";
 import { generateOrderReference } from "@/lib/cart/message";
 import { sendOwnerOrderNotification } from "@/lib/telegram-notify";
 
@@ -19,6 +20,9 @@ const createSchema = z.object({
   source: z.enum(["instant", "cart"]),
   summary: z.string().trim().min(1).max(200),
   customerName: z.string().trim().max(80).optional(),
+  // v1.21.0: token percakapan perangkat — jadi pesanan tahu ke device mana
+  // notifikasi status dikirim (hash SHA-256 disimpan, token mentah tidak).
+  chatToken: z.string().regex(/^[a-f0-9]{32}$/).optional(),
   items: z
     .array(
       z.object({
@@ -44,6 +48,8 @@ export type OrderRecord = {
   statusUpdatedAt: string | null;
   createdAt: string;
   history: Array<{ status: "pending" | "processing" | "success" | "cancel"; at: string; reason: string | null }>;
+  /** v1.21.0: percakapan push pemilik pesanan (device yang membuat order). */
+  conversationId?: string | null;
 };
 
 const buckets = new Map<string, number[]>();
@@ -97,6 +103,7 @@ export async function POST(req: NextRequest) {
     statusUpdatedAt: null,
     createdAt: now,
     history: [{ status: "pending", at: now, reason: null }],
+    conversationId: input.chatToken ? conversationIdForToken(input.chatToken) : null,
   };
 
   try {

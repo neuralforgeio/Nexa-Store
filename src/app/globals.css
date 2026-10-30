@@ -164,6 +164,85 @@
   --shadow-pop: 0 24px 64px -16px oklch(0 0 0 / 0.7);
 }
 
+/* ── v1.21.0 · Kustomisasi tema warna toko ──────────────────────────────
+   Atribut data-palette dipasang di <html> oleh PalettePicker + skrip
+   anti-flash di layout. Amber = bawaan → tanpa blok override. Setiap
+   palet HANYA menimpa token aksen (primary, ring, accent, glow, grid) —
+   permukaan, teks, dan bayangan tetap dari desekain dasar. Mode gelap
+   ditangani selector html.dark[data-palette] (spesifisitas lebih tinggi). */
+
+html[data-palette="emerald"] {
+  --primary: oklch(0.62 0.15 163);
+  --primary-foreground: oklch(0.99 0.01 163);
+  --ring: oklch(0.62 0.15 163);
+  --accent: oklch(0.945 0.028 163);
+  --accent-foreground: oklch(0.32 0.05 163);
+  --glow-primary: 0 0 0 1px oklch(0.62 0.15 163 / 0.22), 0 8px 32px -8px oklch(0.62 0.15 163 / 0.28);
+}
+html.dark[data-palette="emerald"] {
+  --primary: oklch(0.8 0.15 163);
+  --primary-foreground: oklch(0.2 0.05 163);
+  --ring: oklch(0.8 0.15 163);
+  --accent: oklch(0.283 0.016 163);
+  --accent-foreground: oklch(0.93 0.004 260);
+  --grid-line: oklch(0.8 0.06 163 / 0.05);
+  --glow-primary: 0 0 0 1px oklch(0.8 0.15 163 / 0.28), 0 8px 32px -8px oklch(0.8 0.15 163 / 0.22);
+}
+
+html[data-palette="violet"] {
+  --primary: oklch(0.58 0.18 300);
+  --primary-foreground: oklch(0.99 0.01 300);
+  --ring: oklch(0.58 0.18 300);
+  --accent: oklch(0.945 0.028 300);
+  --accent-foreground: oklch(0.32 0.06 300);
+  --glow-primary: 0 0 0 1px oklch(0.58 0.18 300 / 0.22), 0 8px 32px -8px oklch(0.58 0.18 300 / 0.28);
+}
+html.dark[data-palette="violet"] {
+  --primary: oklch(0.78 0.16 300);
+  --primary-foreground: oklch(0.19 0.06 300);
+  --ring: oklch(0.78 0.16 300);
+  --accent: oklch(0.283 0.016 300);
+  --accent-foreground: oklch(0.93 0.004 260);
+  --grid-line: oklch(0.78 0.06 300 / 0.05);
+  --glow-primary: 0 0 0 1px oklch(0.78 0.16 300 / 0.28), 0 8px 32px -8px oklch(0.78 0.16 300 / 0.22);
+}
+
+html[data-palette="rose"] {
+  --primary: oklch(0.62 0.19 15);
+  --primary-foreground: oklch(0.99 0.01 15);
+  --ring: oklch(0.62 0.19 15);
+  --accent: oklch(0.945 0.028 15);
+  --accent-foreground: oklch(0.34 0.05 15);
+  --glow-primary: 0 0 0 1px oklch(0.62 0.19 15 / 0.22), 0 8px 32px -8px oklch(0.62 0.19 15 / 0.28);
+}
+html.dark[data-palette="rose"] {
+  --primary: oklch(0.79 0.14 15);
+  --primary-foreground: oklch(0.22 0.05 15);
+  --ring: oklch(0.79 0.14 15);
+  --accent: oklch(0.283 0.016 15);
+  --accent-foreground: oklch(0.93 0.004 260);
+  --grid-line: oklch(0.79 0.06 15 / 0.05);
+  --glow-primary: 0 0 0 1px oklch(0.79 0.14 15 / 0.28), 0 8px 32px -8px oklch(0.79 0.14 15 / 0.22);
+}
+
+html[data-palette="sunset"] {
+  --primary: oklch(0.66 0.17 45);
+  --primary-foreground: oklch(0.99 0.01 45);
+  --ring: oklch(0.66 0.17 45);
+  --accent: oklch(0.945 0.028 45);
+  --accent-foreground: oklch(0.34 0.05 45);
+  --glow-primary: 0 0 0 1px oklch(0.66 0.17 45 / 0.22), 0 8px 32px -8px oklch(0.66 0.17 45 / 0.28);
+}
+html.dark[data-palette="sunset"] {
+  --primary: oklch(0.82 0.15 50);
+  --primary-foreground: oklch(0.22 0.05 50);
+  --ring: oklch(0.82 0.15 50);
+  --accent: oklch(0.283 0.016 50);
+  --accent-foreground: oklch(0.93 0.004 260);
+  --grid-line: oklch(0.82 0.06 50 / 0.05);
+  --glow-primary: 0 0 0 1px oklch(0.82 0.15 50 / 0.28), 0 8px 32px -8px oklch(0.82 0.15 50 / 0.22);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -10,9 +10,10 @@ import { useSiteFeatures } from "@/lib/queries";
 import { effectivePriceForGame } from "@/lib/promo/pricing";
 import { useCartStore } from "@/lib/cart/store";
 import { MAX_CART_ITEMS } from "@/lib/cart/types";
+import { MAX_WISHLIST_ITEMS, useWishlistStore } from "@/lib/wishlist/store";
 import { formatIdr } from "@/lib/format/idr";
 import { cn } from "@/lib/utils";
-import { Check, ShoppingCart, TimerReset, Zap } from "lucide-react";
+import { Check, Heart, ShoppingCart, TimerReset, Zap } from "lucide-react";
 import { FLY_TO_CART_EVENT } from "./cart/fly-to-cart";
 import type { FlyToCartDetail } from "./cart/fly-to-cart";
 
@@ -47,6 +48,8 @@ export const ProductCard = memo(function ProductCard({
   onOrder: (product: Product) => void;
 }) {
   const addItem = useCartStore((s) => s.addItem);
+  const wishlisted = useWishlistStore((s) => s.entries.some((e) => e.productId === product.id));
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const articleRef = useRef<HTMLElement>(null);
@@ -88,6 +91,30 @@ export const ProductCard = memo(function ProductCard({
           },
         })
       );
+    }
+  }
+
+  function toggleWish(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (disabled) return;
+    const result = toggleWishlist({
+      productId: product.id,
+      gameId,
+      gameSlug: null,
+      gameName,
+      gameImage: gameImage ?? null,
+      denomination: product.denomination,
+      productName: product.name,
+      addedAt: new Date().toISOString(),
+    });
+    if (result === "added") {
+      toast.success("Masuk wishlist", {
+        description: "Buka lewat ikon hati di bilah atas.",
+      });
+    } else if (result === "full") {
+      toast.info("Wishlist penuh", {
+        description: `Maksimal ${MAX_WISHLIST_ITEMS} produk — hapus salah satu dulu.`,
+      });
     }
   }
 
@@ -184,6 +211,38 @@ export const ProductCard = memo(function ProductCard({
           "@max-[320px]:relative @max-[320px]:bottom-auto @max-[320px]:right-auto @max-[320px]:self-end"
         )}
       >
+        <motion.button
+          type="button"
+          onClick={toggleWish}
+          disabled={disabled}
+          aria-pressed={wishlisted}
+          aria-label={
+            wishlisted
+              ? `Hapus ${product.denomination} ${product.name} ${gameName} dari wishlist`
+              : `Simpan ${product.denomination} ${product.name} ${gameName} ke wishlist`
+          }
+          initial={false}
+          animate={
+            wishlisted && !reducedMotion
+              ? { scale: [1, 0.9, 1.15, 1], transition: { duration: 0.4 } }
+              : { scale: 1 }
+          }
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-card",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            wishlisted
+              ? "border-primary/60 bg-primary text-primary-foreground"
+              : "border-primary/30 bg-background/90 text-primary backdrop-blur transition-colors hover:border-primary/60 hover:bg-primary/10"
+          )}
+        >
+          <Heart
+            aria-hidden="true"
+            className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              wishlisted && "fill-current"
+            )}
+          />
+        </motion.button>
         <button
           type="button"
           onClick={instantBuy}

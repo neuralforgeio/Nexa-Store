@@ -5,6 +5,7 @@ import { conversationIdForToken, readFeature, updateFeature } from "@/lib/site-f
 import { parseChat } from "@/lib/site-features/schema";
 import { chatBridgeEnabled, notifyBotOfUserMessage } from "@/lib/site-features/chat-notify";
 import { sendOwnerChatNotification } from "@/lib/telegram-notify";
+import { sendBotReplyPush } from "@/lib/push-notify";
 import { nexaBotAnswer, readAiModeFromStore, type AgentAction, type AgentOption } from "@/lib/nexa-bot/engine";
 import type { ChatConversation, ChatMessage } from "@/lib/site-features/types";
 
@@ -365,6 +366,14 @@ export async function POST(req: NextRequest) {
       } catch {
         // bot gagal — pengunjung tetap terkirim, admin tetap dapat notifikasi
       }
+    }
+
+    // v1.21.0: balasan Nexa Bot → push notification ke perangkat pengunjung.
+    // Service worker melewati notifikasi bila tab toko sedang terlihat
+    // (balasan sudah tampil di layar — notifikasi hanya saat pergi/ditutup).
+    if (botMessage) {
+      const botReplyText = botMessage.text;
+      after(() => sendBotReplyPush(conversationId, botReplyText));
     }
 
     return jsonOk({

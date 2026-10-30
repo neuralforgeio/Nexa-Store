@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk, requireCapability } from "@/lib/api/http";
 import { readFeature, updateFeature } from "@/lib/site-features/store";
+import { sendOrderStatusPush } from "@/lib/push-notify";
 import type { OrderRecord } from "../../orders/route";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,20 @@ export async function PATCH(req: NextRequest) {
   } catch (e) {
     if (e === "not-found") return jsonError(404, "not-found", "Pesanan tidak ditemukan.");
     return jsonError(502, "order.update-failed", "Gagal memperbarui status. Coba lagi.");
+  }
+
+  // v1.21.0: status berubah → push notification ke perangkat pembeli
+  // (best-effort; pesanan tanpa conversationId dilewati diam-diam).
+  // Berlaku untuk admin panel, developer, dan tombol status Telegram bot
+  // (semua lewat endpoint ini).
+  if (updated?.conversationId) {
+    const conversationId = updated.conversationId;
+    const pushPayload = {
+      id: updated.id,
+      status: updated.status,
+      reason: updated.statusReason,
+    };
+    after(() => sendOrderStatusPush(conversationId, pushPayload));
   }
 
   return jsonOk({ order: updated });

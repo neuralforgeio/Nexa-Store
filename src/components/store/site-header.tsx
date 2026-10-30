@@ -6,14 +6,17 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { RouteLink } from "@/components/shared/route-link";
 import { ThemeToggle, ThemeToggleCompact } from "@/components/shared/theme-toggle";
 import { BarcodeScannerDialog } from "@/components/store/barcode/barcode-scanner";
+import { PalettePicker } from "@/components/shared/palette-picker";
+import { WishlistDrawer } from "@/components/store/wishlist/wishlist-drawer";
 import { useCartUI } from "@/components/store/cart/cart-ui-context";
 import { useCartStore } from "@/lib/cart/store";
 import { useCatalog } from "@/lib/queries";
+import { useWishlistStore } from "@/lib/wishlist/store";
 import { useAppRoute, type Route } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Flag, Gamepad2, LifeBuoy, Menu, PackageSearch, ScanBarcode, ShoppingCart, X } from "lucide-react";
+import { ChevronRight, Flag, Gamepad2, Heart, LifeBuoy, Menu, PackageSearch, ScanBarcode, ShoppingCart, X } from "lucide-react";
 
 /**
  * Storefront navigation with the cart entry point. The cart stays visible on
@@ -60,6 +63,8 @@ export function SiteHeader() {
   const storeName = data?.store.name ?? "Nexa Store";
   const { setOpen: setCartOpen } = useCartUI();
   const cartCount = useCartStore((s) => s.items.length);
+  const wishlistCount = useWishlistStore((s) => s.entries.length);
+  const setWishlistOpen = useWishlistStore((s) => s.setOpen);
   const drawerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   // Cart count comes from localStorage — only render after mount so server
@@ -180,6 +185,36 @@ export function SiteHeader() {
             <ScanBarcode aria-hidden="true" className="h-4.5 w-4.5" />
           </Button>
 
+          {/* Wishlist (v1.21.0) — favorit per perangkat, selalu terlihat. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setWishlistOpen(true)}
+            aria-label={
+              mounted && wishlistCount > 0
+                ? `Buka wishlist, ${wishlistCount} item`
+                : "Buka wishlist"
+            }
+            className="relative ml-1 h-9 w-9 rounded-full"
+          >
+            <Heart aria-hidden="true" className="h-4.5 w-4.5" />
+            <AnimatePresence>
+              {mounted && wishlistCount > 0 ? (
+                <motion.span
+                  key={wishlistCount}
+                  initial={reducedMotion ? { opacity: 0 } : { scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={reducedMotion ? { opacity: 0 } : { scale: 0.4, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 26 }}
+                  aria-hidden="true"
+                  className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground shadow-[var(--glow-primary)]"
+                >
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+          </Button>
+
           {/* Cart — always visible, including mobile. data-cart-button is
               targeted by the fly-to-cart animation. */}
           <Button
@@ -208,6 +243,9 @@ export function SiteHeader() {
             </AnimatePresence>
           </Button>
 
+          <div className="hidden md:block">
+            <PalettePicker />
+          </div>
           <div className="hidden md:block">
             <ThemeToggle className="ml-1" />
           </div>
@@ -364,6 +402,29 @@ export function SiteHeader() {
                             className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-foreground/70"
                           />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false);
+                            setWishlistOpen(true);
+                          }}
+                          className="group flex w-full items-center gap-3 rounded-xl border-l-2 border-transparent px-3.5 py-3 text-left text-sm font-medium text-foreground/85 transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                            <Heart aria-hidden="true" className="h-4 w-4" />
+                          </span>
+                          <span className="flex-1 truncate">Wishlist</span>
+                          {mounted && wishlistCount > 0 ? (
+                            <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                              {wishlistCount}
+                            </span>
+                          ) : (
+                            <ChevronRight
+                              aria-hidden="true"
+                              className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-foreground/70"
+                            />
+                          )}
+                        </button>
                       </div>
                     </nav>
 
@@ -372,7 +433,10 @@ export function SiteHeader() {
                         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                           Tampilan
                         </span>
-                        <ThemeToggle />
+                        <div className="flex items-center gap-1">
+                          <PalettePicker />
+                          <ThemeToggle />
+                        </div>
                       </div>
                     </div>
                   </motion.aside>
@@ -386,6 +450,7 @@ export function SiteHeader() {
       {/* Pemindai barcode pesanan — dialog bersama untuk tombol bilah atas
           dan entri drawer. */}
       <BarcodeScannerDialog open={scanOpen} onOpenChange={setScanOpen} />
+      <WishlistDrawer />
     </header>
   );
 }
