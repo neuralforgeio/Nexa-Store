@@ -43,11 +43,13 @@ export const metadata: Metadata = {
     type: "website",
   },
   // v1.21.0: PWA — manifest (installable + syarat push iOS 16.4+) dan ikon.
+  // v1.22.3: favicon di-cache browser secara agresif — query ?v memaksa
+  // pengambilan ulang setiap rilis (memperbaiki ikon Z scaffold yang nyangkut).
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/logo.svg", type: "image/svg+xml" },
-      { url: "/logo.png", sizes: "256x256", type: "image/png" },
+      { url: `/logo.svg?v=${APP_VERSION}`, type: "image/svg+xml" },
+      { url: `/logo.png?v=${APP_VERSION}`, sizes: "256x256", type: "image/png" },
     ],
     apple: [{ url: "/logo.png", sizes: "256x256", type: "image/png" }],
   },
