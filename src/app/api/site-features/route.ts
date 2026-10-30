@@ -23,6 +23,10 @@ const CACHE_TTL_MS = 10_000;
 type CachedResponse = { at: number; body: Record<string, unknown> };
 let cached: CachedResponse | null = null;
 
+// v1.22.1: single-flight — permintaan bersamaan saat cache kosong berbagi
+// satu pembacaan upstream (anti-flood), bukan satu per permintaan.
+let inflight: Promise<Record<string, unknown>> | null = null;
+
 function liveCount(recent: number[]): number {
   const now = Date.now();
   return recent.filter((ts) => now - ts < LIVE_WINDOW_MS).length;
@@ -32,17 +36,24 @@ export async function GET(_req: NextRequest) {
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
     return jsonOk(cached.body);
   }
+  if (!inflight) {
+    inflight = (async () => {
+      const now = new Date();
+      const features = await readFeatures();
+      const analytics = parseAnalytics(features.analytics);
+      return {
+        banners: activeBanners(features.banners.banners, now)
+          .slice(0, 3)
+          .map(toPublicBanner),
+        promos: activePromos(features.promos.promos, now).map(toPublicPromo),
+        liveVisitors: liveCount(analytics.recent),
+      };
+    })().finally(() => {
+      inflight = null;
+    });
+  }
   try {
-    const now = new Date();
-    const features = await readFeatures();
-    const analytics = parseAnalytics(features.analytics);
-    const body = {
-      banners: activeBanners(features.banners.banners, now)
-        .slice(0, 3)
-        .map(toPublicBanner),
-      promos: activePromos(features.promos.promos, now).map(toPublicPromo),
-      liveVisitors: liveCount(analytics.recent),
-    };
+    const body = await inflight;
     cached = { at: Date.now(), body };
     return jsonOk(body);
   } catch {

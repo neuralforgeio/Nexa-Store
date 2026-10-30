@@ -10,53 +10,85 @@ export const dynamic = "force-dynamic";
  * Public catalog endpoint (storefront data source).
  * Exposes ONLY enabled games/products/categories — never disabled records,
  * never raw files, never adapter internals (PRD §29.8: no per-visitor GitHub calls).
+ *
+ * v1.22.1: cache respons 30 detik + SINGLE-FLIGHT. Temuan load test produksi:
+ * flood ke endpoint ini memukul upstream (GitHub Contents API) per permintaan
+ * → 502 saat kuota/transien. Kini hanya pembacaan PERTAMA tiap jendela 30
+ * detik yang membayar biaya upstream; permintaan lain (termasuk yang datang
+ * bersamaan saat cache kosong) berbagi satu promise yang sama. Perubahan
+ * katalog admin tetap terlihat maksimal 30 detik kemudian (UI klien sudah
+ * re-poll tiap 60 detik — segar secara efektif).
  */
+
+const CACHE_TTL_MS = 30_000;
+
+type CachedResponse = { at: number; body: Record<string, unknown> };
+let cached: CachedResponse | null = null;
+let inflight: Promise<Record<string, unknown>> | null = null;
+
+async function buildBody(): Promise<Record<string, unknown>> {
+  const { repo, mode } = getRepository(true);
+  const read = await repo.readSnapshot();
+  const { snapshot } = read;
+
+  const enabledGames = snapshot.games
+    .filter((g) => g.enabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((g) => ({
+      id: g.id,
+      slug: g.slug,
+      name: g.name,
+      description: g.description ?? null,
+      image: g.image ?? null,
+      orderFields: g.orderFieldSchema,
+      productCount: snapshot.products.filter((p) => p.gameId === g.id && p.enabled).length,
+      categoryIds: g.categoryIds,
+      sortOrder: g.sortOrder,
+    }));
+
+  const gameIds = new Set(enabledGames.map((g) => g.id));
+  const enabledProducts: Product[] = snapshot.products
+    .filter((p) => p.enabled && gameIds.has(p.gameId))
+    .sort((a, b) => (a.gameId === b.gameId ? a.sortOrder - b.sortOrder : 0));
+
+  return {
+    store: {
+      name: snapshot.settings.storeName,
+      whatsappNumber: snapshot.settings.whatsappNumber,
+      announcement: snapshot.settings.announcement?.trim() || null,
+      maintenanceMode: snapshot.settings.maintenanceMode,
+      maintenanceMessage: snapshot.settings.maintenanceMessage?.trim() || null,
+      supportNote: snapshot.settings.supportNote?.trim() || null,
+      currency: snapshot.settings.currency,
+      locale: snapshot.settings.locale,
+    },
+    checkoutTemplate: snapshot.checkoutTemplate.template,
+    games: enabledGames,
+    categories: snapshot.categories
+      .filter((c) => c.enabled)
+      .sort((a, b) => a.sortOrder - b.sortOrder),
+    products: enabledProducts,
+    revision: read.revision,
+    adapter: mode,
+  };
+}
+
 export async function GET(_req: NextRequest) {
   try {
-    const { repo, mode } = getRepository(true);
-    const read = await repo.readSnapshot();
-    const { snapshot } = read;
+    // Cache hangat → serve instan tanpa menyentuh upstream.
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+      return jsonOk(cached.body);
+    }
 
-    const enabledGames = snapshot.games
-      .filter((g) => g.enabled)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((g) => ({
-        id: g.id,
-        slug: g.slug,
-        name: g.name,
-        description: g.description ?? null,
-        image: g.image ?? null,
-        orderFields: g.orderFieldSchema,
-        productCount: snapshot.products.filter((p) => p.gameId === g.id && p.enabled).length,
-        categoryIds: g.categoryIds,
-        sortOrder: g.sortOrder,
-      }));
-
-    const gameIds = new Set(enabledGames.map((g) => g.id));
-    const enabledProducts: Product[] = snapshot.products
-      .filter((p) => p.enabled && gameIds.has(p.gameId))
-      .sort((a, b) => (a.gameId === b.gameId ? a.sortOrder - b.sortOrder : 0));
-
-    return jsonOk({
-      store: {
-        name: snapshot.settings.storeName,
-        whatsappNumber: snapshot.settings.whatsappNumber,
-        announcement: snapshot.settings.announcement?.trim() || null,
-        maintenanceMode: snapshot.settings.maintenanceMode,
-        maintenanceMessage: snapshot.settings.maintenanceMessage?.trim() || null,
-        supportNote: snapshot.settings.supportNote?.trim() || null,
-        currency: snapshot.settings.currency,
-        locale: snapshot.settings.locale,
-      },
-      checkoutTemplate: snapshot.checkoutTemplate.template,
-      games: enabledGames,
-      categories: snapshot.categories
-        .filter((c) => c.enabled)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-      products: enabledProducts,
-      revision: read.revision,
-      adapter: mode,
-    });
+    // Single-flight: permintaan bersamaan berbagi SATU pembacaan upstream.
+    if (!inflight) {
+      inflight = buildBody().finally(() => {
+        inflight = null;
+      });
+    }
+    const body = await inflight;
+    cached = { at: Date.now(), body };
+    return jsonOk(body);
   } catch (e) {
     if (e instanceof RepoError) {
       const status =
