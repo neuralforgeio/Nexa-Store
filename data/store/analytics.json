@@ -191,19 +191,22 @@
       }
     },
     "2026-10-30": {
-      "views": 2,
+      "views": 3,
       "uniques": 2,
       "byPath": {
-        "/": 2
+        "/": 3
       },
       "byReferrer": {
-        "langsung": 1,
+        "langsung": 2,
         "m.facebook.com": 1
       },
       "byDevice": {
-        "mobile": 2
+        "mobile": 2,
+        "desktop": 1
       },
-      "events": {}
+      "events": {
+        "chat_open": 1
+      }
     }
   },
   "visitors": {
@@ -479,6 +482,7 @@
     1792930224347,
     1792930224347,
     1793357343680,
-    1793357343680
+    1793357343680,
+    1793359843416
   ]
 }
