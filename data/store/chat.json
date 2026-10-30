@@ -1,3 +1,20 @@
 {
-  "conversations": []
+  "conversations": [
+    {
+      "id": "c_f8fbf9032dd9ca201c254b91",
+      "name": null,
+      "createdAt": "2026-10-30T11:30:48.917Z",
+      "messages": [
+        {
+          "id": "m_mvuw5fitu7t6",
+          "from": "user",
+          "text": "tes notifikasi v1.22 - halo bot!",
+          "at": "2026-10-30T11:30:48.917Z"
+        }
+      ],
+      "lastMessageAt": "2026-10-30T11:30:48.917Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    }
+  ]
 }
