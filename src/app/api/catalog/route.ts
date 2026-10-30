@@ -90,6 +90,12 @@ export async function GET(_req: NextRequest) {
     cached = { at: Date.now(), body };
     return jsonOk(body);
   } catch (e) {
+    // Stale-while-error (v1.22.2): upstream tumbang (kuota GitHub API habis,
+    // transien jaringan) → layani cache TERAKHIR daripada mematikan etalase.
+    // Data bisa telat beberapa menit — jauh lebih baik daripada 502 total.
+    if (cached) {
+      return jsonOk(cached.body);
+    }
     if (e instanceof RepoError) {
       const status =
         e.kind === "validation" ? 500 : e.kind === "not-found" ? 503 : 502;
