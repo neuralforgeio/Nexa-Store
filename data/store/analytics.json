@@ -207,7 +207,8 @@
       },
       "events": {
         "chat_open": 1,
-        "order_click": 1
+        "order_click": 2,
+        "wa_handoff": 1
       }
     }
   },
