@@ -1,28 +1,6 @@
 {
   "conversations": [
     {
-      "id": "c_b313a6bfdc7b8ad921196f21",
-      "name": "Ryu",
-      "createdAt": "2026-10-30T11:31:47.864Z",
-      "messages": [
-        {
-          "id": "m_mvuw6p08s5wi",
-          "from": "user",
-          "text": "Hai",
-          "at": "2026-10-30T11:31:47.864Z"
-        },
-        {
-          "id": "m_mvuw6qraw7s2",
-          "from": "bot",
-          "text": "### Halo, Ryu! 👋\n\nAku **Nexa Bot** — asisten AI NEXA STORE ⚡\n\nYang bisa kubantu:\n- 💰 Daftar harga — ketik nama game (mis. `free fire`)\n- 🛒 Langsung pesan — `pesan 2000 diamonds free fire`\n- 📦 Lacak pesanan — tempel ID Order-mu\n- 💸 Rekomendasi — `rekomendasi termurah`",
-          "at": "2026-10-30T11:31:50.134Z"
-        }
-      ],
-      "lastMessageAt": "2026-10-30T11:31:50.134Z",
-      "unreadByOwner": 1,
-      "ownerLastReadAt": null
-    },
-    {
       "id": "c_f8fbf9032dd9ca201c254b91",
       "name": null,
       "createdAt": "2026-10-30T11:30:48.917Z",
