@@ -191,21 +191,21 @@
       }
     },
     "2026-10-30": {
-      "views": 10,
+      "views": 13,
       "uniques": 5,
       "byPath": {
         "/": 6,
         "/games/ff-max": 1,
         "/login": 1,
-        "/games": 1,
-        "/games/mobile-legends": 1
+        "/games": 2,
+        "/games/mobile-legends": 3
       },
       "byReferrer": {
-        "langsung": 9,
+        "langsung": 12,
         "m.facebook.com": 1
       },
       "byDevice": {
-        "mobile": 9,
+        "mobile": 12,
         "desktop": 1
       },
       "events": {
@@ -497,6 +497,9 @@
     1793360946698,
     1793361090554,
     1793361090554,
-    1793361398124
+    1793361398124,
+    1793361524413,
+    1793361524413,
+    1793361524413
   ]
 }
