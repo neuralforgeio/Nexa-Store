@@ -221,19 +221,22 @@
       "events": {}
     },
     "2026-11-01": {
-      "views": 2,
+      "views": 3,
       "uniques": 1,
       "byPath": {
         "/": 1,
-        "/games/free-fire": 1
+        "/games/free-fire": 1,
+        "/games": 1
       },
       "byReferrer": {
-        "github.com": 2
+        "github.com": 3
       },
       "byDevice": {
-        "desktop": 2
+        "desktop": 3
       },
-      "events": {}
+      "events": {
+        "order_click": 1
+      }
     }
   },
   "visitors": {
@@ -536,6 +539,7 @@
     1793450029176,
     1793450029176,
     1793530689069,
-    1793530689069
+    1793530689069,
+    1793530714953
   ]
 }
