@@ -255,17 +255,18 @@
       "events": {}
     },
     "2026-11-03": {
-      "views": 2,
+      "views": 4,
       "uniques": 1,
       "byPath": {
         "/": 1,
-        "/games": 1
+        "/games": 2,
+        "/games/mobile-legends": 1
       },
       "byReferrer": {
-        "langsung": 2
+        "langsung": 4
       },
       "byDevice": {
-        "mobile": 2
+        "mobile": 4
       },
       "events": {}
     }
@@ -582,6 +583,8 @@
     1793630555353,
     1793630555353,
     1793700216846,
-    1793700216846
+    1793700216846,
+    1793700231801,
+    1793700231801
   ]
 }
