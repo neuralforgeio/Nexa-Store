@@ -271,23 +271,26 @@
       "events": {}
     },
     "2026-11-04": {
-      "views": 6,
+      "views": 7,
       "uniques": 3,
       "byPath": {
         "/": 3,
         "/games/valorant": 1,
         "/games/honor-of-kings": 1,
-        "/testimoni": 1
+        "/testimoni": 1,
+        "/games": 1
       },
       "byReferrer": {
-        "langsung": 4,
+        "langsung": 5,
         "github.com": 2
       },
       "byDevice": {
-        "mobile": 4,
+        "mobile": 5,
         "desktop": 2
       },
-      "events": {}
+      "events": {
+        "chat_open": 1
+      }
     }
   },
   "visitors": {
@@ -613,6 +616,7 @@
     1793789096506,
     1793789096507,
     1793791121213,
-    1793791121213
+    1793791121213,
+    1793791131813
   ]
 }
