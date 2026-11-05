@@ -294,21 +294,23 @@
       }
     },
     "2026-11-05": {
-      "views": 8,
-      "uniques": 3,
+      "views": 12,
+      "uniques": 4,
       "byPath": {
-        "/": 4,
+        "/": 5,
         "/games/free-fire": 1,
         "/games/ff-max": 1,
-        "/games": 2
+        "/games": 4,
+        "/games/valorant": 1
       },
       "byReferrer": {
         "langsung": 2,
         "com.google.android.googlequicksearchbox": 1,
-        "github.com": 5
+        "github.com": 9
       },
       "byDevice": {
-        "mobile": 8
+        "mobile": 8,
+        "desktop": 4
       },
       "events": {}
     }
@@ -358,7 +360,8 @@
     "55d02e8d747f5f29066a0e07": "2026-11-04",
     "b06d5583adb6263cc2fb8d57": "2026-11-04",
     "c8c6b3233ac5d0609e9d2dae": "2026-11-04",
-    "b22de6da86ef6869a08e6f49": "2026-11-05"
+    "b22de6da86ef6869a08e6f49": "2026-11-05",
+    "2ec9bb93ea20efdc27420f93": "2026-11-05"
   },
   "recent": [
     1789319955843,
@@ -648,6 +651,10 @@
     1793879425064,
     1793879425064,
     1793879427539,
-    1793879427539
+    1793879427539,
+    1793886886558,
+    1793886886558,
+    1793886886558,
+    1793886886558
   ]
 }
