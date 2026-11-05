@@ -294,21 +294,21 @@
       }
     },
     "2026-11-05": {
-      "views": 6,
+      "views": 8,
       "uniques": 3,
       "byPath": {
-        "/": 3,
+        "/": 4,
         "/games/free-fire": 1,
         "/games/ff-max": 1,
-        "/games": 1
+        "/games": 2
       },
       "byReferrer": {
         "langsung": 2,
         "com.google.android.googlequicksearchbox": 1,
-        "github.com": 3
+        "github.com": 5
       },
       "byDevice": {
-        "mobile": 6
+        "mobile": 8
       },
       "events": {}
     }
@@ -646,6 +646,8 @@
     1793871102789,
     1793879425064,
     1793879425064,
-    1793879425064
+    1793879425064,
+    1793879427539,
+    1793879427539
   ]
 }
