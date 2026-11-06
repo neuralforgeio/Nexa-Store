@@ -1,24 +1,5 @@
 {
   "days": {
-    "2026-09-21": {
-      "views": 11,
-      "uniques": 4,
-      "byPath": {
-        "/": 4,
-        "/track": 6,
-        "/admin/chat": 1
-      },
-      "byReferrer": {
-        "langsung": 11
-      },
-      "byDevice": {
-        "desktop": 5,
-        "mobile": 6
-      },
-      "events": {
-        "chat_open": 1
-      }
-    },
     "2026-09-22": {
       "views": 2,
       "uniques": 1,
@@ -313,6 +294,22 @@
         "desktop": 4
       },
       "events": {}
+    },
+    "2026-11-06": {
+      "views": 2,
+      "uniques": 1,
+      "byPath": {
+        "/games/free-fire": 2
+      },
+      "byReferrer": {
+        "langsung": 2
+      },
+      "byDevice": {
+        "mobile": 2
+      },
+      "events": {
+        "wa_handoff": 1
+      }
     }
   },
   "visitors": {
@@ -341,7 +338,7 @@
     "cc4c15e852bd3534c621937a": "2026-10-21",
     "3831f0a6b9b84d38f0d49eef": "2026-10-21",
     "63ecfa4efee12dfe33b832c8": "2026-10-21",
-    "c3815dcc4eff4ae162800801": "2026-11-05",
+    "c3815dcc4eff4ae162800801": "2026-11-06",
     "08010725d9105f4defbf0f5e": "2026-10-22",
     "8b6590b03e2afb13b8bec585": "2026-10-23",
     "8541de99f2cf776b5de80add": "2026-10-24",
@@ -655,6 +652,8 @@
     1793886886558,
     1793886886558,
     1793886886558,
-    1793886886558
+    1793886886558,
+    1793946823653,
+    1793946823653
   ]
 }
