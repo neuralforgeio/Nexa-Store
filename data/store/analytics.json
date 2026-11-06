@@ -296,19 +296,22 @@
       "events": {}
     },
     "2026-11-06": {
-      "views": 2,
-      "uniques": 1,
+      "views": 3,
+      "uniques": 2,
       "byPath": {
-        "/games/free-fire": 2
+        "/games/free-fire": 2,
+        "/": 1
       },
       "byReferrer": {
-        "langsung": 2
+        "langsung": 2,
+        "github.com": 1
       },
       "byDevice": {
-        "mobile": 2
+        "mobile": 3
       },
       "events": {
-        "wa_handoff": 1
+        "wa_handoff": 1,
+        "chat_open": 1
       }
     }
   },
@@ -358,7 +361,8 @@
     "b06d5583adb6263cc2fb8d57": "2026-11-04",
     "c8c6b3233ac5d0609e9d2dae": "2026-11-04",
     "b22de6da86ef6869a08e6f49": "2026-11-05",
-    "2ec9bb93ea20efdc27420f93": "2026-11-05"
+    "2ec9bb93ea20efdc27420f93": "2026-11-05",
+    "72b02c0b3c9f5ffd67d98740": "2026-11-06"
   },
   "recent": [
     1789319955843,
@@ -654,6 +658,7 @@
     1793886886558,
     1793886886558,
     1793946823653,
-    1793946823653
+    1793946823653,
+    1793947108653
   ]
 }
