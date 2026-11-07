@@ -300,21 +300,21 @@
       }
     },
     "2026-11-07": {
-      "views": 5,
+      "views": 7,
       "uniques": 2,
       "byPath": {
-        "/": 1,
-        "/games": 2,
+        "/": 2,
+        "/games": 3,
         "/testimoni": 1,
         "/track": 1
       },
       "byReferrer": {
         "l.instagram.com": 2,
-        "github.com": 3
+        "github.com": 5
       },
       "byDevice": {
         "mobile": 2,
-        "desktop": 3
+        "desktop": 5
       },
       "events": {
         "chat_open": 1
@@ -671,6 +671,8 @@
     1794047102564,
     1794058304211,
     1794058319252,
-    1794058319252
+    1794058319252,
+    1794058340290,
+    1794058340290
   ]
 }
