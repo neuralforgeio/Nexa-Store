@@ -300,10 +300,10 @@
       }
     },
     "2026-11-07": {
-      "views": 9,
+      "views": 10,
       "uniques": 3,
       "byPath": {
-        "/": 2,
+        "/": 3,
         "/games": 3,
         "/testimoni": 1,
         "/track": 1,
@@ -312,16 +312,17 @@
       },
       "byReferrer": {
         "l.instagram.com": 2,
-        "github.com": 6,
+        "github.com": 7,
         "langsung": 1
       },
       "byDevice": {
         "mobile": 3,
-        "desktop": 6
+        "desktop": 7
       },
       "events": {
         "chat_open": 1,
-        "order_click": 1
+        "order_click": 1,
+        "wa_handoff": 1
       }
     }
   },
@@ -679,6 +680,7 @@
     1794058340290,
     1794058340290,
     1794058370192,
-    1794058370192
+    1794058370192,
+    1794058386774
   ]
 }
