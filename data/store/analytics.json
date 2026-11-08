@@ -326,18 +326,20 @@
       }
     },
     "2026-11-08": {
-      "views": 4,
+      "views": 7,
       "uniques": 2,
       "byPath": {
-        "/": 2,
+        "/": 3,
         "/track": 1,
-        "/games/delta-force": 1
+        "/games/delta-force": 1,
+        "/games": 1,
+        "/games/brawl-stars": 1
       },
       "byReferrer": {
-        "langsung": 4
+        "langsung": 7
       },
       "byDevice": {
-        "mobile": 4
+        "mobile": 7
       },
       "events": {}
     }
@@ -702,6 +704,9 @@
     1794121869331,
     1794121869331,
     1794138889566,
-    1794138889566
+    1794138889566,
+    1794138905052,
+    1794138905052,
+    1794138905052
   ]
 }
