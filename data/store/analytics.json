@@ -358,7 +358,8 @@
         "mobile": 4
       },
       "events": {
-        "wa_handoff": 1
+        "wa_handoff": 1,
+        "order_click": 2
       }
     }
   },
