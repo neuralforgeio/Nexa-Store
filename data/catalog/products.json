@@ -8,7 +8,7 @@
       "priceIdr": 13000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 13000
+      "sortOrder": 26000
     },
     {
       "id": "free-fire-200",
@@ -18,7 +18,7 @@
       "priceIdr": 26000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 26000
+      "sortOrder": 28000
     },
     {
       "id": "free-fire-member",
@@ -28,7 +28,7 @@
       "priceIdr": 29000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 28000
+      "sortOrder": 45000
     },
     {
       "id": "free-fire-350",
@@ -38,7 +38,7 @@
       "priceIdr": 45000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 45000
+      "sortOrder": 52000
     },
     {
       "id": "free-fire-400",
@@ -48,7 +48,7 @@
       "priceIdr": 52000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 52000
+      "sortOrder": 67000
     },
     {
       "id": "free-fire-500",
@@ -58,7 +58,7 @@
       "priceIdr": 67000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 67000
+      "sortOrder": 77000
     },
     {
       "id": "free-fire-600",
@@ -68,7 +68,7 @@
       "priceIdr": 77000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 77000
+      "sortOrder": 84000
     },
     {
       "id": "free-fire-member-bulanan",
@@ -78,7 +78,7 @@
       "priceIdr": 84000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 84000
+      "sortOrder": 13000
     },
     {
       "id": "free-fire-700",
