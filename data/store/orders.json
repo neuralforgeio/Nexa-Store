@@ -1,6 +1,32 @@
 {
   "orders": [
     {
+      "id": "NEXA-261110-YWX2",
+      "source": "cart",
+      "summary": "1 item — keranjang",
+      "customerName": null,
+      "items": [
+        {
+          "gameName": "Free Fire",
+          "productName": "200 Diamonds",
+          "price": 26000
+        }
+      ],
+      "total": 26000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-11-10T11:09:58.891Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-11-10T11:09:58.891Z",
+          "reason": null
+        }
+      ],
+      "conversationId": "c_e8e49ea81a83132c29ffe11a"
+    },
+    {
       "id": "NEXA-261110-7M8S",
       "source": "instant",
       "summary": "Mobile Legends — 408 Diamonds",
