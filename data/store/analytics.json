@@ -363,19 +363,20 @@
       }
     },
     "2026-11-10": {
-      "views": 6,
+      "views": 9,
       "uniques": 2,
       "byPath": {
-        "/": 1,
+        "/": 3,
         "/testimoni": 1,
         "/login": 3,
-        "/admin/products": 1
+        "/admin/products": 1,
+        "/games/free-fire": 1
       },
       "byReferrer": {
-        "langsung": 6
+        "langsung": 9
       },
       "byDevice": {
-        "mobile": 6
+        "mobile": 9
       },
       "events": {}
     }
@@ -756,6 +757,9 @@
     1794299324287,
     1794299324287,
     1794299426983,
-    1794299426983
+    1794299426983,
+    1794299590258,
+    1794299590258,
+    1794299590258
   ]
 }
