@@ -13,9 +13,9 @@
         }
       ],
       "total": 246000,
-      "status": "success",
+      "status": "processing",
       "statusReason": null,
-      "statusUpdatedAt": "2026-11-09T13:09:25.304Z",
+      "statusUpdatedAt": "2026-11-10T08:33:23.441Z",
       "createdAt": "2026-11-09T12:53:48.614Z",
       "history": [
         {
@@ -26,6 +26,11 @@
         {
           "status": "success",
           "at": "2026-11-09T13:09:25.304Z",
+          "reason": null
+        },
+        {
+          "status": "processing",
+          "at": "2026-11-10T08:33:23.441Z",
           "reason": null
         }
       ],
