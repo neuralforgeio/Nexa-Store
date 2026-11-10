@@ -116,9 +116,9 @@
         }
       ],
       "total": 246000,
-      "status": "success",
+      "status": "cancel",
       "statusReason": null,
-      "statusUpdatedAt": "2026-11-10T12:14:46.895Z",
+      "statusUpdatedAt": "2026-11-10T12:14:51.255Z",
       "createdAt": "2026-11-09T12:53:48.614Z",
       "history": [
         {
@@ -139,6 +139,11 @@
         {
           "status": "success",
           "at": "2026-11-10T12:14:46.895Z",
+          "reason": null
+        },
+        {
+          "status": "cancel",
+          "at": "2026-11-10T12:14:51.255Z",
           "reason": null
         }
       ],
