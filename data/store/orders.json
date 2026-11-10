@@ -13,14 +13,19 @@
         }
       ],
       "total": 26000,
-      "status": "pending",
+      "status": "processing",
       "statusReason": null,
-      "statusUpdatedAt": null,
+      "statusUpdatedAt": "2026-11-10T12:14:17.392Z",
       "createdAt": "2026-11-10T11:09:58.891Z",
       "history": [
         {
           "status": "pending",
           "at": "2026-11-10T11:09:58.891Z",
+          "reason": null
+        },
+        {
+          "status": "processing",
+          "at": "2026-11-10T12:14:17.392Z",
           "reason": null
         }
       ],
