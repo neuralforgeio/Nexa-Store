@@ -2590,6 +2590,17 @@
       "currency": "IDR",
       "enabled": true,
       "sortOrder": 456000
+    },
+    {
+      "id": "free-fire-148",
+      "gameId": "free-fire",
+      "name": "Diamonds",
+      "denomination": "148",
+      "bonus": "134+14",
+      "priceIdr": 48000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 48000
     }
   ]
 }
