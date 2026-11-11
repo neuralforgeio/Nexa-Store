@@ -775,6 +775,7 @@
       "gameId": "mobile-legends",
       "name": "Diamonds",
       "denomination": "100",
+      "bonus": "1",
       "priceIdr": 34000,
       "currency": "IDR",
       "enabled": true,
