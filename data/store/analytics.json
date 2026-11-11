@@ -383,7 +383,7 @@
       }
     },
     "2026-11-11": {
-      "views": 46,
+      "views": 47,
       "uniques": 6,
       "byPath": {
         "/": 19,
@@ -391,18 +391,19 @@
         "/games/mobile-legends": 14,
         "/login": 3,
         "/games/roblox": 2,
-        "/games/fc-mobile": 1
+        "/games/fc-mobile": 2
       },
       "byReferrer": {
         "github.com": 2,
-        "langsung": 44
+        "langsung": 45
       },
       "byDevice": {
-        "mobile": 45,
+        "mobile": 46,
         "desktop": 1
       },
       "events": {
-        "chat_open": 1
+        "chat_open": 1,
+        "order_click": 1
       }
     }
   },
@@ -837,6 +838,7 @@
     1794405450024,
     1794405450024,
     1794405450024,
-    1794405450024
+    1794405450024,
+    1794405490154
   ]
 }
