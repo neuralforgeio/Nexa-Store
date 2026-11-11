@@ -2596,6 +2596,36 @@
       "currency": "IDR",
       "enabled": true,
       "sortOrder": 48000
+    },
+    {
+      "id": "mobile-legends-1708+302",
+      "gameId": "mobile-legends",
+      "name": "Diamonds",
+      "denomination": "1708+302",
+      "priceIdr": 570000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 570000
+    },
+    {
+      "id": "mobile-legends-862+104",
+      "gameId": "mobile-legends",
+      "name": "Diamonds",
+      "denomination": "862+104",
+      "priceIdr": 293000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 293000
+    },
+    {
+      "id": "mobile-legends-928+117",
+      "gameId": "mobile-legends",
+      "name": "Diamonds",
+      "denomination": "928+117",
+      "priceIdr": 316000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 316000
     }
   ]
 }
