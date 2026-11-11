@@ -168,9 +168,9 @@
         }
       ],
       "total": 26000,
-      "status": "processing",
+      "status": "cancel",
       "statusReason": null,
-      "statusUpdatedAt": "2026-11-10T12:14:17.392Z",
+      "statusUpdatedAt": "2026-11-11T23:30:59.983Z",
       "createdAt": "2026-11-10T11:09:58.891Z",
       "history": [
         {
@@ -181,6 +181,11 @@
         {
           "status": "processing",
           "at": "2026-11-10T12:14:17.392Z",
+          "reason": null
+        },
+        {
+          "status": "cancel",
+          "at": "2026-11-11T23:30:59.983Z",
           "reason": null
         }
       ],
