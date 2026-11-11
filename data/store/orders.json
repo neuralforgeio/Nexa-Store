@@ -75,14 +75,19 @@
         }
       ],
       "total": 34000,
-      "status": "pending",
+      "status": "cancel",
       "statusReason": null,
-      "statusUpdatedAt": null,
+      "statusUpdatedAt": "2026-11-11T23:30:44.813Z",
       "createdAt": "2026-11-11T13:58:06.425Z",
       "history": [
         {
           "status": "pending",
           "at": "2026-11-11T13:58:06.425Z",
+          "reason": null
+        },
+        {
+          "status": "cancel",
+          "at": "2026-11-11T23:30:44.813Z",
           "reason": null
         }
       ],
