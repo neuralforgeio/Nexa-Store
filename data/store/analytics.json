@@ -383,22 +383,22 @@
       }
     },
     "2026-11-11": {
-      "views": 41,
+      "views": 46,
       "uniques": 6,
       "byPath": {
-        "/": 18,
-        "/games": 4,
-        "/games/mobile-legends": 13,
+        "/": 19,
+        "/games": 7,
+        "/games/mobile-legends": 14,
         "/login": 3,
         "/games/roblox": 2,
         "/games/fc-mobile": 1
       },
       "byReferrer": {
         "github.com": 2,
-        "langsung": 39
+        "langsung": 44
       },
       "byDevice": {
-        "mobile": 40,
+        "mobile": 45,
         "desktop": 1
       },
       "events": {
@@ -832,6 +832,11 @@
     1794404999332,
     1794404999332,
     1794405295517,
-    1794405295517
+    1794405295517,
+    1794405450024,
+    1794405450024,
+    1794405450024,
+    1794405450024,
+    1794405450024
   ]
 }
