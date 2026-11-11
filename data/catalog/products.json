@@ -2524,6 +2524,17 @@
       "currency": "IDR",
       "enabled": true,
       "sortOrder": 1800000
+    },
+    {
+      "id": "mobile-legends-233",
+      "gameId": "mobile-legends",
+      "name": "Diamonds",
+      "denomination": "233",
+      "bonus": "25",
+      "priceIdr": 84000,
+      "currency": "IDR",
+      "enabled": true,
+      "sortOrder": 84000
     }
   ]
 }
