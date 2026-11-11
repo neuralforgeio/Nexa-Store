@@ -838,7 +838,7 @@
       "priceIdr": 282000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 282000
+      "sortOrder": 293000
     },
     {
       "id": "mobile-legends-1100",
@@ -858,7 +858,7 @@
       "priceIdr": 546000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 546000
+      "sortOrder": 570000
     },
     {
       "id": "roblox-100",
@@ -2604,7 +2604,7 @@
       "priceIdr": 570000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 570000
+      "sortOrder": 546000
     },
     {
       "id": "mobile-legends-862+104",
@@ -2614,7 +2614,7 @@
       "priceIdr": 293000,
       "currency": "IDR",
       "enabled": true,
-      "sortOrder": 293000
+      "sortOrder": 282000
     },
     {
       "id": "mobile-legends-928+117",
