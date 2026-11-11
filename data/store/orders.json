@@ -1,6 +1,32 @@
 {
   "orders": [
     {
+      "id": "NEXA-261111-2SST",
+      "source": "instant",
+      "summary": "Mobile Legends — Weekly Diamond Pass",
+      "customerName": "Ggags",
+      "items": [
+        {
+          "gameName": "Mobile Legends",
+          "productName": "Weekly Diamond Pass",
+          "price": 33000
+        }
+      ],
+      "total": 33000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-11-11T13:49:59.355Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-11-11T13:49:59.355Z",
+          "reason": null
+        }
+      ],
+      "conversationId": "c_66d1db8651216139f1fd5bfe"
+    },
+    {
       "id": "NEXA-261110-YWX2",
       "source": "cart",
       "summary": "1 item — keranjang",
