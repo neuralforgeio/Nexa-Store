@@ -407,21 +407,22 @@
       }
     },
     "2026-11-12": {
-      "views": 14,
+      "views": 16,
       "uniques": 4,
       "byPath": {
         "/": 5,
         "/games/free-fire": 1,
         "/games": 5,
         "/games/ff-max": 1,
-        "/games/valorant": 2
+        "/games/valorant": 3,
+        "/track": 1
       },
       "byReferrer": {
-        "langsung": 14
+        "langsung": 16
       },
       "byDevice": {
         "mobile": 10,
-        "desktop": 4
+        "desktop": 6
       },
       "events": {}
     }
@@ -876,6 +877,8 @@
     1794453672632,
     1794453672632,
     1794453678913,
-    1794453678913
+    1794453678913,
+    1794453683883,
+    1794453683883
   ]
 }
