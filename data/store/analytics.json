@@ -407,7 +407,7 @@
       }
     },
     "2026-11-12": {
-      "views": 16,
+      "views": 18,
       "uniques": 4,
       "byPath": {
         "/": 5,
@@ -415,14 +415,15 @@
         "/games": 5,
         "/games/ff-max": 1,
         "/games/valorant": 3,
-        "/track": 1
+        "/track": 2,
+        "/testimoni": 1
       },
       "byReferrer": {
-        "langsung": 16
+        "langsung": 18
       },
       "byDevice": {
         "mobile": 10,
-        "desktop": 6
+        "desktop": 8
       },
       "events": {}
     }
@@ -879,6 +880,8 @@
     1794453678913,
     1794453678913,
     1794453683883,
-    1794453683883
+    1794453683883,
+    1794453694621,
+    1794453694621
   ]
 }
