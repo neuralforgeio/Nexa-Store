@@ -1,6 +1,32 @@
 {
   "orders": [
     {
+      "id": "NEXA-261113-9FAZ",
+      "source": "instant",
+      "summary": "Free Fire — 1000 Diamonds",
+      "customerName": "thyos",
+      "items": [
+        {
+          "gameName": "Free Fire",
+          "productName": "1000 Diamonds",
+          "price": 126000
+        }
+      ],
+      "total": 126000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-11-13T16:07:37.873Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-11-13T16:07:37.873Z",
+          "reason": null
+        }
+      ],
+      "conversationId": "c_c778b92e2c2b5f40725c416e"
+    },
+    {
       "id": "NEXA-261113-82XR",
       "source": "cart",
       "summary": "1 item — keranjang",
