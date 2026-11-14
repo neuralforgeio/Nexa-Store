@@ -448,21 +448,24 @@
       }
     },
     "2026-11-14": {
-      "views": 5,
+      "views": 6,
       "uniques": 3,
       "byPath": {
         "/games/free-fire": 3,
         "/": 1,
-        "/games": 1
+        "/games": 1,
+        "/games/mobile-legends": 1
       },
       "byReferrer": {
-        "langsung": 5
+        "langsung": 6
       },
       "byDevice": {
         "mobile": 3,
-        "desktop": 2
+        "desktop": 3
       },
-      "events": {}
+      "events": {
+        "order_click": 1
+      }
     }
   },
   "visitors": {
@@ -525,7 +528,6 @@
     "a86923fadfac1e4feb349f8a": "2026-11-12"
   },
   "recent": [
-    1789328627602,
     1789328746272,
     1789328746272,
     1789329489040,
@@ -924,6 +926,7 @@
     1794626218944,
     1794626218944,
     1794635629969,
-    1794635629969
+    1794635629969,
+    1794635686811
   ]
 }
