@@ -1,6 +1,32 @@
 {
   "orders": [
     {
+      "id": "NEXA-261116-9KBT",
+      "source": "instant",
+      "summary": "FF MAX — 400 Diamonds",
+      "customerName": "ucok",
+      "items": [
+        {
+          "gameName": "FF MAX",
+          "productName": "400 Diamonds",
+          "price": 52000
+        }
+      ],
+      "total": 52000,
+      "status": "pending",
+      "statusReason": null,
+      "statusUpdatedAt": null,
+      "createdAt": "2026-11-16T23:39:50.141Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-11-16T23:39:50.141Z",
+          "reason": null
+        }
+      ],
+      "conversationId": "c_1117c02fee18520b1a17a135"
+    },
+    {
       "id": "NEXA-261116-A22N",
       "source": "instant",
       "summary": "FF MAX — 400 Diamonds",
