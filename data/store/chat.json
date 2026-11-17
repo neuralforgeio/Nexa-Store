@@ -22,9 +22,15 @@
           "from": "user",
           "text": "ini bisa otomatis?",
           "at": "2026-11-17T07:26:12.194Z"
+        },
+        {
+          "id": "m_mwkdc8dsanfc",
+          "from": "bot",
+          "text": "Pembayaran diatur langsung lewat chat WhatsApp saat kamu order 💬\n\n- QRIS ✅\n- E-wallet umum (DANA, OVO, GoPay, ShopeePay) ✅\n\nNominal + rekening/QR dikirim admin setelah pesanan masuk. Checkout cepat, proses langsung!",
+          "at": "2026-11-17T07:26:14.128Z"
         }
       ],
-      "lastMessageAt": "2026-11-17T07:26:12.194Z",
+      "lastMessageAt": "2026-11-17T07:26:14.128Z",
       "unreadByOwner": 2,
       "ownerLastReadAt": null
     },
