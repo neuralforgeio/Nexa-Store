@@ -34,9 +34,15 @@
           "from": "user",
           "text": "kenapa lama prosesnya?",
           "at": "2026-11-24T13:50:23.541Z"
+        },
+        {
+          "id": "m_mwur59r1pqov",
+          "from": "bot",
+          "text": "NEXA STORE buka **24 jam** ⏰ Order kapan pun — otomatis masuk ke admin lewat WhatsApp.\n\nMayoritas pesanan diproses cepat setelah pembayaran dikonfirmasi; kalau ada antrean, statusnya kelihatan di halaman **Lacak Pesanan**.",
+          "at": "2026-11-24T13:50:25.693Z"
         }
       ],
-      "lastMessageAt": "2026-11-24T13:50:23.541Z",
+      "lastMessageAt": "2026-11-24T13:50:25.693Z",
       "unreadByOwner": 3,
       "ownerLastReadAt": null
     },
