@@ -577,26 +577,27 @@
       "events": {}
     },
     "2026-11-24": {
-      "views": 15,
+      "views": 16,
       "uniques": 3,
       "byPath": {
         "/": 4,
         "/games": 1,
         "/track": 4,
         "/testimoni": 2,
-        "/reports": 2,
+        "/reports": 3,
         "/help": 2
       },
       "byReferrer": {
         "langsung": 10,
-        "github.com": 5
+        "github.com": 6
       },
       "byDevice": {
         "desktop": 13,
-        "mobile": 2
+        "mobile": 3
       },
       "events": {
-        "chat_open": 1
+        "chat_open": 1,
+        "wa_handoff": 1
       }
     }
   },
@@ -678,7 +679,6 @@
     "72fc72178f10ed77fd7f217d": "2026-11-24"
   },
   "recent": [
-    1792387540403,
     1792387540403,
     1792387570011,
     1792387570011,
@@ -1077,6 +1077,7 @@
     1795528181987,
     1795528181987,
     1795528203259,
-    1795528203259
+    1795528203259,
+    1795537279246
   ]
 }
