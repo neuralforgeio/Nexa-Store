@@ -68,7 +68,63 @@
       ],
       "lastMessageAt": "2026-11-24T13:51:08.288Z",
       "unreadByOwner": 5,
-      "ownerLastReadAt": null
+      "ownerLastReadAt": null,
+      "agent": {
+        "productId": null,
+        "gameId": null,
+        "at": "2026-11-24T13:51:08.974Z",
+        "options": [
+          {
+            "productId": "free-fire-member",
+            "gameId": "free-fire",
+            "label": "Member Mingguan",
+            "price": 29000
+          },
+          {
+            "productId": "free-fire-member-bulanan",
+            "gameId": "free-fire",
+            "label": "Member Bulanan",
+            "price": 84000
+          },
+          {
+            "productId": "free-fire-100",
+            "gameId": "free-fire",
+            "label": "100 Diamonds",
+            "price": 13000
+          },
+          {
+            "productId": "free-fire-200",
+            "gameId": "free-fire",
+            "label": "200 Diamonds",
+            "price": 26000
+          },
+          {
+            "productId": "free-fire-148",
+            "gameId": "free-fire",
+            "label": "148 Diamonds +13414",
+            "price": 48000
+          },
+          {
+            "productId": "free-fire-350",
+            "gameId": "free-fire",
+            "label": "350 Diamonds",
+            "price": 45000
+          },
+          {
+            "productId": "free-fire-400",
+            "gameId": "free-fire",
+            "label": "400 Diamonds",
+            "price": 52000
+          },
+          {
+            "productId": "free-fire-500",
+            "gameId": "free-fire",
+            "label": "500 Diamonds",
+            "price": 67000
+          }
+        ],
+        "optionsAt": "2026-11-24T13:51:08.974Z"
+      }
     },
     {
       "id": "c_d5131cdf064873cd2cd79338",
