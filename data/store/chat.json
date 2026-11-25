@@ -34,9 +34,15 @@
           "from": "user",
           "text": "Can you speak English?",
           "at": "2026-11-25T18:00:09.115Z"
+        },
+        {
+          "id": "m_mwwfibe802yq",
+          "from": "bot",
+          "text": "Maaf, di luar wewenangku 😅 Aku **Nexa Bot** — asisten khusus NEXA STORE (top up game). Aku nggak bisa bantu soal itu.\n\nTanya aku soal **harga game**, **cara top up**, atau **lacak pesanan** ya!",
+          "at": "2026-11-25T18:00:11.312Z"
         }
       ],
-      "lastMessageAt": "2026-11-25T18:00:09.115Z",
+      "lastMessageAt": "2026-11-25T18:00:11.312Z",
       "unreadByOwner": 3,
       "ownerLastReadAt": null
     },
