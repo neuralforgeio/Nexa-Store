@@ -1,6 +1,22 @@
 {
   "conversations": [
     {
+      "id": "c_5026ab30ad30e05f9140e694",
+      "name": null,
+      "createdAt": "2026-11-25T17:59:49.928Z",
+      "messages": [
+        {
+          "id": "m_mwwfhuw85fsl",
+          "from": "user",
+          "text": "Hi",
+          "at": "2026-11-25T17:59:49.928Z"
+        }
+      ],
+      "lastMessageAt": "2026-11-25T17:59:49.928Z",
+      "unreadByOwner": 1,
+      "ownerLastReadAt": null
+    },
+    {
       "id": "c_31bbe98ec1e0583298c87756",
       "name": null,
       "createdAt": "2026-11-24T13:50:02.344Z",
